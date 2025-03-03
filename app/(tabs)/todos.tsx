@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { CheckSquare, Plus } from 'lucide-react-native';
 import { useTodoStore } from '@/store/todo-store';
@@ -17,21 +19,22 @@ import Colors from '@/constants/colors';
 import { mockTodos } from '@/mocks/todos';
 
 export default function TodosScreen() {
-  const { todos, addTodo, updateTodo, deleteTodo, toggleTodo } = useTodoStore();
+  const { todos, addTodo, updateTodo, deleteTodo, toggleTodo } =
+    useTodoStore();
   const [newTodo, setNewTodo] = useState('');
 
   // Add mock todos on first load if no todos exist
   useEffect(() => {
     if (todos.length === 0) {
-      mockTodos.forEach(todo => {
+      mockTodos.forEach((todo) => {
         addTodo(todo.title);
-        
+
         // If the todo is completed, toggle it
         if (todo.completed) {
           // We need to find the ID of the newly added todo
-          const addedTodo = useTodoStore.getState().todos.find(
-            t => t.title === todo.title
-          );
+          const addedTodo = useTodoStore
+            .getState()
+            .todos.find((t) => t.title === todo.title);
           if (addedTodo) {
             toggleTodo(addedTodo.id);
           }
@@ -49,6 +52,13 @@ export default function TodosScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={Colors.background}
+      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>To-dos</Text>
+      </View>
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -74,7 +84,7 @@ export default function TodosScreen() {
             />
           }
         />
-        
+
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -84,11 +94,11 @@ export default function TodosScreen() {
             onSubmitEditing={handleAddTodo}
             returnKeyType="done"
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.addButton,
-              !newTodo.trim() && styles.addButtonDisabled
-            ]} 
+              !newTodo.trim() && styles.addButtonDisabled,
+            ]}
             onPress={handleAddTodo}
             disabled={!newTodo.trim()}
           >
@@ -104,6 +114,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+    backgroundColor: Colors.background,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.text,
   },
   keyboardAvoidingView: {
     flex: 1,

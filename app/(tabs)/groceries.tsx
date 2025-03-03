@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, ShoppingCart } from 'lucide-react-native';
@@ -21,16 +23,16 @@ export default function GroceriesScreen() {
   // Add mock grocery lists on first load if no lists exist
   useEffect(() => {
     if (groceryLists.length === 0) {
-      mockGroceryLists.forEach(list => {
+      mockGroceryLists.forEach((list) => {
         // We need to manually add each list since our addGroceryList function
         // only takes a name parameter
         addGroceryList(list.name);
-        
+
         // Update the last added list with the mock items
         const lastIndex = groceryLists.length;
         if (lastIndex > 0) {
           const lastList = groceryLists[lastIndex - 1];
-          list.items.forEach(item => {
+          list.items.forEach((item) => {
             // This is a workaround since we don't have a direct way to add items with IDs
             useGroceryStore.getState().addGroceryItem(lastList.id, {
               name: item.name,
@@ -50,10 +52,19 @@ export default function GroceriesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={Colors.background}
+      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Groceries</Text>
+      </View>
       <FlatList
         data={groceryLists}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <GroceryListCard groceryList={item} />}
+        renderItem={({ item }) => (
+          <GroceryListCard groceryList={item} />
+        )}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <EmptyState
@@ -63,8 +74,8 @@ export default function GroceriesScreen() {
           />
         }
       />
-      <TouchableOpacity 
-        style={styles.fab} 
+      <TouchableOpacity
+        style={styles.fab}
         onPress={handleAddGroceryList}
         activeOpacity={0.8}
       >
@@ -78,6 +89,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+    backgroundColor: Colors.background,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.text,
   },
   listContent: {
     padding: 16,

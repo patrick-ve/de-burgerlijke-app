@@ -1,7 +1,11 @@
-import React from "react";
-import { Tabs } from "expo-router";
-import { BookOpen, ShoppingCart, CheckSquare } from "lucide-react-native";
-import Colors from "@/constants/colors";
+import React from 'react';
+import { Tabs } from 'expo-router';
+import {
+  BookOpen,
+  ShoppingCart,
+  CheckSquare,
+} from 'lucide-react-native';
+import Colors from '@/constants/colors';
 
 export default function TabLayout() {
   return (
@@ -17,35 +21,34 @@ export default function TabLayout() {
           fontSize: 12,
           fontWeight: '500',
         },
-        headerStyle: {
-          backgroundColor: Colors.background,
-        },
-        headerShadowVisible: false,
-        headerTitleStyle: {
-          fontWeight: '600',
-          fontSize: 18,
-        },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Recipes",
-          tabBarIcon: ({ color }) => <BookOpen size={22} color={color} />,
+          title: 'Recipes',
+          tabBarIcon: ({ color }) => (
+            <BookOpen size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="groceries"
         options={{
-          title: "Groceries",
-          tabBarIcon: ({ color }) => <ShoppingCart size={22} color={color} />,
+          title: 'Groceries',
+          tabBarIcon: ({ color }) => (
+            <ShoppingCart size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="todos"
         options={{
-          title: "To-dos",
-          tabBarIcon: ({ color }) => <CheckSquare size={22} color={color} />,
+          title: 'To-dos',
+          tabBarIcon: ({ color }) => (
+            <CheckSquare size={22} color={color} />
+          ),
         }}
       />
     </Tabs>
