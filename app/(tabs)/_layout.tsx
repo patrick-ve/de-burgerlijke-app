@@ -1,44 +1,51 @@
 import React from "react";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
-import { Pressable } from "react-native";
-
+import { Tabs } from "expo-router";
+import { BookOpen, ShoppingCart, CheckSquare } from "lucide-react-native";
 import Colors from "@/constants/colors";
-
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.light.tint,
-        headerShown: true,
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.gray[400],
+        tabBarStyle: {
+          borderTopColor: Colors.gray[200],
+          backgroundColor: Colors.background,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        headerStyle: {
+          backgroundColor: Colors.background,
+        },
+        headerShadowVisible: false,
+        headerTitleStyle: {
+          fontWeight: '600',
+          fontSize: 18,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Tab One",
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors.light.text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          title: "Recipes",
+          tabBarIcon: ({ color }) => <BookOpen size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="groceries"
+        options={{
+          title: "Groceries",
+          tabBarIcon: ({ color }) => <ShoppingCart size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="todos"
+        options={{
+          title: "To-dos",
+          tabBarIcon: ({ color }) => <CheckSquare size={22} color={color} />,
         }}
       />
     </Tabs>

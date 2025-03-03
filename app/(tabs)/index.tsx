@@ -1,30 +1,86 @@
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Plus, UtensilsCrossed } from 'lucide-react-native';
+import { useRecipeStore } from '@/store/recipe-store';
+import RecipeCard from '@/components/RecipeCard';
+import EmptyState from '@/components/EmptyState';
+import Colors from '@/constants/colors';
+import { mockRecipes } from '@/mocks/recipes';
 
-export default function TabOneScreen() {
+export default function RecipesScreen() {
+  const router = useRouter();
+  const { recipes, addRecipe } = useRecipeStore();
+
+  // Add mock recipes on first load if no recipes exist
+  useEffect(() => {
+    if (recipes.length === 0) {
+      mockRecipes.forEach(recipe => {
+        addRecipe(recipe);
+      });
+    }
+  }, []);
+
+  const handleAddRecipe = () => {
+    router.push('/add-recipe');
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} />
-      <Text>
-        This is an example tab. You can edit it in app/%28tabs%29/index.tsx.
-      </Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={recipes}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <RecipeCard recipe={item} />}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <EmptyState
+            icon={UtensilsCrossed}
+            title="No recipes yet"
+            message="Add your first recipe by tapping the + button"
+          />
+        }
+      />
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={handleAddRecipe}
+        activeOpacity={0.8}
+      >
+        <Plus size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: Colors.background,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
+  listContent: {
+    padding: 16,
+    flexGrow: 1,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
 });
