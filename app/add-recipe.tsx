@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -15,32 +15,33 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
 import { parseRecipeFromUrl } from '@/utils/recipe-parser';
+import { ModalLayout } from '@/components/AnimatedLayout';
 
 export default function AddRecipeScreen() {
   const router = useRouter();
   const { addRecipe } = useRecipeStore();
-  
+
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const handleSubmit = async () => {
     if (!url.trim()) {
       setError('Please enter a URL');
       return;
     }
-    
+
     if (!url.startsWith('http')) {
       setError('Please enter a valid URL');
       return;
     }
-    
+
     setError('');
     setLoading(true);
-    
+
     try {
       const recipe = await parseRecipeFromUrl(url);
-      
+
       if (recipe) {
         addRecipe(recipe);
         router.back();
@@ -48,62 +49,65 @@ export default function AddRecipeScreen() {
         setError('Could not extract recipe from this URL');
       }
     } catch (err) {
-      setError('An error occurred while processing the URL');
-      console.error(err);
+      console.error('Error parsing recipe:', err);
+      setError('An error occurred while parsing the recipe');
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
-    <SafeAreaView style={styles.container}>
+    <ModalLayout>
       <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
+        style={styles.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.content}>
-            <Text style={styles.title}>Add Recipe from URL</Text>
-            <Text style={styles.description}>
-              Enter the URL of a recipe page, and we'll try to extract the recipe information.
-            </Text>
-            
-            <Input
-              label="Recipe URL"
-              placeholder="https://example.com/recipe"
-              value={url}
-              onChangeText={setUrl}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-              error={error}
-              containerStyle={styles.inputContainer}
-            />
-            
-            <Text style={styles.note}>
-              Note: For demo purposes, any URL containing "recipe", "food", or "cook" will work.
-            </Text>
-            
-            <View style={styles.buttonContainer}>
-              <Button
-                title="Cancel"
-                onPress={() => router.back()}
-                variant="outline"
-                style={styles.cancelButton}
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.content}>
+              <Text style={styles.title}>Add Recipe from URL</Text>
+              <Text style={styles.description}>
+                Enter the URL of a recipe page, and we'll try to
+                extract the recipe information.
+              </Text>
+
+              <Input
+                label="Recipe URL"
+                placeholder="https://example.com/recipe"
+                value={url}
+                onChangeText={setUrl}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                error={error}
+                containerStyle={styles.inputContainer}
               />
-              <Button
-                title="Add Recipe"
-                onPress={handleSubmit}
-                loading={loading}
-                disabled={loading}
-                style={styles.submitButton}
-              />
+
+              <Text style={styles.note}>
+                Note: For demo purposes, any URL containing "recipe",
+                "food", or "cook" will work.
+              </Text>
+
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Cancel"
+                  onPress={() => router.back()}
+                  variant="outline"
+                  style={styles.cancelButton}
+                />
+                <Button
+                  title="Add Recipe"
+                  onPress={handleSubmit}
+                  loading={loading}
+                  disabled={loading}
+                  style={styles.submitButton}
+                />
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </SafeAreaView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ModalLayout>
   );
 }
 
@@ -112,7 +116,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  keyboardAvoidingView: {
+  safeArea: {
     flex: 1,
   },
   scrollContent: {

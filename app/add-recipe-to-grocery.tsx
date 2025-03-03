@@ -1,186 +1,222 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+} from 'lucide-react-native';
 import { useRecipeStore } from '@/store/recipe-store';
 import { useGroceryStore } from '@/store/grocery-store';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import Colors from '@/constants/colors';
+import { ModalLayout } from '@/components/AnimatedLayout';
 
 export default function AddRecipeToGroceryScreen() {
-  const { recipeId, groceryListId } = useLocalSearchParams<{ 
+  const { recipeId, groceryListId } = useLocalSearchParams<{
     recipeId?: string;
     groceryListId?: string;
   }>();
-  
+
   const router = useRouter();
   const { recipes, getRecipeById } = useRecipeStore();
-  const { groceryLists, addIngredientsFromRecipe } = useGroceryStore();
-  
-  const [selectedRecipeId, setSelectedRecipeId] = useState(recipeId || '');
-  const [selectedListId, setSelectedListId] = useState(groceryListId || '');
+  const { groceryLists, addIngredientsFromRecipe } =
+    useGroceryStore();
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState(
+    recipeId || ''
+  );
+  const [selectedListId, setSelectedListId] = useState(
+    groceryListId || ''
+  );
   const [servings, setServings] = useState(4);
-  
-  const selectedRecipe = selectedRecipeId 
-    ? getRecipeById(selectedRecipeId) 
+
+  const selectedRecipe = selectedRecipeId
+    ? getRecipeById(selectedRecipeId)
     : null;
-  
+
   useEffect(() => {
     if (selectedRecipe) {
       setServings(selectedRecipe.servings);
     }
   }, [selectedRecipe]);
-  
+
   const handleServingsChange = (newServings: number) => {
     if (newServings > 0) {
       setServings(newServings);
     }
   };
-  
+
   const handleAddToGroceryList = () => {
     if (selectedRecipe && selectedListId) {
       addIngredientsFromRecipe(
-        selectedListId, 
-        selectedRecipeId, 
-        selectedRecipe, 
+        selectedListId,
+        selectedRecipeId,
+        selectedRecipe,
         servings
       );
       router.back();
     }
   };
-  
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Add Recipe to Grocery List</Text>
-          
-          {!recipeId && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Recipe</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.recipesContainer}
-              >
-                {recipes.map((recipe) => (
-                  <TouchableOpacity
-                    key={recipe.id}
-                    style={[
-                      styles.recipeCard,
-                      selectedRecipeId === recipe.id && styles.selectedRecipeCard
-                    ]}
-                    onPress={() => setSelectedRecipeId(recipe.id)}
-                  >
-                    <Text 
+    <ModalLayout>
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
+            <Text style={styles.title}>
+              Add Recipe to Grocery List
+            </Text>
+
+            {!recipeId && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Select Recipe</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recipesContainer}
+                >
+                  {recipes.map((recipe) => (
+                    <TouchableOpacity
+                      key={recipe.id}
                       style={[
-                        styles.recipeCardTitle,
-                        selectedRecipeId === recipe.id && styles.selectedRecipeCardTitle
+                        styles.recipeCard,
+                        selectedRecipeId === recipe.id &&
+                          styles.selectedRecipeCard,
                       ]}
-                      numberOfLines={2}
+                      onPress={() => setSelectedRecipeId(recipe.id)}
                     >
-                      {recipe.title}
+                      <Text
+                        style={[
+                          styles.recipeCardTitle,
+                          selectedRecipeId === recipe.id &&
+                            styles.selectedRecipeCardTitle,
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {recipe.title}
+                      </Text>
+                      {selectedRecipeId === recipe.id && (
+                        <View style={styles.checkIcon}>
+                          <Check size={16} color="#FFFFFF" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {!groceryListId && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  Select Grocery List
+                </Text>
+                {groceryLists.map((list) => (
+                  <TouchableOpacity
+                    key={list.id}
+                    style={[
+                      styles.listItem,
+                      selectedListId === list.id &&
+                        styles.selectedListItem,
+                    ]}
+                    onPress={() => setSelectedListId(list.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.listItemTitle,
+                        selectedListId === list.id &&
+                          styles.selectedListItemTitle,
+                      ]}
+                    >
+                      {list.name}
                     </Text>
-                    {selectedRecipeId === recipe.id && (
-                      <View style={styles.checkIcon}>
-                        <Check size={16} color="#FFFFFF" />
-                      </View>
+                    {selectedListId === list.id && (
+                      <Check size={20} color={Colors.primary} />
                     )}
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            </View>
-          )}
-          
-          {!groceryListId && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Grocery List</Text>
-              {groceryLists.map((list) => (
-                <TouchableOpacity
-                  key={list.id}
-                  style={[
-                    styles.listItem,
-                    selectedListId === list.id && styles.selectedListItem
-                  ]}
-                  onPress={() => setSelectedListId(list.id)}
-                >
-                  <Text 
-                    style={[
-                      styles.listItemTitle,
-                      selectedListId === list.id && styles.selectedListItemTitle
-                    ]}
-                  >
-                    {list.name}
-                  </Text>
-                  {selectedListId === list.id && (
-                    <Check size={20} color={Colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-          
-          {selectedRecipe && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Adjust Servings</Text>
-              <Card>
-                <View style={styles.servingsContainer}>
-                  <TouchableOpacity
-                    onPress={() => handleServingsChange(servings - 1)}
-                    disabled={servings <= 1}
-                    style={[
-                      styles.servingsButton,
-                      servings <= 1 && styles.servingsButtonDisabled
-                    ]}
-                  >
-                    <ChevronLeft 
-                      size={20} 
-                      color={servings <= 1 ? Colors.gray[300] : Colors.primary} 
-                    />
-                  </TouchableOpacity>
-                  
-                  <Text style={styles.servingsText}>{servings} servings</Text>
-                  
-                  <TouchableOpacity
-                    onPress={() => handleServingsChange(servings + 1)}
-                    style={styles.servingsButton}
-                  >
-                    <ChevronRight size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                </View>
-                
-                <Text style={styles.servingsNote}>
-                  Ingredient quantities will be adjusted accordingly
+              </View>
+            )}
+
+            {selectedRecipe && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  Adjust Servings
                 </Text>
-              </Card>
+                <Card>
+                  <View style={styles.servingsContainer}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleServingsChange(servings - 1)
+                      }
+                      disabled={servings <= 1}
+                      style={[
+                        styles.servingsButton,
+                        servings <= 1 &&
+                          styles.servingsButtonDisabled,
+                      ]}
+                    >
+                      <ChevronLeft
+                        size={20}
+                        color={
+                          servings <= 1
+                            ? Colors.gray[300]
+                            : Colors.primary
+                        }
+                      />
+                    </TouchableOpacity>
+
+                    <Text style={styles.servingsText}>
+                      {servings} servings
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleServingsChange(servings + 1)
+                      }
+                      style={styles.servingsButton}
+                    >
+                      <ChevronRight
+                        size={20}
+                        color={Colors.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.servingsNote}>
+                    Ingredient quantities will be adjusted accordingly
+                  </Text>
+                </Card>
+              </View>
+            )}
+
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Add to List"
+                onPress={handleAddToGroceryList}
+                disabled={!selectedRecipeId || !selectedListId}
+                style={styles.submitButton}
+              />
             </View>
-          )}
-          
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Cancel"
-              onPress={() => router.back()}
-              variant="outline"
-              style={styles.cancelButton}
-            />
-            <Button
-              title="Add to List"
-              onPress={handleAddToGroceryList}
-              disabled={!selectedRecipeId || !selectedListId}
-              style={styles.submitButton}
-            />
           </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </ModalLayout>
   );
 }
 
@@ -190,15 +226,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollContent: {
-    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 32,
   },
   content: {
-    padding: 16,
     flex: 1,
   },
   title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 24,
     color: Colors.text,
   },

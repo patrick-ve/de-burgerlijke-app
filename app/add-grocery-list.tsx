@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -12,63 +12,66 @@ import { useGroceryStore } from '@/store/grocery-store';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
+import { ModalLayout } from '@/components/AnimatedLayout';
 
 export default function AddGroceryListScreen() {
   const router = useRouter();
   const { addGroceryList } = useGroceryStore();
-  
+
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  
+
   const handleSubmit = () => {
     if (!name.trim()) {
       setError('Please enter a name for your grocery list');
       return;
     }
-    
+
     addGroceryList(name);
     router.back();
   };
-  
+
   return (
-    <SafeAreaView style={styles.container}>
+    <ModalLayout>
       <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Create Grocery List</Text>
-          <Text style={styles.description}>
-            Give your grocery list a name to help you stay organized.
-          </Text>
-          
-          <Input
-            label="List Name"
-            placeholder="Weekly Groceries"
-            value={name}
-            onChangeText={setName}
-            error={error}
-            containerStyle={styles.inputContainer}
-            autoFocus
-          />
-          
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Cancel"
-              onPress={() => router.back()}
-              variant="outline"
-              style={styles.cancelButton}
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.content}>
+            <Text style={styles.title}>Create Grocery List</Text>
+            <Text style={styles.description}>
+              Give your grocery list a name to help you stay
+              organized.
+            </Text>
+
+            <Input
+              label="List Name"
+              placeholder="Weekly Groceries"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              error={error}
+              containerStyle={styles.inputContainer}
             />
-            <Button
-              title="Create List"
-              onPress={handleSubmit}
-              style={styles.submitButton}
-            />
+
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                onPress={() => router.back()}
+                variant="outline"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Create List"
+                onPress={handleSubmit}
+                style={styles.submitButton}
+              />
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ModalLayout>
   );
 }
 
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  keyboardAvoidingView: {
+  safeArea: {
     flex: 1,
   },
   content: {

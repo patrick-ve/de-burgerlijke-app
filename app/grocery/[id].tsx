@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -16,34 +16,37 @@ import { useGroceryStore } from '@/store/grocery-store';
 import GroceryItem from '@/components/GroceryItem';
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
+import { CardLayout } from '@/components/AnimatedLayout';
 
 export default function GroceryListDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { 
-    getGroceryListById, 
-    addGroceryItem, 
-    toggleGroceryItem, 
+  const {
+    getGroceryListById,
+    addGroceryItem,
+    toggleGroceryItem,
     deleteGroceryItem,
     deleteGroceryList,
   } = useGroceryStore();
-  
+
   const groceryList = getGroceryListById(id);
-  
+
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemUnit, setNewItemUnit] = useState('');
-  
+
   if (!groceryList) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Grocery list not found</Text>
-        <Button 
-          title="Go Back"
-          onPress={() => router.back()}
-          style={{ marginTop: 16 }}
-        />
-      </View>
+      <CardLayout>
+        <View style={styles.container}>
+          <Text style={styles.errorText}>Grocery list not found</Text>
+          <Button
+            title="Go Back"
+            onPress={() => router.back()}
+            style={{ marginTop: 16 }}
+          />
+        </View>
+      </CardLayout>
     );
   }
 
@@ -69,7 +72,7 @@ export default function GroceryListDetailScreen() {
   const handleAddRecipe = () => {
     router.push({
       pathname: '/add-recipe-to-grocery',
-      params: { groceryListId: id }
+      params: { groceryListId: id },
     });
   };
 
@@ -80,88 +83,90 @@ export default function GroceryListDetailScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{
-          title: groceryList.name,
-          headerRight: () => (
-            <TouchableOpacity 
-              onPress={handleDeleteList}
-              style={{ marginRight: 8 }}
-            >
-              <Trash2 size={20} color={Colors.error} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
-      >
-        <FlatList
-          data={sortedItems}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <GroceryItem
-              item={item}
-              onToggle={(itemId) => toggleGroceryItem(id, itemId)}
-              onDelete={(itemId) => deleteGroceryItem(id, itemId)}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={
-            <Button
-              title="Add Items from Recipe"
-              onPress={handleAddRecipe}
-              variant="outline"
-              fullWidth
-              style={styles.addRecipeButton}
-              size="medium"
-            />
-          }
+    <CardLayout>
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen
+          options={{
+            title: groceryList.name,
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={handleDeleteList}
+                style={{ marginRight: 8 }}
+              >
+                <Trash2 size={20} color={Colors.error} />
+              </TouchableOpacity>
+            ),
+          }}
         />
-        
-        <View style={styles.inputContainer}>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.nameInput}
-              placeholder="Item name"
-              value={newItemName}
-              onChangeText={setNewItemName}
-              returnKeyType="next"
-            />
-            <TextInput
-              style={styles.quantityInput}
-              placeholder="Qty"
-              value={newItemQuantity}
-              onChangeText={setNewItemQuantity}
-              keyboardType="numeric"
-              returnKeyType="next"
-            />
-            <TextInput
-              style={styles.unitInput}
-              placeholder="Unit"
-              value={newItemUnit}
-              onChangeText={setNewItemUnit}
-              returnKeyType="done"
-              onSubmitEditing={handleAddItem}
-            />
+
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={100}
+        >
+          <FlatList
+            data={sortedItems}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <GroceryItem
+                item={item}
+                onToggle={(itemId) => toggleGroceryItem(id, itemId)}
+                onDelete={(itemId) => deleteGroceryItem(id, itemId)}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <Button
+                title="Add Items from Recipe"
+                onPress={handleAddRecipe}
+                variant="outline"
+                fullWidth
+                style={styles.addRecipeButton}
+                size="medium"
+              />
+            }
+          />
+
+          <View style={styles.inputContainer}>
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.nameInput}
+                placeholder="Item name"
+                value={newItemName}
+                onChangeText={setNewItemName}
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.quantityInput}
+                placeholder="Qty"
+                value={newItemQuantity}
+                onChangeText={setNewItemQuantity}
+                keyboardType="numeric"
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.unitInput}
+                placeholder="Unit"
+                value={newItemUnit}
+                onChangeText={setNewItemUnit}
+                returnKeyType="done"
+                onSubmitEditing={handleAddItem}
+              />
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                !newItemName.trim() && styles.addButtonDisabled,
+              ]}
+              onPress={handleAddItem}
+              disabled={!newItemName.trim()}
+            >
+              <Plus size={24} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={[
-              styles.addButton,
-              !newItemName.trim() && styles.addButtonDisabled
-            ]} 
-            onPress={handleAddItem}
-            disabled={!newItemName.trim()}
-          >
-            <Plus size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </CardLayout>
   );
 }
 

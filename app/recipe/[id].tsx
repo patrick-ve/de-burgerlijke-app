@@ -26,6 +26,7 @@ import {
 import { useRecipeStore } from '@/store/recipe-store';
 import Button from '@/components/Button';
 import Colors from '@/constants/colors';
+import { CardLayout } from '@/components/AnimatedLayout';
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,14 +47,11 @@ export default function RecipeDetailScreen() {
 
   if (!recipe) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Recipe not found</Text>
-        <Button
-          title="Go Back"
-          onPress={() => router.back()}
-          style={{ marginTop: 16 }}
-        />
-      </View>
+      <CardLayout>
+        <View style={styles.container}>
+          <Text style={styles.errorText}>Recipe not found</Text>
+        </View>
+      </CardLayout>
     );
   }
 
@@ -104,239 +102,248 @@ export default function RecipeDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: recipe.title,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={handleDeleteRecipe}
-              style={{ marginRight: 8 }}
-            >
-              <Trash2 size={20} color={Colors.error} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Image
-          source={{ uri: recipe.imageUrl }}
-          style={styles.image}
-          resizeMode="cover"
+    <CardLayout>
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen
+          options={{
+            title: recipe.title,
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={handleDeleteRecipe}
+                style={{ marginRight: 8 }}
+              >
+                <Trash2 size={20} color={Colors.error} />
+              </TouchableOpacity>
+            ),
+          }}
         />
 
-        <View style={styles.content}>
-          <Text style={styles.description}>{recipe.description}</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Image
+            source={{ uri: recipe.imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+          />
 
-          <View style={styles.metaContainer}>
-            <View style={styles.metaItem}>
-              <Clock size={18} color={Colors.textLight} />
-              <Text style={styles.metaText}>
-                {recipe.prepTime + recipe.cookTime} min
-              </Text>
-            </View>
+          <View style={styles.content}>
+            <Text style={styles.description}>
+              {recipe.description}
+            </Text>
 
-            <View style={styles.servingsContainer}>
-              <TouchableOpacity
-                onPress={() => handleServingsChange(servings - 1)}
-                disabled={servings <= 1}
-                style={[
-                  styles.servingsButton,
-                  servings <= 1 && styles.servingsButtonDisabled,
-                ]}
-              >
-                <ChevronLeft
-                  size={20}
-                  color={
-                    servings <= 1 ? Colors.gray[300] : Colors.primary
-                  }
-                />
-              </TouchableOpacity>
-
-              <View style={styles.servingsTextContainer}>
-                <Users size={18} color={Colors.textLight} />
+            <View style={styles.metaContainer}>
+              <View style={styles.metaItem}>
+                <Clock size={18} color={Colors.textLight} />
                 <Text style={styles.metaText}>
-                  {servings} servings
+                  {recipe.prepTime + recipe.cookTime} min
                 </Text>
               </View>
 
-              <TouchableOpacity
-                onPress={() => handleServingsChange(servings + 1)}
-                style={styles.servingsButton}
-              >
-                <ChevronRight size={20} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Tab Navigation */}
-          <View style={styles.tabContainer}>
-            <Pressable
-              style={[
-                styles.tabButton,
-                activeTab === 'ingredients' && styles.activeTabButton,
-              ]}
-              onPress={() => setActiveTab('ingredients')}
-            >
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  activeTab === 'ingredients' &&
-                    styles.activeTabButtonText,
-                ]}
-              >
-                Ingredients
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.tabButton,
-                activeTab === 'instructions' &&
-                  styles.activeTabButton,
-              ]}
-              onPress={() => setActiveTab('instructions')}
-            >
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  activeTab === 'instructions' &&
-                    styles.activeTabButtonText,
-                ]}
-              >
-                Instructions
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Tab Content */}
-          {activeTab === 'ingredients' ? (
-            <View style={styles.section}>
-              <View style={styles.ingredientsList}>
-                {recipe.ingredients.map((ingredient, index) => (
-                  <View
-                    key={ingredient.id}
-                    style={[
-                      styles.ingredientItem,
-                      index === recipe.ingredients.length - 1 &&
-                        styles.ingredientItemLast,
-                    ]}
-                  >
-                    <Text style={styles.ingredientAmount}>
-                      {ingredient.quantity > 0
-                        ? `${
-                            Number.isInteger(ingredient.quantity)
-                              ? ingredient.quantity
-                              : ingredient.quantity.toFixed(1)
-                          } ${ingredient.unit}`
-                        : ''}
-                    </Text>
-                    <Text style={styles.ingredientName}>
-                      {ingredient.name}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              <Button
-                title="Add ingredients to shopping list"
-                onPress={handleAddToGroceryList}
-                fullWidth
-                style={styles.addButton}
-                variant="primary"
-                size="large"
-              />
-            </View>
-          ) : (
-            <View style={styles.section}>
-              {/* Progress indicator */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBarContainer}>
-                  <View
-                    style={[
-                      styles.progressBar,
-                      {
-                        width: `${
-                          (recipe.completedInstructions.length /
-                            recipe.instructions.length) *
-                          100
-                        }%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressText}>
-                    {recipe.completedInstructions.length} of{' '}
-                    {recipe.instructions.length} steps completed
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      updateRecipe(recipe.id, {
-                        completedInstructions: [],
-                      });
-                    }}
-                    style={styles.resetButton}
-                  >
-                    <Text style={styles.resetButtonText}>Reset</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {recipe.instructions.map((instruction, index) => {
-                const isCompleted =
-                  recipe.completedInstructions?.includes(index) ||
-                  false;
-
-                const hasLaterCompletedSteps =
-                  isCompleted &&
-                  recipe.completedInstructions.some(
-                    (completedIndex) => completedIndex > index
-                  );
-
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.instructionItem}
-                    onPress={() =>
-                      handleToggleInstructionCompletion(index)
+              <View style={styles.servingsContainer}>
+                <TouchableOpacity
+                  onPress={() => handleServingsChange(servings - 1)}
+                  disabled={servings <= 1}
+                  style={[
+                    styles.servingsButton,
+                    servings <= 1 && styles.servingsButtonDisabled,
+                  ]}
+                >
+                  <ChevronLeft
+                    size={20}
+                    color={
+                      servings <= 1
+                        ? Colors.gray[300]
+                        : Colors.primary
                     }
-                  >
+                  />
+                </TouchableOpacity>
+
+                <View style={styles.servingsTextContainer}>
+                  <Users size={18} color={Colors.textLight} />
+                  <Text style={styles.metaText}>
+                    {servings} servings
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => handleServingsChange(servings + 1)}
+                  style={styles.servingsButton}
+                >
+                  <ChevronRight size={20} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Tab Navigation */}
+            <View style={styles.tabContainer}>
+              <Pressable
+                style={[
+                  styles.tabButton,
+                  activeTab === 'ingredients' &&
+                    styles.activeTabButton,
+                ]}
+                onPress={() => setActiveTab('ingredients')}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === 'ingredients' &&
+                      styles.activeTabButtonText,
+                  ]}
+                >
+                  Ingredients
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.tabButton,
+                  activeTab === 'instructions' &&
+                    styles.activeTabButton,
+                ]}
+                onPress={() => setActiveTab('instructions')}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === 'instructions' &&
+                      styles.activeTabButtonText,
+                  ]}
+                >
+                  Instructions
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Tab Content */}
+            {activeTab === 'ingredients' ? (
+              <View style={styles.section}>
+                <View style={styles.ingredientsList}>
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <View
+                      key={ingredient.id}
+                      style={[
+                        styles.ingredientItem,
+                        index === recipe.ingredients.length - 1 &&
+                          styles.ingredientItemLast,
+                      ]}
+                    >
+                      <Text style={styles.ingredientAmount}>
+                        {ingredient.quantity > 0
+                          ? `${
+                              Number.isInteger(ingredient.quantity)
+                                ? ingredient.quantity
+                                : ingredient.quantity.toFixed(1)
+                            } ${ingredient.unit}`
+                          : ''}
+                      </Text>
+                      <Text style={styles.ingredientName}>
+                        {ingredient.name}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Button
+                  title="Add ingredients to shopping list"
+                  onPress={handleAddToGroceryList}
+                  fullWidth
+                  style={styles.addButton}
+                  variant="primary"
+                  size="large"
+                />
+              </View>
+            ) : (
+              <View style={styles.section}>
+                {/* Progress indicator */}
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBarContainer}>
                     <View
                       style={[
-                        styles.instructionCheckbox,
-                        isCompleted &&
-                          styles.instructionCheckboxCompleted,
-                        hasLaterCompletedSteps &&
-                          styles.instructionCheckboxLocked,
+                        styles.progressBar,
+                        {
+                          width: `${
+                            (recipe.completedInstructions.length /
+                              recipe.instructions.length) *
+                            100
+                          }%`,
+                        },
                       ]}
-                    >
-                      {isCompleted ? (
-                        <Check size={16} color="#FFFFFF" />
-                      ) : (
-                        <CircleDashed
-                          size={16}
-                          color={Colors.primary}
-                        />
-                      )}
-                    </View>
-                    <Text
-                      style={[
-                        styles.instructionText,
-                        isCompleted &&
-                          styles.instructionTextCompleted,
-                      ]}
-                    >
-                      {instruction}
+                    />
+                  </View>
+                  <View style={styles.progressHeader}>
+                    <Text style={styles.progressText}>
+                      {recipe.completedInstructions.length} of{' '}
+                      {recipe.instructions.length} steps completed
                     </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+                    <TouchableOpacity
+                      onPress={() => {
+                        updateRecipe(recipe.id, {
+                          completedInstructions: [],
+                        });
+                      }}
+                      style={styles.resetButton}
+                    >
+                      <Text style={styles.resetButtonText}>
+                        Reset
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {recipe.instructions.map((instruction, index) => {
+                  const isCompleted =
+                    recipe.completedInstructions?.includes(index) ||
+                    false;
+
+                  const hasLaterCompletedSteps =
+                    isCompleted &&
+                    recipe.completedInstructions.some(
+                      (completedIndex) => completedIndex > index
+                    );
+
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.instructionItem}
+                      onPress={() =>
+                        handleToggleInstructionCompletion(index)
+                      }
+                    >
+                      <View
+                        style={[
+                          styles.instructionCheckbox,
+                          isCompleted &&
+                            styles.instructionCheckboxCompleted,
+                          hasLaterCompletedSteps &&
+                            styles.instructionCheckboxLocked,
+                        ]}
+                      >
+                        {isCompleted ? (
+                          <Check size={16} color="#FFFFFF" />
+                        ) : (
+                          <CircleDashed
+                            size={16}
+                            color={Colors.primary}
+                          />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.instructionText,
+                          isCompleted &&
+                            styles.instructionTextCompleted,
+                        ]}
+                      >
+                        {instruction}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </CardLayout>
   );
 }
 
