@@ -4,8 +4,10 @@ export const mockRecipes: Recipe[] = [
   {
     id: '1',
     title: 'Spaghetti Carbonara',
-    description: 'A classic Italian pasta dish with eggs, cheese, pancetta, and black pepper.',
-    imageUrl: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?q=80&w=2071&auto=format&fit=crop',
+    description:
+      'A classic Italian pasta dish with eggs, cheese, pancetta, and black pepper.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1612874742237-6526221588e3?q=80&w=2071&auto=format&fit=crop',
     sourceUrl: 'https://example.com/carbonara',
     ingredients: [
       { id: '1-1', name: 'Spaghetti', quantity: 400, unit: 'g' },
@@ -24,6 +26,7 @@ export const mockRecipes: Recipe[] = [
       'Add egg mixture and toss quickly to coat pasta, adding a splash of pasta water if needed to create a creamy sauce.',
       'Serve immediately with extra cheese and black pepper.',
     ],
+    completedInstructions: [],
     prepTime: 10,
     cookTime: 15,
     servings: 4,
@@ -33,8 +36,10 @@ export const mockRecipes: Recipe[] = [
   {
     id: '2',
     title: 'Chicken Stir Fry',
-    description: 'A quick and healthy stir fry with chicken and colorful vegetables.',
-    imageUrl: 'https://images.unsplash.com/photo-1603356033288-acfcb54801e6?q=80&w=1780&auto=format&fit=crop',
+    description:
+      'A quick and healthy stir fry with chicken and colorful vegetables.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1603356033288-acfcb54801e6?q=80&w=1780&auto=format&fit=crop',
     sourceUrl: 'https://example.com/stirfry',
     ingredients: [
       { id: '2-1', name: 'Chicken breast', quantity: 500, unit: 'g' },
@@ -57,6 +62,7 @@ export const mockRecipes: Recipe[] = [
       'Cook for another 1-2 minutes until everything is hot and well combined.',
       'Serve over rice or noodles.',
     ],
+    completedInstructions: [],
     prepTime: 15,
     cookTime: 15,
     servings: 4,
@@ -66,16 +72,28 @@ export const mockRecipes: Recipe[] = [
   {
     id: '3',
     title: 'Avocado Toast',
-    description: 'Simple and nutritious breakfast with mashed avocado on toasted bread.',
-    imageUrl: 'https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?q=80&w=1974&auto=format&fit=crop',
+    description:
+      'Simple and nutritious breakfast with mashed avocado on toasted bread.',
+    imageUrl:
+      'https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?q=80&w=1974&auto=format&fit=crop',
     sourceUrl: 'https://example.com/avocadotoast',
     ingredients: [
       { id: '3-1', name: 'Bread', quantity: 2, unit: 'slices' },
       { id: '3-2', name: 'Avocado', quantity: 1, unit: '' },
       { id: '3-3', name: 'Lemon juice', quantity: 1, unit: 'tsp' },
-      { id: '3-4', name: 'Red pepper flakes', quantity: 0.5, unit: 'tsp' },
+      {
+        id: '3-4',
+        name: 'Red pepper flakes',
+        quantity: 0.5,
+        unit: 'tsp',
+      },
       { id: '3-5', name: 'Salt', quantity: 0.5, unit: 'tsp' },
-      { id: '3-6', name: 'Black pepper', quantity: 0.25, unit: 'tsp' },
+      {
+        id: '3-6',
+        name: 'Black pepper',
+        quantity: 0.25,
+        unit: 'tsp',
+      },
     ],
     instructions: [
       'Toast bread until golden and crisp.',
@@ -84,6 +102,7 @@ export const mockRecipes: Recipe[] = [
       'Spread mashed avocado on toast.',
       'Sprinkle with red pepper flakes and additional salt and pepper if desired.',
     ],
+    completedInstructions: [],
     prepTime: 5,
     cookTime: 5,
     servings: 1,

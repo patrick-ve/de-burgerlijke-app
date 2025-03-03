@@ -6,6 +6,7 @@ export interface Recipe {
   sourceUrl: string;
   ingredients: Ingredient[];
   instructions: string[];
+  completedInstructions: number[]; // Array of indices of completed instructions
   prepTime: number; // in minutes
   cookTime: number; // in minutes
   servings: number;

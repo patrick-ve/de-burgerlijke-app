@@ -10,40 +10,102 @@ interface RecipeState {
   deleteRecipe: (id: string) => void;
   getRecipeById: (id: string) => Recipe | undefined;
   updateServings: (id: string, servings: number) => void;
+  toggleInstructionCompletion: (
+    recipeId: string,
+    instructionIndex: number
+  ) => void;
 }
 
 export const useRecipeStore = create<RecipeState>()(
   persist(
     (set, get) => ({
       recipes: [],
-      addRecipe: (recipe) => set((state) => ({ 
-        recipes: [recipe, ...state.recipes] 
-      })),
-      updateRecipe: (id, updatedRecipe) => set((state) => ({
-        recipes: state.recipes.map((recipe) => 
-          recipe.id === id ? { ...recipe, ...updatedRecipe } : recipe
-        )
-      })),
-      deleteRecipe: (id) => set((state) => ({
-        recipes: state.recipes.filter((recipe) => recipe.id !== id)
-      })),
+      addRecipe: (recipe) =>
+        set((state) => ({
+          recipes: [recipe, ...state.recipes],
+        })),
+      updateRecipe: (id, updatedRecipe) =>
+        set((state) => ({
+          recipes: state.recipes.map((recipe) =>
+            recipe.id === id
+              ? { ...recipe, ...updatedRecipe }
+              : recipe
+          ),
+        })),
+      deleteRecipe: (id) =>
+        set((state) => ({
+          recipes: state.recipes.filter((recipe) => recipe.id !== id),
+        })),
       getRecipeById: (id) => {
         return get().recipes.find((recipe) => recipe.id === id);
       },
-      updateServings: (id, servings) => set((state) => ({
-        recipes: state.recipes.map((recipe) => 
-          recipe.id === id 
-            ? { 
-                ...recipe, 
-                servings,
-                ingredients: recipe.ingredients.map(ingredient => ({
-                  ...ingredient,
-                  quantity: (ingredient.quantity / recipe.servings) * servings
-                }))
-              } 
-            : recipe
-        )
-      })),
+      updateServings: (id, servings) =>
+        set((state) => ({
+          recipes: state.recipes.map((recipe) =>
+            recipe.id === id
+              ? {
+                  ...recipe,
+                  servings,
+                  ingredients: recipe.ingredients.map(
+                    (ingredient) => ({
+                      ...ingredient,
+                      quantity:
+                        (ingredient.quantity / recipe.servings) *
+                        servings,
+                    })
+                  ),
+                }
+              : recipe
+          ),
+        })),
+      toggleInstructionCompletion: (recipeId, instructionIndex) =>
+        set((state) => {
+          const recipe = state.recipes.find((r) => r.id === recipeId);
+          if (!recipe) return state;
+
+          const completedInstructions =
+            recipe.completedInstructions || [];
+          const isCompleted =
+            completedInstructions.includes(instructionIndex);
+
+          if (isCompleted) {
+            const hasLaterCompletedSteps = completedInstructions.some(
+              (index) => index > instructionIndex
+            );
+
+            if (hasLaterCompletedSteps) {
+              return state;
+            }
+
+            return {
+              recipes: state.recipes.map((r) =>
+                r.id === recipeId
+                  ? {
+                      ...r,
+                      completedInstructions:
+                        completedInstructions.filter(
+                          (index) => index !== instructionIndex
+                        ),
+                    }
+                  : r
+              ),
+            };
+          }
+
+          return {
+            recipes: state.recipes.map((r) =>
+              r.id === recipeId
+                ? {
+                    ...r,
+                    completedInstructions: [
+                      ...completedInstructions,
+                      instructionIndex,
+                    ],
+                  }
+                : r
+            ),
+          };
+        }),
     }),
     {
       name: 'recipe-storage',

@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { 
-  Clock, 
-  Users, 
-  ChevronLeft, 
+import {
+  Clock,
+  Users,
+  ChevronLeft,
   ChevronRight,
   ShoppingCart,
   Trash2,
+  Check,
+  Circle,
+  CircleDashed,
 } from 'lucide-react-native';
 import { useRecipeStore } from '@/store/recipe-store';
 import Button from '@/components/Button';
@@ -25,18 +29,24 @@ import Colors from '@/constants/colors';
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { getRecipeById, updateServings, deleteRecipe } = useRecipeStore();
-  
+  const {
+    getRecipeById,
+    updateServings,
+    deleteRecipe,
+    toggleInstructionCompletion,
+  } = useRecipeStore();
+
   const recipe = getRecipeById(id);
-  
+
   const [servings, setServings] = useState(recipe?.servings || 4);
-  
+
   if (!recipe) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Recipe not found</Text>
-        <Button 
-          title="Go Back" onPress={() => router.back()}
+        <Button
+          title="Go Back"
+          onPress={() => router.back()}
           style={{ marginTop: 16 }}
         />
       </View>
@@ -53,7 +63,7 @@ export default function RecipeDetailScreen() {
   const handleAddToGroceryList = () => {
     router.push({
       pathname: '/add-recipe-to-grocery',
-      params: { recipeId: id }
+      params: { recipeId: id },
     });
   };
 
@@ -62,13 +72,40 @@ export default function RecipeDetailScreen() {
     router.back();
   };
 
+  const handleToggleInstructionCompletion = (index: number) => {
+    if (recipe) {
+      const isCompleted =
+        recipe.completedInstructions?.includes(index) || false;
+
+      // If trying to uncomplete a step, check if there are later completed steps
+      if (isCompleted) {
+        const hasLaterCompletedSteps =
+          recipe.completedInstructions.some(
+            (completedIndex) => completedIndex > index
+          );
+
+        if (hasLaterCompletedSteps) {
+          // Show alert explaining why the step can't be uncompleted
+          Alert.alert(
+            "Can't Uncomplete Step",
+            'You need to uncomplete later steps first before uncompleting this one.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
+
+      toggleInstructionCompletion(recipe.id, index);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           title: recipe.title,
           headerRight: () => (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleDeleteRecipe}
               style={{ marginRight: 8 }}
             >
@@ -77,17 +114,17 @@ export default function RecipeDetailScreen() {
           ),
         }}
       />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Image 
-          source={{ uri: recipe.imageUrl }} 
-          style={styles.image} 
+        <Image
+          source={{ uri: recipe.imageUrl }}
+          style={styles.image}
           resizeMode="cover"
         />
-        
+
         <View style={styles.content}>
           <Text style={styles.description}>{recipe.description}</Text>
-          
+
           <View style={styles.metaContainer}>
             <View style={styles.metaItem}>
               <Clock size={18} color={Colors.textLight} />
@@ -95,27 +132,31 @@ export default function RecipeDetailScreen() {
                 {recipe.prepTime + recipe.cookTime} min
               </Text>
             </View>
-            
+
             <View style={styles.servingsContainer}>
               <TouchableOpacity
                 onPress={() => handleServingsChange(servings - 1)}
                 disabled={servings <= 1}
                 style={[
                   styles.servingsButton,
-                  servings <= 1 && styles.servingsButtonDisabled
+                  servings <= 1 && styles.servingsButtonDisabled,
                 ]}
               >
-                <ChevronLeft 
-                  size={20} 
-                  color={servings <= 1 ? Colors.gray[300] : Colors.primary} 
+                <ChevronLeft
+                  size={20}
+                  color={
+                    servings <= 1 ? Colors.gray[300] : Colors.primary
+                  }
                 />
               </TouchableOpacity>
-              
+
               <View style={styles.servingsTextContainer}>
                 <Users size={18} color={Colors.textLight} />
-                <Text style={styles.metaText}>{servings} servings</Text>
+                <Text style={styles.metaText}>
+                  {servings} servings
+                </Text>
               </View>
-              
+
               <TouchableOpacity
                 onPress={() => handleServingsChange(servings + 1)}
                 style={styles.servingsButton}
@@ -124,33 +165,70 @@ export default function RecipeDetailScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ingredients</Text>
             {recipe.ingredients.map((ingredient) => (
               <View key={ingredient.id} style={styles.ingredientItem}>
                 <Text style={styles.ingredientAmount}>
-                  {ingredient.quantity > 0 
-                    ? `${Number.isInteger(ingredient.quantity) 
-                        ? ingredient.quantity 
-                        : ingredient.quantity.toFixed(1)} ${ingredient.unit}`
+                  {ingredient.quantity > 0
+                    ? `${
+                        Number.isInteger(ingredient.quantity)
+                          ? ingredient.quantity
+                          : ingredient.quantity.toFixed(1)
+                      } ${ingredient.unit}`
                     : ''}
                 </Text>
-                <Text style={styles.ingredientName}>{ingredient.name}</Text>
+                <Text style={styles.ingredientName}>
+                  {ingredient.name}
+                </Text>
               </View>
             ))}
           </View>
-          
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Instructions</Text>
-            {recipe.instructions.map((instruction, index) => (
-              <View key={index} style={styles.instructionItem}>
-                <Text style={styles.instructionNumber}>{index + 1}</Text>
-                <Text style={styles.instructionText}>{instruction}</Text>
-              </View>
-            ))}
+            {recipe.instructions.map((instruction, index) => {
+              const isCompleted =
+                recipe.completedInstructions?.includes(index) ||
+                false;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.instructionItem}
+                  onPress={() =>
+                    handleToggleInstructionCompletion(index)
+                  }
+                >
+                  <View
+                    style={[
+                      styles.instructionCheckbox,
+                      isCompleted &&
+                        styles.instructionCheckboxCompleted,
+                    ]}
+                  >
+                    {isCompleted ? (
+                      <Check size={16} color="#FFFFFF" />
+                    ) : (
+                      <CircleDashed
+                        size={16}
+                        color={Colors.primary}
+                      />
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.instructionText,
+                      isCompleted && styles.instructionTextCompleted,
+                    ]}
+                  >
+                    {instruction}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          
+
           <Button
             title="Add to Grocery List"
             onPress={handleAddToGroceryList}
@@ -253,24 +331,30 @@ const styles = StyleSheet.create({
   instructionItem: {
     flexDirection: 'row',
     marginBottom: 16,
+    alignItems: 'flex-start',
   },
-  instructionNumber: {
+  instructionCheckbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 24,
+    borderWidth: 2,
+    borderColor: Colors.primary,
     marginRight: 12,
-    fontWeight: '600',
-    fontSize: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  instructionCheckboxCompleted: {
+    backgroundColor: Colors.primary,
   },
   instructionText: {
     flex: 1,
     fontSize: 16,
     color: Colors.text,
     lineHeight: 24,
+  },
+  instructionTextCompleted: {
+    textDecorationLine: 'line-through',
+    color: Colors.gray[400],
   },
   addButton: {
     marginTop: 8,
