@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Platform,
   Alert,
+  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import {
@@ -34,10 +35,13 @@ export default function RecipeDetailScreen() {
     updateServings,
     deleteRecipe,
     toggleInstructionCompletion,
+    updateRecipe,
   } = useRecipeStore();
 
   const recipe = getRecipeById(id);
-
+  const [activeTab, setActiveTab] = useState<
+    'ingredients' | 'instructions'
+  >('ingredients');
   const [servings, setServings] = useState(recipe?.servings || 4);
 
   if (!recipe) {
@@ -166,110 +170,170 @@ export default function RecipeDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
-            {recipe.ingredients.map((ingredient) => (
-              <View key={ingredient.id} style={styles.ingredientItem}>
-                <Text style={styles.ingredientAmount}>
-                  {ingredient.quantity > 0
-                    ? `${
-                        Number.isInteger(ingredient.quantity)
-                          ? ingredient.quantity
-                          : ingredient.quantity.toFixed(1)
-                      } ${ingredient.unit}`
-                    : ''}
-                </Text>
-                <Text style={styles.ingredientName}>
-                  {ingredient.name}
-                </Text>
-              </View>
-            ))}
+          {/* Tab Navigation */}
+          <View style={styles.tabContainer}>
+            <Pressable
+              style={[
+                styles.tabButton,
+                activeTab === 'ingredients' && styles.activeTabButton,
+              ]}
+              onPress={() => setActiveTab('ingredients')}
+            >
+              <Text
+                style={[
+                  styles.tabButtonText,
+                  activeTab === 'ingredients' &&
+                    styles.activeTabButtonText,
+                ]}
+              >
+                Ingredients
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.tabButton,
+                activeTab === 'instructions' &&
+                  styles.activeTabButton,
+              ]}
+              onPress={() => setActiveTab('instructions')}
+            >
+              <Text
+                style={[
+                  styles.tabButtonText,
+                  activeTab === 'instructions' &&
+                    styles.activeTabButtonText,
+                ]}
+              >
+                Instructions
+              </Text>
+            </Pressable>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Instructions</Text>
-
-            {/* Progress indicator */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBarContainer}>
-                <View
-                  style={[
-                    styles.progressBar,
-                    {
-                      width: `${
-                        (recipe.completedInstructions.length /
-                          recipe.instructions.length) *
-                        100
-                      }%`,
-                    },
-                  ]}
-                />
+          {/* Tab Content */}
+          {activeTab === 'ingredients' ? (
+            <View style={styles.section}>
+              <View style={styles.ingredientsList}>
+                {recipe.ingredients.map((ingredient, index) => (
+                  <View
+                    key={ingredient.id}
+                    style={[
+                      styles.ingredientItem,
+                      index === recipe.ingredients.length - 1 &&
+                        styles.ingredientItemLast,
+                    ]}
+                  >
+                    <Text style={styles.ingredientAmount}>
+                      {ingredient.quantity > 0
+                        ? `${
+                            Number.isInteger(ingredient.quantity)
+                              ? ingredient.quantity
+                              : ingredient.quantity.toFixed(1)
+                          } ${ingredient.unit}`
+                        : ''}
+                    </Text>
+                    <Text style={styles.ingredientName}>
+                      {ingredient.name}
+                    </Text>
+                  </View>
+                ))}
               </View>
-              <Text style={styles.progressText}>
-                {recipe.completedInstructions.length} of{' '}
-                {recipe.instructions.length} steps completed
-              </Text>
+
+              <Button
+                title="Add ingredients to shopping list"
+                onPress={handleAddToGroceryList}
+                fullWidth
+                style={styles.addButton}
+                variant="primary"
+                size="large"
+              />
             </View>
-
-            {recipe.instructions.map((instruction, index) => {
-              const isCompleted =
-                recipe.completedInstructions?.includes(index) ||
-                false;
-
-              // Check if this completed step has later completed steps (can't be uncompleted)
-              const hasLaterCompletedSteps =
-                isCompleted &&
-                recipe.completedInstructions.some(
-                  (completedIndex) => completedIndex > index
-                );
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.instructionItem}
-                  onPress={() =>
-                    handleToggleInstructionCompletion(index)
-                  }
-                >
+          ) : (
+            <View style={styles.section}>
+              {/* Progress indicator */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBarContainer}>
                   <View
                     style={[
-                      styles.instructionCheckbox,
-                      isCompleted &&
-                        styles.instructionCheckboxCompleted,
-                      hasLaterCompletedSteps &&
-                        styles.instructionCheckboxLocked,
+                      styles.progressBar,
+                      {
+                        width: `${
+                          (recipe.completedInstructions.length /
+                            recipe.instructions.length) *
+                          100
+                        }%`,
+                      },
                     ]}
-                  >
-                    {isCompleted ? (
-                      <Check size={16} color="#FFFFFF" />
-                    ) : (
-                      <CircleDashed
-                        size={16}
-                        color={Colors.primary}
-                      />
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      styles.instructionText,
-                      isCompleted && styles.instructionTextCompleted,
-                    ]}
-                  >
-                    {instruction}
+                  />
+                </View>
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressText}>
+                    {recipe.completedInstructions.length} of{' '}
+                    {recipe.instructions.length} steps completed
                   </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      updateRecipe(recipe.id, {
+                        completedInstructions: [],
+                      });
+                    }}
+                    style={styles.resetButton}
+                  >
+                    <Text style={styles.resetButtonText}>Reset</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          <Button
-            title="Add to Grocery List"
-            onPress={handleAddToGroceryList}
-            fullWidth
-            style={styles.addButton}
-            variant="primary"
-            size="large"
-          />
+              {recipe.instructions.map((instruction, index) => {
+                const isCompleted =
+                  recipe.completedInstructions?.includes(index) ||
+                  false;
+
+                const hasLaterCompletedSteps =
+                  isCompleted &&
+                  recipe.completedInstructions.some(
+                    (completedIndex) => completedIndex > index
+                  );
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.instructionItem}
+                    onPress={() =>
+                      handleToggleInstructionCompletion(index)
+                    }
+                  >
+                    <View
+                      style={[
+                        styles.instructionCheckbox,
+                        isCompleted &&
+                          styles.instructionCheckboxCompleted,
+                        hasLaterCompletedSteps &&
+                          styles.instructionCheckboxLocked,
+                      ]}
+                    >
+                      {isCompleted ? (
+                        <Check size={16} color="#FFFFFF" />
+                      ) : (
+                        <CircleDashed
+                          size={16}
+                          color={Colors.primary}
+                        />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.instructionText,
+                        isCompleted &&
+                          styles.instructionTextCompleted,
+                      ]}
+                    >
+                      {instruction}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -344,11 +408,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: Colors.text,
   },
+  ingredientsList: {
+    marginBottom: 24,
+    paddingBottom: 8,
+  },
   ingredientItem: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
+    marginBottom: -1,
+  },
+  ingredientItemLast: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
   },
   ingredientAmount: {
     width: 80,
@@ -420,5 +493,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textLight,
     textAlign: 'right',
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  resetButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: Colors.gray[200],
+    borderRadius: 4,
+  },
+  resetButtonText: {
+    fontSize: 12,
+    color: Colors.textLight,
+    fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.gray[100],
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  activeTabButton: {
+    backgroundColor: Colors.background,
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textLight,
+  },
+  activeTabButtonText: {
+    color: Colors.primary,
   },
 });
