@@ -1,11 +1,11 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, Check } from 'lucide-react-native';
 import { GroceryItem as GroceryItemType } from '@/types';
 import Colors from '@/constants/colors';
 
@@ -15,9 +15,9 @@ interface GroceryItemProps {
   onDelete: (id: string) => void;
 }
 
-const GroceryItem: React.FC<GroceryItemProps> = ({ 
-  item, 
-  onToggle, 
+const GroceryItem: React.FC<GroceryItemProps> = ({
+  item,
+  onToggle,
   onDelete,
 }) => {
   const handleToggle = () => {
@@ -29,29 +29,28 @@ const GroceryItem: React.FC<GroceryItemProps> = ({
   };
 
   const formatQuantity = (quantity: number, unit: string) => {
-    const formattedQuantity = Number.isInteger(quantity) 
-      ? quantity.toString() 
+    const formattedQuantity = Number.isInteger(quantity)
+      ? quantity.toString()
       : quantity.toFixed(1);
-    
+
     return `${formattedQuantity} ${unit}`.trim();
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
-          styles.checkbox, 
-          item.checked && styles.checkboxChecked
-        ]} 
+          styles.checkbox,
+          item.checked && styles.checkboxChecked,
+        ]}
         onPress={handleToggle}
-      />
-      
+      >
+        {item.checked && <Check size={16} color="#FFFFFF" />}
+      </TouchableOpacity>
+
       <View style={styles.content}>
-        <Text 
-          style={[
-            styles.title, 
-            item.checked && styles.titleChecked
-          ]}
+        <Text
+          style={[styles.title, item.checked && styles.titleChecked]}
         >
           {item.name}
         </Text>
@@ -61,9 +60,9 @@ const GroceryItem: React.FC<GroceryItemProps> = ({
           </Text>
         )}
       </View>
-      
-      <TouchableOpacity 
-        style={styles.deleteButton} 
+
+      <TouchableOpacity
+        style={styles.deleteButton}
         onPress={handleDelete}
       >
         <Trash2 size={18} color={Colors.error} />
@@ -77,8 +76,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
+    paddingHorizontal: 8,
+    marginVertical: 4,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   checkbox: {
     width: 24,
@@ -87,6 +93,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
     marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   checkboxChecked: {
     backgroundColor: Colors.primary,
@@ -97,6 +105,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     color: Colors.text,
+    fontWeight: '500',
   },
   titleChecked: {
     textDecorationLine: 'line-through',
@@ -109,6 +118,8 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 8,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 12,
   },
 });
 

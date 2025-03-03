@@ -1,13 +1,13 @@
 import React from 'react';
-import { 
-  View, 
-  TextInput, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
   TextInputProps,
   StyleProp,
   ViewStyle,
-  TextStyle
+  TextStyle,
 } from 'react-native';
 import Colors from '@/constants/colors';
 
@@ -17,6 +17,7 @@ interface InputProps extends TextInputProps {
   containerStyle?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
   inputStyle?: StyleProp<ViewStyle>;
+  icon?: React.ReactNode;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -25,20 +26,26 @@ const Input: React.FC<InputProps> = ({
   containerStyle,
   labelStyle,
   inputStyle,
+  icon,
   ...props
 }) => {
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
-      <TextInput
-        style={[
-          styles.input,
-          error ? styles.inputError : null,
-          inputStyle,
-        ]}
-        placeholderTextColor={Colors.gray[400]}
-        {...props}
-      />
+      {label && (
+        <Text style={[styles.label, labelStyle]}>{label}</Text>
+      )}
+      <View style={styles.inputContainer}>
+        {icon && <View style={styles.iconContainer}>{icon}</View>}
+        <TextInput
+          style={[
+            styles.input,
+            error ? styles.inputError : null,
+            inputStyle,
+          ]}
+          placeholderTextColor={Colors.gray[400]}
+          {...props}
+        />
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -55,11 +62,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: Colors.text,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.gray[100],
     borderWidth: 1,
     borderColor: Colors.gray[200],
-    borderRadius: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  iconContainer: {
+    paddingLeft: 12,
+  },
+  input: {
+    flex: 1,
     padding: 12,
     fontSize: 16,
     color: Colors.text,

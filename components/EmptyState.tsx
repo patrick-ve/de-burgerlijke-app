@@ -9,14 +9,16 @@ interface EmptyStateProps {
   message: string;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({ 
-  icon: Icon, 
-  title, 
-  message 
+const EmptyState: React.FC<EmptyStateProps> = ({
+  icon: Icon,
+  title,
+  message,
 }) => {
   return (
     <View style={styles.container}>
-      <Icon size={64} color={Colors.gray[300]} />
+      <View style={styles.iconContainer}>
+        <Icon size={64} color={Colors.primary} />
+      </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
     </View>
@@ -30,11 +32,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
     color: Colors.text,
-    marginTop: 16,
+    marginTop: 24,
     marginBottom: 8,
   },
   message: {
@@ -42,6 +52,7 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     textAlign: 'center',
     maxWidth: 300,
+    lineHeight: 22,
   },
 });
 

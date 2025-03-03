@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
-  StyleProp
+  StyleProp,
 } from 'react-native';
 import Colors from '@/constants/colors';
 
@@ -20,6 +20,7 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   fullWidth?: boolean;
+  icon?: React.ReactNode;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -32,10 +33,11 @@ const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   fullWidth = false,
+  icon,
 }) => {
   const getButtonStyle = () => {
     let buttonStyle: ViewStyle = {};
-    
+
     switch (variant) {
       case 'primary':
         buttonStyle = {
@@ -55,21 +57,21 @@ const Button: React.FC<ButtonProps> = ({
         };
         break;
     }
-    
+
     if (disabled) {
       buttonStyle.opacity = 0.5;
     }
-    
+
     if (fullWidth) {
       buttonStyle.width = '100%';
     }
-    
+
     return buttonStyle;
   };
-  
+
   const getTextStyle = () => {
     let textStyleObj: TextStyle = {};
-    
+
     switch (variant) {
       case 'primary':
       case 'secondary':
@@ -83,7 +85,7 @@ const Button: React.FC<ButtonProps> = ({
         };
         break;
     }
-    
+
     switch (size) {
       case 'small':
         textStyleObj.fontSize = 14;
@@ -95,54 +97,52 @@ const Button: React.FC<ButtonProps> = ({
         textStyleObj.fontSize = 18;
         break;
     }
-    
+
     return textStyleObj;
   };
-  
+
   const getSizeStyle = () => {
     switch (size) {
       case 'small':
         return {
           paddingVertical: 8,
           paddingHorizontal: 16,
-          borderRadius: 6,
+          borderRadius: 20,
         };
       case 'medium':
         return {
           paddingVertical: 12,
           paddingHorizontal: 20,
-          borderRadius: 8,
+          borderRadius: 24,
         };
       case 'large':
         return {
           paddingVertical: 16,
           paddingHorizontal: 24,
-          borderRadius: 10,
+          borderRadius: 28,
         };
     }
   };
-  
+
   return (
     <TouchableOpacity
-      style={[
-        styles.button,
-        getButtonStyle(),
-        getSizeStyle(),
-        style,
-      ]}
+      style={[styles.button, getButtonStyle(), getSizeStyle(), style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator 
-          color={variant === 'outline' ? Colors.primary : '#FFFFFF'} 
-          size="small" 
+        <ActivityIndicator
+          color={variant === 'outline' ? Colors.primary : '#FFFFFF'}
+          size="small"
         />
       ) : (
-        <Text style={[styles.text, getTextStyle(), textStyle]}>
-          {title}
-        </Text>
+        <>
+          {icon && <View style={styles.iconContainer}>{icon}</View>}
+          <Text style={[styles.text, getTextStyle(), textStyle]}>
+            {title}
+          </Text>
+        </>
       )}
     </TouchableOpacity>
   );
@@ -153,10 +153,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   text: {
     fontWeight: '600',
     textAlign: 'center',
+  },
+  iconContainer: {
+    marginRight: 8,
   },
 });
 

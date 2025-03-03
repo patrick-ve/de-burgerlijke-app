@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { Clock, Users } from 'lucide-react-native';
 import { Recipe } from '@/types';
 import Colors from '@/constants/colors';
@@ -17,14 +23,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.container} 
+    <TouchableOpacity
+      style={styles.container}
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <Image 
-        source={{ uri: recipe.imageUrl }} 
-        style={styles.image} 
+      <Image
+        source={{ uri: recipe.imageUrl }}
+        style={styles.image}
         resizeMode="cover"
       />
       <View style={styles.content}>
@@ -36,13 +42,13 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         </Text>
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
-            <Clock size={16} color={Colors.textLight} />
+            <Clock size={16} color={Colors.primary} />
             <Text style={styles.metaText}>
               {recipe.prepTime + recipe.cookTime} min
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <Users size={16} color={Colors.textLight} />
+            <Users size={16} color={Colors.primary} />
             <Text style={styles.metaText}>
               {recipe.servings} servings
             </Text>
@@ -56,16 +62,15 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.card,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 0,
   },
   image: {
     width: '100%',
@@ -92,6 +97,10 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.gray[100],
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
   },
   metaText: {
     fontSize: 14,

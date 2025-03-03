@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, UtensilsCrossed } from 'lucide-react-native';
@@ -22,7 +23,7 @@ export default function RecipesScreen() {
   // Add mock recipes on first load if no recipes exist
   useEffect(() => {
     if (recipes.length === 0) {
-      mockRecipes.forEach(recipe => {
+      mockRecipes.forEach((recipe) => {
         addRecipe(recipe);
       });
     }
@@ -34,11 +35,19 @@ export default function RecipesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={Colors.background}
+      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Recipes</Text>
+      </View>
       <FlatList
         data={recipes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <RecipeCard recipe={item} />}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <EmptyState
             icon={UtensilsCrossed}
@@ -47,8 +56,8 @@ export default function RecipesScreen() {
           />
         }
       />
-      <TouchableOpacity 
-        style={styles.fab} 
+      <TouchableOpacity
+        style={styles.fab}
         onPress={handleAddRecipe}
         activeOpacity={0.8}
       >
@@ -63,6 +72,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.text,
+  },
   listContent: {
     padding: 16,
     flexGrow: 1,
@@ -71,16 +89,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
 });

@@ -5,11 +5,22 @@ import Colors from '@/constants/colors';
 interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  variant?: 'default' | 'accent';
 }
 
-const Card: React.FC<CardProps> = ({ children, style }) => {
+const Card: React.FC<CardProps> = ({
+  children,
+  style,
+  variant = 'default',
+}) => {
   return (
-    <View style={[styles.card, style]}>
+    <View
+      style={[
+        styles.card,
+        variant === 'accent' && styles.accentCard,
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -18,16 +29,18 @@ const Card: React.FC<CardProps> = ({ children, style }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.card,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
     marginVertical: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 0,
+  },
+  accentCard: {
+    backgroundColor: Colors.accent,
   },
 });
 

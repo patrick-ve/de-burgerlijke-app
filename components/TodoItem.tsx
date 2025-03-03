@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
   TextInput,
 } from 'react-native';
@@ -17,9 +17,9 @@ interface TodoItemProps {
   onUpdate: (id: string, title: string) => void;
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ 
-  todo, 
-  onToggle, 
+const TodoItem: React.FC<TodoItemProps> = ({
+  todo,
+  onToggle,
   onDelete,
   onUpdate,
 }) => {
@@ -52,16 +52,16 @@ const TodoItem: React.FC<TodoItemProps> = ({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
-          styles.checkbox, 
-          todo.completed && styles.checkboxChecked
-        ]} 
+          styles.checkbox,
+          todo.completed && styles.checkboxChecked,
+        ]}
         onPress={handleToggle}
       >
         {todo.completed && <Check size={16} color="#FFFFFF" />}
       </TouchableOpacity>
-      
+
       <View style={styles.content}>
         {isEditing ? (
           <TextInput
@@ -73,28 +73,28 @@ const TodoItem: React.FC<TodoItemProps> = ({
             onSubmitEditing={handleSave}
           />
         ) : (
-          <Text 
+          <Text
             style={[
-              styles.title, 
-              todo.completed && styles.titleCompleted
+              styles.title,
+              todo.completed && styles.titleCompleted,
             ]}
           >
             {todo.title}
           </Text>
         )}
       </View>
-      
+
       <View style={styles.actions}>
         {!isEditing && !todo.completed && (
-          <TouchableOpacity 
-            style={styles.actionButton} 
+          <TouchableOpacity
+            style={styles.actionButton}
             onPress={handleEdit}
           >
-            <Pencil size={18} color={Colors.textLight} />
+            <Pencil size={18} color={Colors.primary} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity 
-          style={styles.actionButton} 
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={handleDelete}
         >
           <Trash2 size={18} color={Colors.error} />
@@ -109,13 +109,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
+    paddingHorizontal: 16,
+    marginVertical: 6,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.primary,
     marginRight: 12,
@@ -131,6 +138,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     color: Colors.text,
+    fontWeight: '500',
   },
   titleCompleted: {
     textDecorationLine: 'line-through',
@@ -147,6 +155,9 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
     marginLeft: 4,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 12,
+    marginHorizontal: 2,
   },
 });
 
