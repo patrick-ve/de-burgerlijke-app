@@ -188,10 +188,41 @@ export default function RecipeDetailScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Instructions</Text>
+
+            {/* Progress indicator */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${
+                        (recipe.completedInstructions.length /
+                          recipe.instructions.length) *
+                        100
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {recipe.completedInstructions.length} of{' '}
+                {recipe.instructions.length} steps completed
+              </Text>
+            </View>
+
             {recipe.instructions.map((instruction, index) => {
               const isCompleted =
                 recipe.completedInstructions?.includes(index) ||
                 false;
+
+              // Check if this completed step has later completed steps (can't be uncompleted)
+              const hasLaterCompletedSteps =
+                isCompleted &&
+                recipe.completedInstructions.some(
+                  (completedIndex) => completedIndex > index
+                );
+
               return (
                 <TouchableOpacity
                   key={index}
@@ -205,6 +236,8 @@ export default function RecipeDetailScreen() {
                       styles.instructionCheckbox,
                       isCompleted &&
                         styles.instructionCheckboxCompleted,
+                      hasLaterCompletedSteps &&
+                        styles.instructionCheckboxLocked,
                     ]}
                   >
                     {isCompleted ? (
@@ -356,6 +389,10 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: Colors.gray[400],
   },
+  instructionCheckboxLocked: {
+    backgroundColor: Colors.gray[400],
+    borderColor: Colors.gray[400],
+  },
   addButton: {
     marginTop: 8,
     marginBottom: Platform.OS === 'ios' ? 24 : 16,
@@ -364,5 +401,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: Colors.text,
     textAlign: 'center',
+  },
+  progressContainer: {
+    marginBottom: 16,
+  },
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: Colors.gray[200],
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+  },
+  progressText: {
+    fontSize: 14,
+    color: Colors.textLight,
+    textAlign: 'right',
   },
 });

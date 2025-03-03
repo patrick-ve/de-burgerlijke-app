@@ -92,15 +92,25 @@ export const useRecipeStore = create<RecipeState>()(
             };
           }
 
+          const allPreviousSteps = Array.from(
+            { length: instructionIndex },
+            (_, i) => i
+          );
+
+          const newCompletedInstructions = Array.from(
+            new Set([
+              ...completedInstructions,
+              ...allPreviousSteps,
+              instructionIndex,
+            ])
+          ).sort((a, b) => a - b);
+
           return {
             recipes: state.recipes.map((r) =>
               r.id === recipeId
                 ? {
                     ...r,
-                    completedInstructions: [
-                      ...completedInstructions,
-                      instructionIndex,
-                    ],
+                    completedInstructions: newCompletedInstructions,
                   }
                 : r
             ),
