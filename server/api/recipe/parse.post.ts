@@ -1,17 +1,16 @@
 import { z } from 'zod';
-import OpenAI from 'openai';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
 import * as cheerio from 'cheerio';
 import { recipeSchema } from '~/server/utils/recipeSchema';
 
-// Input validation schema
 const inputSchema = z
   .object({
     url: z.string().url(),
   })
-  .describe('Schema voor het valideren van de recipe URL input');
+  .describe('Schema for validating the recipe URL input');
 
-// System prompt for recipe parsing
-const SYSTEM_PROMPT = `You are an expert in analyzing Dutch recipes. Given a recipe URL, you will:
+const SYSTEM_PROMPT = `You are an expert in analyzing recipes. Given a recipe URL, you will:
 1. Extract the recipe content
 2. Structure it according to the specified format
 3. Convert measurements to Dutch standard units
@@ -65,48 +64,20 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
   try {
-    // Parse and validate input
     const body = await readBody(event);
     const { url } = inputSchema.parse(body);
 
-    // Initialize OpenAI
-    const openai = new OpenAI({
-      apiKey: config.openaiApiKey,
-    });
-
-    // Fetch recipe content
     const recipeContent = await fetchRecipeContent(url);
+    console.log(recipeContent);
 
-    // Parse recipe with AI
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `Analyseer dit recept en formatteer het volgens het schema. Receptinhoud:\n${recipeContent}`,
-        },
-      ],
-      temperature: 0.2, // Lower temperature for more consistent output
-      response_format: { type: 'json_object' },
+    const { object: recipe } = await generateObject({
+      model: openai('gpt-4o-mini'),
+      schema: recipeSchema,
+      prompt: `${SYSTEM_PROMPT}\n\nRecipe content:\n${recipeContent}`,
     });
-
-    // Parse and validate AI response
-    const rawRecipe = JSON.parse(
-      completion.choices[0].message.content || '{}'
-    );
-    const recipe = recipeSchema.parse(rawRecipe);
 
     return recipe;
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw createError({
-        statusCode: 400,
-        message: 'Invalid input format',
-        data: error.errors,
-      });
-    }
-
     console.error('Recipe parsing error:', error);
     throw createError({
       statusCode: 500,
@@ -115,7 +86,6 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-// Helper function to fetch and parse recipe content
 async function fetchRecipeContent(url: string): Promise<string> {
   try {
     const response = await fetch(url);
@@ -128,13 +98,11 @@ async function fetchRecipeContent(url: string): Promise<string> {
     $('noscript').remove();
     $('iframe').remove();
 
-    // Get the main content
     const mainContent = $('body').text();
 
-    // Clean up the text
     const cleanContent = mainContent
-      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .replace(/\n+/g, '\n') // Replace multiple newlines with single newline
+      .replace(/\s+/g, ' ')
+      .replace(/\n+/g, '\n')
       .trim();
 
     return cleanContent;

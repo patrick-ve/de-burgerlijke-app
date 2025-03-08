@@ -24,25 +24,20 @@ interface ParseUrlResult {
 }
 
 export const useRecipeParser = () => {
-  const supportedDomains = [
-    'allrecipes.com',
-    'foodnetwork.com',
-    'epicurious.com',
-  ];
-
   const parseRecipeUrl = (url: string): ParseUrlResult => {
     try {
       const urlObj = new URL(url);
       const domain = urlObj.hostname.replace('www.', '');
 
       return {
-        isValid: supportedDomains.some((d) => domain.includes(d)),
-        domain: domain,
+        isValid: true,
+        domain,
       };
     } catch (error) {
       return {
         isValid: false,
-        error: 'Invalid URL format',
+        error:
+          'Ongeldige URL. Voer een geldige URL in (bijvoorbeeld: https://www.example.com/recipe)',
       };
     }
   };
@@ -50,14 +45,12 @@ export const useRecipeParser = () => {
   const extractRecipeData = async (
     url: string
   ): Promise<RecipeData> => {
-    const { isValid, domain, error } = parseRecipeUrl(url);
+    const { isValid, error } = parseRecipeUrl(url);
 
     if (!isValid) {
-      throw new Error(error || 'Unsupported recipe website');
+      throw new Error(error || 'Ongeldige URL');
     }
 
-    // This would be replaced with actual API calls to recipe parsing service
-    // and AI processing in the real implementation
     throw new Error('Not implemented');
   };
 

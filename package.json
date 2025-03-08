@@ -13,8 +13,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.2.1",
+    "@nuxt/icon": "1.10.3",
+    "@nuxt/ui": "2.21.1",
     "@nuxtjs/ionic": "0.16.0",
-    "@nuxtjs/tailwindcss": "6.13.1",
     "ai": "^4.1.54",
     "cheerio": "^1.0.0",
     "nuxt": "^3.16.0",

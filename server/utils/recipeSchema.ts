@@ -1,19 +1,24 @@
 import { z } from 'zod';
 
-// Dutch-friendly measurement units
 export const unitSchema = z
   .enum([
-    'ml', // milliliter
-    'l', // liter
-    'el', // eetlepel (tablespoon)
-    'tl', // theelepel (teaspoon)
-    'kop', // cup
-    'g', // gram
-    'kg', // kilogram
-    'stuk', // piece
-    'teen', // clove (for garlic)
-    'snuf', // pinch
-    'mespunt', // tip of knife
+    'ml',
+    'l',
+    'el',
+    'tl',
+    'kop',
+    'g',
+    'kg',
+    'stuk',
+    'teen',
+    'snuf',
+    'mespunt',
+    'plak',
+    'bol',
+    'takje',
+    'blaadje',
+    'scheut',
+    'handvol',
   ])
   .describe('Dutch measurement units for ingredients');
 
@@ -44,6 +49,21 @@ export const instructionSchema = z
       .describe('Optional timer in minutes for this step'),
   })
   .describe('Schema for a preparation step in the recipe');
+
+export const substitutionSchema = z
+  .object({
+    ingredient: z.string(),
+    alternatives: z.array(z.string()),
+  })
+  .describe('Ingredient substitution suggestions');
+
+export const aiEnhancementsSchema = z
+  .object({
+    tips: z.array(z.string()),
+    substitutions: z.array(substitutionSchema),
+    pairingsSuggestions: z.array(z.string()),
+  })
+  .describe('AI-generated enhancements for the recipe');
 
 export const metadataSchema = z
   .object({
@@ -82,3 +102,5 @@ export type Recipe = z.infer<typeof recipeSchema>;
 export type Ingredient = z.infer<typeof ingredientSchema>;
 export type Instruction = z.infer<typeof instructionSchema>;
 export type RecipeMetadata = z.infer<typeof metadataSchema>;
+export type AiEnhancements = z.infer<typeof aiEnhancementsSchema>;
+export type Substitution = z.infer<typeof substitutionSchema>;
