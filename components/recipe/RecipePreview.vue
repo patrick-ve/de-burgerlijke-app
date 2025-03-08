@@ -2,9 +2,7 @@
   <UCard>
     <template #header>
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-medium">
-          {{ recipe.title }}
-        </h3>
+        <h3 class="text-lg font-medium">{{ recipe.title }}</h3>
         <UBadge
           :color="
             recipe.metadata.difficulty === 'easy'
@@ -118,7 +116,7 @@
         <UAlert
           v-if="recipe.aiEnhancements.substitutions.length"
           icon="i-heroicons-arrow-path"
-          color="info"
+          color="blue"
           variant="subtle"
           title="Mogelijke vervangingen"
         >
@@ -201,3 +199,49 @@ const recipeMetadata = computed(() => [
   },
 ]);
 </script>
+
+<style scoped>
+ion-card {
+  margin: 0;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+ion-list-header {
+  --background: transparent;
+  font-weight: 600;
+  font-size: 1.1em;
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+ion-item.ion-invalid {
+  --highlight-background: var(--ion-color-danger);
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+ion-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--ion-background-color);
+  border-top: 1px solid var(--ion-border-color);
+}
+</style>

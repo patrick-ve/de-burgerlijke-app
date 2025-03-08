@@ -93,7 +93,6 @@ async function handleSubmit() {
 }
 
 function handleSave(savedRecipe: Recipe) {
-  // TODO: Implement save to store/backend
   url.value = '';
   recipe.value = null;
   navigateTo('/recipes');
@@ -104,3 +103,21 @@ function handleCancel() {
   recipe.value = null;
 }
 </script>
+
+<style scoped>
+ion-card {
+  margin: 0;
+}
+
+ion-button {
+  margin: 1rem 0 0;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+</style>

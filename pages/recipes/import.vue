@@ -1,17 +1,23 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <UBreadcrumb
-      :links="[
-        { label: 'Recepten', to: '/recipes' },
-        { label: 'Importeren', to: '/recipes/import' },
-      ]"
-      class="mb-6"
-    />
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-back-button
+            default-href="/recipes"
+            text="Recepten"
+          ></ion-back-button>
+        </ion-buttons>
+        <ion-title>Importeren</ion-title>
+      </ion-toolbar>
+    </ion-header>
 
-    <div class="max-w-3xl mx-auto">
-      <RecipeImport />
-    </div>
-  </div>
+    <ion-content class="ion-padding">
+      <div class="max-w-3xl mx-auto">
+        <RecipeImport />
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
@@ -27,3 +33,9 @@ useHead({
   ],
 });
 </script>
+
+<style scoped>
+ion-content::part(scroll) {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+</style>

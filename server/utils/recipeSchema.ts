@@ -20,13 +20,14 @@ export const unitSchema = z
     'scheut',
     'handvol',
   ])
+  .nullable()
   .describe('Dutch measurement units for ingredients');
 
 export const ingredientSchema = z
   .object({
     amount: z
       .number()
-      .positive()
+      .nullable()
       .describe('Amount of the ingredient (positive number)'),
     unit: unitSchema.describe(
       'Unit of measurement for the ingredient'
@@ -39,12 +40,10 @@ export const instructionSchema = z
   .object({
     step: z
       .number()
-      .positive()
       .describe('Sequence number of the preparation step'),
     text: z.string().describe('Description of the preparation step'),
     timer: z
       .number()
-      .positive()
       .optional()
       .describe('Optional timer in minutes for this step'),
   })
