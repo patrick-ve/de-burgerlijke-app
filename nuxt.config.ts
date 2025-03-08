@@ -4,4 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/ionic', '@nuxtjs/tailwindcss'],
   ssr: false,
+  runtimeConfig: {
+    openaiApiKey: process.env.OPENAI_API_KEY,
+  },
 });
