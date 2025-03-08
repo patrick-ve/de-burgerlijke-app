@@ -99,7 +99,7 @@ De Burgerlijke App is a mobile application designed to simplify meal planning an
 
 - Basic recipe parsing
 - Shopping list management
-- User authentication
+- User authenticationg
 - Partner synchronization
 
 ### Phase 2: Enhanced Features (Q3 2024)
