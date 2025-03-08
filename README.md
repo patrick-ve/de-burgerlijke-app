@@ -10,6 +10,55 @@ De Burgerlijke App is a mobile application designed to simplify meal planning an
 
 - [ ] Recipe URL Import
   - AI-powered recipe parsing
+    - Server-side implementation using Vercel AI SDK
+    - Input validation using Zod schema
+    - Structured recipe data extraction
+    - Support for multiple popular cooking websites
+  - Recipe Schema
+    ```typescript
+    {
+      title: string
+      description?: string
+      ingredients: {
+        amount: number
+        unit: string
+        name: string
+        notes?: string
+      }[]
+      instructions: {
+        step: number
+        text: string
+        time?: {
+          value: number
+          unit: 'minutes' | 'hours'
+        }
+      }[]
+      metadata: {
+        servings: number
+        prepTime: number
+        cookTime: number
+        totalTime: number
+        difficulty: 'easy' | 'medium' | 'hard'
+        cuisine?: string
+        tags: string[]
+      }
+      nutrition?: {
+        calories: number
+        protein: number
+        carbs: number
+        fat: number
+        fiber?: number
+      }
+      aiEnhancements: {
+        tips: string[]
+        substitutions: {
+          ingredient: string
+          alternatives: string[]
+        }[]
+        pairingsSuggestions: string[]
+      }
+    }
+    ```
   - Automatic extraction of ingredients and instructions
   - Support for multiple popular cooking websites
 - [ ] Recipe Library
