@@ -99,11 +99,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [ ] **Recipe Storage:**
   - [ ] Define database schema for `Recipe` model.
   - [ ] Server API endpoints for CRUD operations on recipes.
-- [ ] **Recipe View (Detail):** (`components/RecipeDetailView.vue`)
+- [x] **Recipe View (Detail):** (`components/RecipeDetailView.vue`)
   - [x] Display Title, Description, Metadata.
-  - [x] Display Ingredients list.
-  - [x] Display Steps list.
-  - [x] Display Utensils list.
+  - [x] Display Ingredients list (in dedicated tab).
+  - [x] Display Steps list (in dedicated tab).
+  - [x] Display Utensils list (in dedicated tab).
   - [x] Display Portions.
 - [ ] **Favorites:**
   - [x] UI toggle button (`RecipeCard.vue`).
@@ -331,9 +331,34 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **Types(`recipe.ts`):** Defined the `Recipe` interface.
 - **Component(`RecipeList.vue`):** Initial setup for displaying a list of recipes.
 
+## [Date - e.g., YYYY-MM-DD]
+
+### Added
+
+- Improved the UI for the recipe metadata section in `RecipeDetailView.vue`:
+  - Added display for the recipe image (`<NuxtImg>`).
+  - Used icons (`<UIcon>`) for prep time, cook time, and portions.
+  - Applied modern Tailwind CSS styling to the metadata section.
+  - Added icons to the Ingredients/Instructions tabs.
+
 ## [Unreleased] - YYYY-MM-DD
 
 ### Added
 
 - Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar in `RecipeList.vue`.
 - Added a "Reset filters" button that appears next to the active filter badges.
+
+### Refactoring Mock Recipe Data
+
+- **Date:** 2024-07-27
+- **Summary:** Refactored mock recipe data handling to eliminate duplication between the recipe list page (`pages/recipes/index.vue`) and the recipe detail page (`pages/recipes/[id].vue`).
+- **Details:**
+  - Created a new composable `composables/useMockRecipes.ts` to centralize the mock recipe array.
+  - This composable exports the `recipes` array and a `findRecipeById` function.
+  - Updated `pages/recipes/index.vue` to fetch the list of recipes from the `useMockRecipes` composable.
+  - Updated `pages/recipes/[id].vue` to use the `findRecipeById` function from the `useMockRecipes` composable within `useAsyncData` to retrieve the specific recipe based on the route parameter, removing the previously hardcoded mock data.
+- **Impact:** Improved code maintainability by centralizing mock data and reducing redundancy.
+
+## [Current Date] - Refinements
+
+- **RecipeDetailView:** Fixed an issue where the tab icon was rendered twice by removing the redundant icon element from the default slot of the `UTabs` component.
