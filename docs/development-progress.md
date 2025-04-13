@@ -33,8 +33,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 ### Core Components & Tests
 - [x] `components/RecipeCard.vue`: Display basic recipe info.
 - [x] `__tests__/RecipeCard.spec.ts`: Unit tests for `RecipeCard`.
-- [ ] `components/RecipeDetailView.vue`: Display full recipe details.
-- [ ] `__tests__/RecipeDetailView.spec.ts`: Unit tests for `RecipeDetailView`.
+- [x] `components/RecipeDetailView.vue`: Display full recipe details.
+- [x] `__tests__/RecipeDetailView.spec.ts`: Unit tests for `RecipeDetailView`.
 - [ ] `components/RecipeForm.vue`: Form for creating/editing recipes.
 - [ ] `__tests__/RecipeForm.spec.ts`: Unit tests for `RecipeForm`.
 - [ ] `components/RecipeList.vue`: Component to display multiple `RecipeCard`s with filtering/sorting/pagination.
@@ -68,11 +68,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
     - [ ] Define database schema for `Recipe` model.
     - [ ] Server API endpoints for CRUD operations on recipes.
 - [ ] **Recipe View (Detail):** (`components/RecipeDetailView.vue`)
-    - [ ] Display Title, Description, Metadata.
-    - [ ] Display Ingredients list.
-    - [ ] Display Steps list.
-    - [ ] Display Utensils list.
-    - [ ] Display Portions.
+    - [x] Display Title, Description, Metadata.
+    - [x] Display Ingredients list.
+    - [x] Display Steps list.
+    - [x] Display Utensils list.
+    - [x] Display Portions.
 - [ ] **Favorites:**
     - [x] UI toggle button (`RecipeCard.vue`).
     - [ ] Persistence for favorite status (backend).
