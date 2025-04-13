@@ -8,12 +8,12 @@ const props = defineProps<{
 const items = [
   {
     key: 'ingredients',
-    label: 'Ingredients',
+    label: 'Ingrediënten',
     icon: 'i-heroicons-list-bullet',
   },
   {
     key: 'instructions',
-    label: 'Instructions',
+    label: 'Bereidingswijze',
     icon: 'i-heroicons-book-open',
   },
 ];
@@ -39,41 +39,49 @@ const items = [
 
     <!-- Recipe metadata card with themed icons -->
     <div
-      class="flex items-center justify-around gap-2 p-3 bg-gradient-to-r from-amber-50 to-orange-50 shadow-sm text-xs"
+      class="grid grid-cols-3 items-center p-3 text-xs border-b border-gray-200"
     >
       <div
         v-if="props.recipe.prepTime"
-        class="flex flex-col items-center gap-0.5"
+        class="flex items-center justify-center gap-2 border-r border-gray-200"
       >
         <UIcon
           name="i-heroicons-clock"
-          class="w-5 h-5 text-blue-500"
+          class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
-        <span class="text-gray-700"
-          >{{ props.recipe.prepTime }} min</span
-        >
-        <span class="text-gray-500">Prep</span>
+        <div class="flex flex-col">
+          <span class="text-gray-700"
+            >{{ props.recipe.prepTime }} minuten</span
+          >
+          <span class="text-gray-500">Voorbereiding</span>
+        </div>
       </div>
       <div
         v-if="props.recipe.cookTime"
-        class="flex flex-col items-center gap-0.5"
+        class="flex items-center justify-center gap-2 border-r border-gray-200"
       >
         <UIcon
           name="i-heroicons-fire"
-          class="w-5 h-5 text-orange-500"
+          class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
-        <span class="text-gray-700"
-          >{{ props.recipe.cookTime }} min</span
-        >
-        <span class="text-gray-500">Cook</span>
+        <div class="flex flex-col">
+          <span class="text-gray-700"
+            >{{ props.recipe.cookTime }} minuten</span
+          >
+          <span class="text-gray-500">Kooktijd</span>
+        </div>
       </div>
-      <div class="flex flex-col items-center gap-0.5">
+      <div class="flex items-center justify-center gap-2">
         <UIcon
           name="i-heroicons-users"
-          class="w-5 h-5 text-green-500"
+          class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
-        <span class="text-gray-700">{{ props.recipe.portions }}</span>
-        <span class="text-gray-500">Serves</span>
+        <div class="flex flex-col">
+          <span class="text-gray-700">{{
+            props.recipe.portions
+          }}</span>
+          <span class="text-gray-500">Porties</span>
+        </div>
       </div>
     </div>
 
@@ -114,7 +122,7 @@ const items = [
                 v-for="(ingredient, index) in props.recipe
                   .ingredients"
                 :key="`ingredient-${index}`"
-                class="flex items-start gap-2 pb-2 border-b border-gray-100"
+                class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
               >
                 <span
                   class="inline-block w-2 h-2 mt-2 rounded-full bg-amber-400"
@@ -141,20 +149,20 @@ const items = [
                   name="i-heroicons-book-open"
                   class="w-5 h-5 mr-2 text-primary-500"
                 />
-                Steps
+                Stappen
               </h3>
-              <ol class="space-y-4">
+              <ol class="space-y-4 text-sm">
                 <li
                   v-for="(step, index) in props.recipe.steps"
                   :key="`step-${index}`"
-                  class="flex gap-3 pb-4 border-b border-gray-100"
+                  class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
                 >
                   <span
-                    class="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-600 font-medium text-sm flex-shrink-0"
-                  >
-                    {{ index + 1 }}
-                  </span>
-                  <p class="text-gray-700">{{ step.description }}</p>
+                    class="inline-block w-2 h-2 mt-2 rounded-full bg-amber-400"
+                  ></span>
+                  <span class="text-gray-700">{{
+                    step.description
+                  }}</span>
                 </li>
               </ol>
             </div>
@@ -172,7 +180,7 @@ const items = [
                   name="i-heroicons-beaker"
                   class="w-5 h-5 mr-2 text-indigo-500"
                 />
-                Utensils
+                Keukengerei
               </h3>
               <ul class="grid grid-cols-2 gap-2">
                 <li
