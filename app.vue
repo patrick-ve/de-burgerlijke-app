@@ -30,7 +30,6 @@ const { headerState } = useHeaderState();
 <style>
 .ion-padding {
   --padding-bottom: 4rem;
-  --padding-top: 4.5rem;
 }
 
 ion-content {

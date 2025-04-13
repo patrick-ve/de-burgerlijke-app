@@ -115,7 +115,7 @@ onMounted(async () => {
   isMounted.value = true;
 
   setHeader({
-    title: 'Add New Recipe',
+    title: 'Create a new recipe',
     showLeftAction: true, // Controls visibility via v-if on the button
     showRightAction: true, // Controls visibility via v-if on the button
     leftActionHandler: defaultLeftAction, // Assign the actual logic
