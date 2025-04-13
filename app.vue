@@ -14,6 +14,9 @@
     </ion-content>
 
     <BottomNav />
+
+    <!-- Add USlideovers for programmatic control -->
+    <USlideovers />
   </ion-app>
 </template>
 

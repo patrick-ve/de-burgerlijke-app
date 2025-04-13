@@ -20,6 +20,7 @@ const showFavoritesOnly = ref(false);
 const currentPage = ref(1);
 const sortBy = ref<'title' | 'prepTime' | 'createdAt'>('title');
 const sortDirection = ref<'asc' | 'desc'>('asc');
+const isFilterSlideoverOpen = ref(false); // State to control slideover visibility
 
 // Get unique cuisines from recipes
 const availableCuisines = computed(() => {
@@ -144,6 +145,12 @@ const resetFilters = () => {
   sortDirection.value = 'asc';
 };
 
+// Function to clear filters and close slideover
+const clearFiltersAndClose = () => {
+  resetFilters();
+  isFilterSlideoverOpen.value = false;
+};
+
 // Check if we need to show no results message (primarily for tests)
 const showNoResultsMessage = computed(() => {
   if (!props.recipes || props.recipes.length === 0) {
@@ -178,7 +185,7 @@ const showNoRecipesMessage = computed(() => {
       <UInput
         v-model="searchQuery"
         name="search"
-        placeholder="Search recipes..."
+        placeholder="Zoek naar recepten..."
         icon="i-heroicons-magnifying-glass-20-solid"
         autocomplete="off"
         size="lg"
@@ -186,42 +193,15 @@ const showNoRecipesMessage = computed(() => {
         data-testid="search-input"
       />
 
-      <!-- Cuisine Filter -->
-      <USelect
-        v-if="availableCuisines.length > 0"
-        :model-value="selectedCuisine ?? undefined"
-        @update:model-value="(val) => (selectedCuisine = val || null)"
-        :options="availableCuisines"
-        placeholder="Filter by cuisine"
-        size="lg"
-        data-testid="cuisine-filter"
-        class="w-full sm:w-48"
-      >
-        <template #leading>
-          <UIcon name="i-heroicons-globe-europe-africa" />
-        </template>
-      </USelect>
-
-      <!-- Favorite Toggle -->
+      <!-- Filter Button -->
       <UButton
+        icon="i-heroicons-adjustments-horizontal"
         color="gray"
-        :variant="showFavoritesOnly ? 'solid' : 'outline'"
+        variant="outline"
         size="lg"
-        @click="showFavoritesOnly = !showFavoritesOnly"
-        data-testid="favorite-filter-toggle"
-        class="w-full sm:w-auto"
-      >
-        <template #leading>
-          <UIcon
-            :name="
-              showFavoritesOnly
-                ? 'i-heroicons-heart-solid'
-                : 'i-heroicons-heart'
-            "
-          />
-        </template>
-        Favorites
-      </UButton>
+        @click="isFilterSlideoverOpen = true"
+        data-testid="filter-button"
+      />
     </div>
 
     <!-- Sorting Controls -->
@@ -313,7 +293,7 @@ const showNoRecipesMessage = computed(() => {
         <template #leading>
           <UIcon name="i-heroicons-x-mark" />
         </template>
-        Reset
+        Reset Filters & Sort
       </UButton>
     </div>
 
@@ -386,5 +366,103 @@ const showNoRecipesMessage = computed(() => {
         data-testid="next-page"
       />
     </div>
+
+    <USlideover v-model="isFilterSlideoverOpen" side="bottom">
+      <!-- Using UCard for structure as per Nuxt UI v2 docs example -->
+      <UCard
+        class="flex flex-col flex-1"
+        :ui="{
+          body: { base: 'flex-1' },
+          ring: '',
+          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+            >
+              Filter
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isFilterSlideoverOpen = false"
+            />
+          </div>
+        </template>
+
+        <!-- Body contains the actual filters -->
+        <div class="p-4 space-y-4">
+          <UFormGroup label="Cuisine">
+            <USelect
+              v-if="availableCuisines.length > 0"
+              :model-value="selectedCuisine ?? undefined"
+              @update:model-value="
+                (val: string | null) =>
+                  (selectedCuisine = val || null)
+              "
+              :options="availableCuisines"
+              placeholder="Filter op keuken"
+              size="md"
+              data-testid="cuisine-filter-slideover"
+              class="w-full"
+            >
+              <template #leading>
+                <UIcon name="i-heroicons-globe-europe-africa" />
+              </template>
+            </USelect>
+            <p
+              v-else
+              class="text-sm text-gray-500 dark:text-gray-400"
+            >
+              No cuisines available.
+            </p>
+          </UFormGroup>
+
+          <UFormGroup label="Favorites">
+            <UButton
+              color="gray"
+              :variant="showFavoritesOnly ? 'solid' : 'outline'"
+              size="md"
+              @click="showFavoritesOnly = !showFavoritesOnly"
+              data-testid="favorite-filter-toggle-slideover"
+              class="w-full justify-center"
+            >
+              <template #leading>
+                <UIcon
+                  :name="
+                    showFavoritesOnly
+                      ? 'i-heroicons-heart-solid'
+                      : 'i-heroicons-heart'
+                  "
+                />
+              </template>
+              Show Favorites Only
+            </UButton>
+          </UFormGroup>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="outline"
+              @click="clearFiltersAndClose"
+              data-testid="clear-filters-slideover"
+            >
+              Clear Filters
+            </UButton>
+            <UButton
+              @click="isFilterSlideoverOpen = false"
+              data-testid="apply-filters-slideover"
+            >
+              Apply Filters
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </USlideover>
   </div>
 </template>
