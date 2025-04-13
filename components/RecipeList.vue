@@ -24,10 +24,10 @@ const isFilterSlideoverOpen = ref(false); // State to control slideover visibili
 
 // Time filter options and state - UPDATED for specific ranges
 const timeFilterOptions = [
-  { label: 'Elke tijd', value: null }, // Default/reset option
-  { label: '< 20 min', value: 'under_20' },
+  { label: 'Elke kooktijd', value: null }, // Default/reset option
+  { label: 'Sneller dan 20 min', value: 'under_20' },
   { label: '20 - 45 min', value: '20_to_45' },
-  { label: '> 45 min', value: 'over_45' },
+  { label: 'Langer dan 45 min', value: 'over_45' },
 ];
 // UPDATED type to string | null
 const selectedTimeFilter = ref<string | null>(null); // Holds the selected time range identifier
