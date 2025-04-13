@@ -330,3 +330,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **Component(`RecipeCard.vue`):** Created component to display individual recipe details.
 - **Types(`recipe.ts`):** Defined the `Recipe` interface.
 - **Component(`RecipeList.vue`):** Initial setup for displaying a list of recipes.
+
+## [Unreleased] - YYYY-MM-DD
+
+### Added
+
+- Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar in `RecipeList.vue`.
+- Added a "Reset filters" button that appears next to the active filter badges.
