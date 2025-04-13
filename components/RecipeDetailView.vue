@@ -46,11 +46,11 @@ const items = [
         class="flex items-center justify-center gap-2 border-r border-gray-200"
       >
         <UIcon
-          name="i-heroicons-clock"
+          name="i-heroicons-book-open"
           class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
         <div class="flex flex-col">
-          <span class="text-gray-700"
+          <span class="text-gray-700 font-bold"
             >{{ props.recipe.prepTime }} minuten</span
           >
           <span class="text-gray-500">Voorbereiding</span>
@@ -61,11 +61,11 @@ const items = [
         class="flex items-center justify-center gap-2 border-r border-gray-200"
       >
         <UIcon
-          name="i-heroicons-fire"
+          name="i-heroicons-clock"
           class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
         <div class="flex flex-col">
-          <span class="text-gray-700"
+          <span class="text-gray-700 font-bold"
             >{{ props.recipe.cookTime }} minuten</span
           >
           <span class="text-gray-500">Kooktijd</span>
@@ -77,7 +77,7 @@ const items = [
           class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
         <div class="flex flex-col">
-          <span class="text-gray-700">{{
+          <span class="text-gray-700 font-bold">{{
             props.recipe.portions
           }}</span>
           <span class="text-gray-500">Porties</span>
@@ -86,16 +86,13 @@ const items = [
     </div>
 
     <!-- Modern tab container -->
-    <div
-      class="p-5 bg-white rounded-xl shadow-sm border border-gray-100"
-    >
+    <div class="p-2 bg-white shadow-sm">
       <UTabs
         :items="items"
         class="w-full"
         :ui="{
           list: {
             background: 'bg-gray-50',
-            rounded: 'rounded-lg',
             padding: 'p-1',
             width: 'w-full',
             height: 'h-12',
