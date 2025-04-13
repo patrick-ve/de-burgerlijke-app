@@ -180,6 +180,210 @@ const recipes = ref<Recipe[]>([
     ],
     isFavorite: false,
   },
+  {
+    id: '3',
+    title: 'Greek Salad',
+    description: 'Fresh and healthy Mediterranean salad.',
+    imageUrl:
+      'https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574',
+    prepTime: 20,
+    cookTime: 0,
+    cuisine: 'Greek',
+    portions: 4,
+    ingredients: [
+      {
+        id: 'i13',
+        quantity: 2,
+        unit: null,
+        name: 'Cucumbers',
+        notes: 'diced',
+      },
+      {
+        id: 'i14',
+        quantity: 4,
+        unit: null,
+        name: 'Tomatoes',
+        notes: 'wedged',
+      },
+      {
+        id: 'i15',
+        quantity: 1,
+        unit: null,
+        name: 'Red Onion',
+        notes: 'sliced',
+      },
+      {
+        id: 'i16',
+        quantity: 200,
+        unit: 'g',
+        name: 'Feta Cheese',
+        notes: 'cubed',
+      },
+      {
+        id: 'i17',
+        quantity: 100,
+        unit: 'g',
+        name: 'Kalamata Olives',
+      },
+      { id: 'i18', quantity: 60, unit: 'ml', name: 'Olive Oil' },
+    ],
+    steps: [
+      {
+        id: 's10',
+        order: 1,
+        description: 'Combine all vegetables in a large bowl.',
+      },
+      {
+        id: 's11',
+        order: 2,
+        description: 'Add feta cheese and olives.',
+      },
+      {
+        id: 's12',
+        order: 3,
+        description: 'Drizzle with olive oil and toss gently.',
+      },
+    ],
+    utensils: [
+      { id: 'u8', name: 'Large Bowl' },
+      { id: 'u9', name: 'Cutting Board' },
+      { id: 'u10', name: 'Sharp Knife' },
+    ],
+    isFavorite: true,
+  },
+  {
+    id: '4',
+    title: 'Beef Tacos',
+    description: 'Classic Mexican street tacos.',
+    imageUrl:
+      'https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574',
+    prepTime: 25,
+    cookTime: 20,
+    cuisine: 'Mexican',
+    portions: 6,
+    ingredients: [
+      { id: 'i19', quantity: 500, unit: 'g', name: 'Ground Beef' },
+      { id: 'i20', quantity: 12, unit: null, name: 'Corn Tortillas' },
+      {
+        id: 'i21',
+        quantity: 1,
+        unit: 'cup',
+        name: 'Onion',
+        notes: 'diced',
+      },
+      {
+        id: 'i22',
+        quantity: 1,
+        unit: 'cup',
+        name: 'Cilantro',
+        notes: 'chopped',
+      },
+      {
+        id: 'i23',
+        quantity: 2,
+        unit: null,
+        name: 'Limes',
+        notes: 'wedged',
+      },
+      {
+        id: 'i24',
+        quantity: 1,
+        unit: 'packet',
+        name: 'Taco Seasoning',
+      },
+    ],
+    steps: [
+      {
+        id: 's13',
+        order: 1,
+        description: 'Brown beef in a large skillet.',
+      },
+      {
+        id: 's14',
+        order: 2,
+        description: 'Add taco seasoning and water, simmer.',
+      },
+      {
+        id: 's15',
+        order: 3,
+        description: 'Warm tortillas on a griddle.',
+      },
+      {
+        id: 's16',
+        order: 4,
+        description: 'Assemble tacos with meat and toppings.',
+      },
+    ],
+    utensils: [
+      { id: 'u11', name: 'Large Skillet' },
+      { id: 'u12', name: 'Griddle' },
+      { id: 'u13', name: 'Tongs' },
+    ],
+    isFavorite: false,
+  },
+  {
+    id: '5',
+    title: 'Chocolate Chip Cookies',
+    description: 'Classic homemade cookies.',
+    imageUrl:
+      'https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574',
+    prepTime: 15,
+    cookTime: 12,
+    cuisine: 'American',
+    portions: 24,
+    ingredients: [
+      {
+        id: 'i25',
+        quantity: 250,
+        unit: 'g',
+        name: 'Butter',
+        notes: 'softened',
+      },
+      { id: 'i26', quantity: 200, unit: 'g', name: 'Brown Sugar' },
+      { id: 'i27', quantity: 2, unit: null, name: 'Eggs' },
+      { id: 'i28', quantity: 300, unit: 'g', name: 'Flour' },
+      {
+        id: 'i29',
+        quantity: 200,
+        unit: 'g',
+        name: 'Chocolate Chips',
+      },
+      {
+        id: 'i30',
+        quantity: 1,
+        unit: 'tsp',
+        name: 'Vanilla Extract',
+      },
+    ],
+    steps: [
+      {
+        id: 's17',
+        order: 1,
+        description: 'Cream butter and sugar until fluffy.',
+      },
+      {
+        id: 's18',
+        order: 2,
+        description: 'Beat in eggs and vanilla.',
+      },
+      {
+        id: 's19',
+        order: 3,
+        description: 'Mix in flour and chocolate chips.',
+      },
+      {
+        id: 's20',
+        order: 4,
+        description: 'Bake at 180°C for 12 minutes.',
+      },
+    ],
+    utensils: [
+      { id: 'u14', name: 'Mixing Bowl' },
+      { id: 'u15', name: 'Electric Mixer' },
+      { id: 'u16', name: 'Baking Sheet' },
+    ],
+    isFavorite: true,
+  },
 ]);
 
 onMounted(async () => {

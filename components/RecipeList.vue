@@ -177,31 +177,29 @@ const showNoRecipesMessage = computed(() => {
 <template>
   <div class="space-y-4">
     <!-- Search and Filters -->
-    <div
-      v-if="props.recipes && props.recipes.length > 0"
-      class="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4"
-    >
-      <!-- Search Input -->
-      <UInput
-        v-model="searchQuery"
-        name="search"
-        placeholder="Zoek naar recepten..."
-        icon="i-heroicons-magnifying-glass-20-solid"
-        autocomplete="off"
-        size="lg"
-        class="flex-grow"
-        data-testid="search-input"
-      />
+    <div v-if="props.recipes && props.recipes.length > 0">
+      <div class="flex items-center space-x-2">
+        <!-- Search Input -->
+        <UInput
+          v-model="searchQuery"
+          name="search"
+          placeholder="Zoek naar recepten..."
+          icon="i-heroicons-magnifying-glass-20-solid"
+          autocomplete="off"
+          size="lg"
+          class="w-[87.5%]"
+          data-testid="search-input"
+        />
 
-      <!-- Filter Button -->
-      <UButton
-        icon="i-heroicons-adjustments-horizontal"
-        color="gray"
-        variant="outline"
-        size="lg"
-        @click="isFilterSlideoverOpen = true"
-        data-testid="filter-button"
-      />
+        <!-- Filter Button -->
+        <UButton
+          icon="i-heroicons-adjustments-horizontal"
+          size="lg"
+          @click="isFilterSlideoverOpen = true"
+          data-testid="filter-button"
+          class="w-[12.5%] justify-center"
+        />
+      </div>
     </div>
 
     <!-- Sorting Controls -->
