@@ -2,9 +2,11 @@
   <div>
     <!-- Fetch recipe data based on route params -->
     <div v-if="pending">Loading...</div>
+
     <div v-else-if="error || !recipe">
       Error loading recipe or recipe not found.
     </div>
+
     <RecipeDetailView v-else :recipe="recipe" />
 
     <!-- Teleport Back button to the header -->
@@ -53,14 +55,15 @@ const {
   data: recipe,
   pending,
   error,
-} = await useAsyncData<Recipe | null | undefined>( // Allow undefined type
+} = await useAsyncData<Recipe | undefined>( // Keep type as Recipe | undefined
   `recipe-${recipeId.value}`,
   async () => {
+    // Re-add async, remove delay
     console.log(`Fetching recipe with ID: ${recipeId.value}`);
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Removed artificial delay
     // Use the composable to find the recipe
     const foundRecipe = findRecipeById(recipeId.value);
+    // console.log('Found Recipe:', foundRecipe);
     return foundRecipe; // Return the found recipe or undefined
   },
   {
@@ -74,7 +77,7 @@ onMounted(async () => {
 
   // Initial header setup
   setHeader({
-    title: 'Loading Recipe...',
+    title: recipe.value?.title || 'Loading Recipe...',
     showLeftAction: true,
     showRightAction: false, // No right action for now
     leftActionHandler: defaultLeftAction,
@@ -86,11 +89,14 @@ onMounted(async () => {
 watch(
   recipe,
   (newRecipe) => {
+    // console.log('Recipe Watch Triggered:', newRecipe, pending.value);
     if (newRecipe) {
-      headerState.value.title = newRecipe.title;
+      // console.log('Setting header title to:', newRecipe.title);
+      setHeader({ title: newRecipe.title }); // Use setHeader for partial update
     } else if (!pending.value) {
+      // console.log('Setting header title to: Recipe Not Found');
       // Handle cases where recipe is not found or error occurred after initial load
-      headerState.value.title = 'Recipe Not Found';
+      setHeader({ title: 'Recipe Not Found' });
     }
     // If pending is true, the initial 'Loading Recipe...' title remains
   },
