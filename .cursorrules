@@ -37,6 +37,7 @@
       UI and Styling
       - Use Nuxt UI and Tailwind CSS for components and styling.
       - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+      - Do not apply dark mode (e.g. "dark:text-white") in any code you generate.
 
       Mobile Development with Capacitor.js/Ionic
       - Use @capacitor/core for accessing native device features and @capacitor/cli for building and managing the mobile project.
@@ -65,6 +66,5 @@
         2. Optimize images and assets for mobile devices.
         3. Implement proper caching strategies.
         4. Use hardware acceleration for animations.
-
 
 When you have made progress, I want you to update docs/development-progress.md to help the user understand what has been worked on.
