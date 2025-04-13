@@ -65,3 +65,6 @@
         2. Optimize images and assets for mobile devices.
         3. Implement proper caching strategies.
         4. Use hardware acceleration for animations.
+
+
+When you have made progress, I want you to update development-progress.md to help the user understand what has been worked on.
