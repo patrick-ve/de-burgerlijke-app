@@ -43,6 +43,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [x] `__tests__/RecipeForm.spec.ts`: Unit tests for `RecipeForm`.
 - [-] `components/RecipeList.vue`: Component to display multiple `RecipeCard`s with filtering/sorting/pagination (Basic structure created).
 - [-] `__tests__/RecipeList.spec.ts`: Unit tests for `RecipeList` (Basic tests added).
+- [x] `pages/recipes/index.vue`: Page to display `RecipeList`.
+- [x] `pages/recipes/[id].vue`: Page to display `RecipeDetailView` for a specific recipe.
+- [x] `pages/recipes/new.vue`: Page to display `RecipeForm` for creating new recipes.
 
 ### Features Checklist
 
