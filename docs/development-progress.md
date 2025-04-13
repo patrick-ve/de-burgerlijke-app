@@ -2,6 +2,32 @@
 
 This document tracks the implementation status of features outlined in the Product Requirement Documents (PRDs) using a checklist format.
 
+Development of the app follows a Test-Driven Development (TDD) approach:
+
+1. Test Writing Phase:
+   - Unit tests are written first, based on:
+     - Business requirements and acceptance criteria
+     - Edge cases and error scenarios
+     - Domain knowledge and expected behaviors
+     - Component interfaces and props
+   - Integration tests are added for critical user flows
+   - E2E tests cover key user journeys
+
+2. Test Execution:
+   - Unit tests: `yarn run unit` 
+
+3. Implementation Phase:
+   - Components are developed to pass the test specifications
+   - Code is refactored while maintaining test coverage
+   - Additional tests are added as new edge cases are discovered
+   - Components are improved based on test results and feedback
+
+4. Code Review:
+   - Tests are reviewed alongside implementation
+   - Coverage reports are analyzed
+   - Edge cases and error handling are verified
+   - Performance implications are considered
+
 ## Recipes (`recipes-prd.md`)
 
 ### Core Components & Tests
