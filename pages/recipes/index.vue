@@ -43,6 +43,8 @@ const recipes = ref<Recipe[]>([
     id: '1',
     title: 'Spaghetti Carbonara',
     description: 'A classic Roman pasta dish.',
+    imageUrl:
+      'https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574',
     prepTime: 10,
     cookTime: 15,
     cuisine: 'Italian',
@@ -101,6 +103,8 @@ const recipes = ref<Recipe[]>([
     id: '2',
     title: 'Chicken Stir-Fry',
     description: 'Quick and easy weeknight meal.',
+    imageUrl:
+      'https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574',
     prepTime: 15,
     cookTime: 10,
     cuisine: 'Asian',
