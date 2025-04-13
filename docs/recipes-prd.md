@@ -85,7 +85,41 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
   - Show the estimated total cost for the list per selected supermarket and the cheapest overall option.
 - **List Management:** Allow users to check off items as they shop, manually add items (including attempting to price match), and edit quantities. Prices should update accordingly.
 
-### 4.6 Non-Functional Requirements
+### 4.6 Technical Specifications & Business Logic
+
+- **Architecture:**
+  - Mobile-first application built using Capacitor.js to target iOS and Android from a single Nuxt 3 codebase.
+  - Client-side focused logic using Vue 3 Composition API and TypeScript.
+  - Nuxt Server API (`server/api/`) will be used for:
+    - Interfacing with the LLM for recipe parsing.
+    - Interfacing with OCR services (if external).
+    - Handling price data fetching and potentially aggregation logic from external supermarket sources/APIs.
+    - User account management and data persistence (database interactions).
+- **Key Technologies:**
+  - **Frontend Framework:** Nuxt 3 / Vue 3
+  - **Language:** TypeScript
+  - **Mobile Wrapper:** Capacitor.js
+  - **UI:** Nuxt UI / Tailwind CSS
+  - **AI/ML:** Large Language Model (LLM) for recipe parsing, OCR for image input.
+  - **State Management:** Pinia (implied by Nuxt/Vue ecosystem best practices)
+  - **Routing:** Vue Router (via Nuxt)
+- **Data Models (Conceptual):**
+  - **Recipe:** `id`, `userId`, `title`, `description`, `sourceUrl?`, `imageUrl?`, `portions`, `prepTime?`, `cookTime?`, `cuisineType?`, `ingredients[]`, `steps[]`, `utensils[]`, `isFavorite`.
+  - **Ingredient:** `quantity`, `unit`, `name`, `originalText?`.
+  - **Step:** `order`, `description`, `timerDuration?`.
+  - **ScheduledMeal:** `id`, `userId`, `recipeId`, `date`, `portions`.
+  - **ShoppingList:** `id`, `userId`, `startDate`, `endDate`, `items[]`, `status`.
+  - **ShoppingListItem:** `ingredientName`, `standardizedName?`, `aggregatedQuantity`, `unit`, `isChecked`, `priceInfo[]?`.
+  - **PriceInfo:** `supermarket`, `productId?`, `price`, `lastUpdated`.
+- **Core Business Logic:**
+  - **Recipe Parsing:** Input (URL/Image) -> Fetch/OCR -> LLM for structuring -> User review/save. Handles extraction of title, metadata, portions, ingredients (qty, unit, name), ordered steps, utensils.
+  - **Portion Scaling:** When user adjusts portions on a recipe/scheduled meal, ingredient quantities are multiplied by `(newPortions / originalPortions)`. Logic needed to handle non-scalable units gracefully.
+  - **Ingredient Aggregation:** Group items in the shopping list by `standardizedName` and `unit`. Sum `aggregatedQuantity`. Requires robust ingredient name standardization (e.g., "large onion" vs "onion", handling plurals).
+  - **Price Matching:** Map `standardizedName` to specific supermarket product SKUs/identifiers. Requires a maintained mapping or intelligent matching algorithm. Handle cases where no match is found.
+  - **Cheapest Basket Calculation:** For a given shopping list, fetch prices for matched items across selected supermarkets. Calculate total cost per store. Identify the store or combination of stores with the lowest overall total for the available items.
+  - **Step Timers:** Regex or NLP to detect time phrases (e.g., "X minutes", "Y hours") within recipe steps. Associate detected duration with the step for timer activation.
+
+### 4.7 Non-Functional Requirements
 
 - **Platform:** Mobile-first application (iOS & Android via Capacitor).
 - **Performance:** The app should be responsive. Recipe parsing may take a few seconds. Price fetching should be reasonably fast, potentially asynchronous, with progress indicators.
@@ -94,7 +128,7 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - **Data Accuracy & Freshness:** Price data should be updated regularly (e.g., daily) and sourced reliably. Users should be informed about the potential for slight discrepancies or delays.
 - **Offline Access:** (Consideration) Allow access to saved recipes and potentially the last generated shopping list (including last known prices) even when offline. Meal planning and live price fetching require connectivity.
 
-### 4.7 Acceptance Criteria
+### 4.8 Acceptance Criteria
 
 - **URL Recipe Import:**
   - Given a valid recipe URL, when the user submits it, the system successfully fetches the page content.
@@ -132,7 +166,7 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
   - Navigation between different sections (recipes, planner, grocery list, price insights) is intuitive.
   - Price comparisons and historical trends are presented clearly.
 
-### 4.8 Constraints
+### 4.9 Constraints
 
 - **Technology Stack:** The application must be built using Nuxt 3, Vue 3, TypeScript, Capacitor.js, and Nuxt UI/Tailwind CSS as specified.
 - **LLM Dependency:** Recipe parsing accuracy is dependent on the capabilities and potential costs associated with the chosen LLM. Error handling for failed parsing is required.

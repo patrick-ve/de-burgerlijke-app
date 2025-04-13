@@ -48,7 +48,30 @@ This document details the requirements for the Groceries Pricing Insights featur
 - **Supermarket Coverage:** Clearly define and communicate which Dutch supermarkets are included in the historical price tracking (e.g., Albert Heijn, Jumbo, Plus, Lidl initially).
 - **Data Updates:** Ensure the historical data backend is updated regularly in sync with current price fetching.
 
-## 5. Non-Functional Requirements
+## 5. Technical Specifications & Business Logic
+
+- **Architecture:**
+  - Price data collection likely handled by Nuxt Server API endpoints (`server/api/`).
+  - These endpoints interface with external supermarket APIs or scraping mechanisms.
+  - A separate data store (database) is required for historical price points.
+  - Client-side (Vue/Nuxt) responsible for fetching aggregated/processed historical data and rendering charts.
+- **Key Technologies:**
+  - **Backend:** Nuxt 3 Server API (Node.js environment).
+  - **Database:** Suitable database for time-series data or structured historical records (e.g., PostgreSQL with TimescaleDB, InfluxDB, or standard SQL/NoSQL with appropriate indexing).
+  - **Frontend:** Vue 3 / Nuxt 3.
+  - **Charting Library:** A JavaScript charting library compatible with Vue (e.g., Chart.js with vue-chartjs, ApexCharts with vue-apexcharts).
+- **Data Models (Conceptual):**
+  - **HistoricalPrice:** `productId` (standardized), `supermarket`, `price`, `timestamp`.
+  - **StandardizedProduct:** `id`, `name`, `category?`, `trackedSupermarketProductIds[]` (linking to specific store SKUs).
+- **Core Business Logic:**
+  - **Data Ingestion:** Regularly fetch current prices for tracked products/SKUs from target supermarkets. Store these prices with timestamps in the `HistoricalPrice` collection/table.
+  - **Product Standardization/Matching:** Implement a robust system (potentially involving heuristics, manual mapping, or ML) to link different supermarket product identifiers (SKUs) to a single `StandardizedProduct`. This is crucial for comparing the *same* item across stores and over time.
+  - **Time Series Aggregation:** Provide API endpoints that query the `HistoricalPrice` data, aggregate it based on the requested time range and granularity (e.g., weekly average), and filter by `StandardizedProduct` and selected `supermarket`(s).
+  - **Trend Calculation:** The frontend charting library will typically handle plotting the time series data provided by the API.
+  - **Shopping List Context:** Logic to link an item on the shopping list (identified by its `standardizedName` or `productId`) to its corresponding historical price data API endpoint.
+  - **Price Context Indicator (Optional):** Calculate a recent average price (e.g., last 30 days) for an item from its historical data. Compare the current price against this average to determine if it's significantly higher/lower (requires defining thresholds).
+
+## 6. Non-Functional Requirements
 
 - **Performance:** Price history queries and chart generation should be performant, even with significant historical data. Consider aggregation or indexing strategies.
 - **Accuracy:** Strive for high accuracy in historical price data, acknowledging potential minor discrepancies from the source.
@@ -56,7 +79,7 @@ This document details the requirements for the Groceries Pricing Insights featur
 - **Usability:** Charts and data visualizations must be clear, easy to understand, and interactive.
 - **Data Privacy:** Ensure compliance with privacy regulations; historical data is generally less sensitive than personal data but should still be handled appropriately.
 
-### 5.1 Acceptance Criteria
+### 6.1 Acceptance Criteria
 
 - **Item Search:**
   - Given a user searches for a known grocery item, the system returns relevant matches.
@@ -70,7 +93,7 @@ This document details the requirements for the Groceries Pricing Insights featur
 - **Data Consistency:**
   - Historical prices shown are consistent with the data collection process.
 
-### 5.2 Constraints
+### 6.2 Constraints
 
 - **Data Source Reliability:** The entire feature relies heavily on the continuous availability and accuracy of price data from external supermarket sources. Changes in APIs or website structures can break data collection.
 - **Historical Data Availability:** There might be gaps in historical data, especially initially or if data sources become temporarily unavailable. The system should handle and potentially visualize these gaps gracefully.
@@ -79,7 +102,7 @@ This document details the requirements for the Groceries Pricing Insights featur
 - **Initial Scope:** v1 focuses on visualizing historical trends for searched items and linking from the shopping list. More advanced analytics (e.g., category trends, inflation indexes) are out of scope for v1.
 - **Supermarket Scope:** Limited to selected Dutch supermarkets for v1.
 
-## 6. Design & UX Considerations
+## 7. Design & UX Considerations
 
 - Use clear and standard chart components (e.g., line charts).
 - Ensure charts are responsive and legible on mobile devices.
@@ -88,7 +111,7 @@ This document details the requirements for the Groceries Pricing Insights featur
 - Consider accessibility for users with visual impairments (e.g., color contrast, data tables as alternatives).
 - Smooth integration with the existing shopping list UI.
 
-## 7. Future Considerations / Out of Scope (v1)
+## 8. Future Considerations / Out of Scope (v1)
 
 - Calculating and displaying personalized inflation rates based on user's typical purchases.
 - Analyzing price trends for broader categories (e.g., "Dairy", "Vegetables").

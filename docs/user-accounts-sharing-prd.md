@@ -86,14 +86,42 @@ This document details the requirements for user account management and sharing f
   - Shared lists should also reflect the price fetching and comparison features available (e.g., seeing the cheapest options based on household preferences or collectively).
 - **Permissions:** Access control should be based on household membership. Ensure users outside a household cannot access its shared data.
 
-## 5. Non-Functional Requirements
+## 5. Technical Specifications & Business Logic
+
+- **Architecture:**
+  - Authentication, authorization, and household management logic primarily reside in the Nuxt Server API (`server/api/`).
+  - This backend interacts with a database to store user credentials, profile info, household memberships, and shared data links.
+  - Client-side handles UI for login/registration forms, profile editing, household management interfaces, and displaying shared data.
+- **Key Technologies:**
+  - **Backend:** Nuxt 3 Server API (Node.js environment).
+  - **Database:** SQL (e.g., PostgreSQL, MySQL) or NoSQL (e.g., MongoDB) database capable of handling relational user/household data and potentially document-based recipe/list data.
+  - **Authentication:** Secure password hashing (e.g., bcrypt), potentially JWT for session management.
+  - **Frontend:** Vue 3 / Nuxt 3.
+  - **Email Service:** Third-party email service (e.g., SendGrid, Mailgun) for verification and password resets.
+- **Data Models (Conceptual):**
+  - **User:** `id`, `email`, `passwordHash`, `name`, `createdAt`, `emailVerified`.
+  - **Household:** `id`, `name`, `createdAt`.
+  - **HouseholdMember:** `userId`, `householdId`, `role` (e.g., 'admin', 'member'), `joinedAt`.
+  - **HouseholdInvitation:** `id`, `householdId`, `invitedEmail`, `inviterUserId`, `status` ('pending', 'accepted', 'declined'), `createdAt`, `expiresAt`.
+  - **Recipe:** (Existing model - needs `householdId?` or link table if recipes can belong to multiple households or be purely personal).
+  - **ScheduledMeal:** (Existing model - needs `householdId?` or link table).
+  - **ShoppingList:** (Existing model - needs `householdId?` or link table).
+- **Core Business Logic:**
+  - **Authentication Flow:** Register (hash password, send verification email) -> Verify Email -> Login (compare password hash, issue session token) -> Authenticated Requests (validate token).
+  - **Password Reset Flow:** Request reset -> Generate secure token -> Send email with reset link containing token -> User clicks link -> Verify token -> Allow new password input -> Update password hash.
+  - **Household Creation:** Create `Household` record, create `HouseholdMember` record linking creator user with 'admin' role.
+  - **Invitation Logic:** Create `HouseholdInvitation` record. Send notification (email/in-app). When accepted, create `HouseholdMember` record, update invitation status. Handle invitation expiry.
+  - **Sharing Logic/Permissions:** Backend APIs must check `HouseholdMember` status before returning/modifying shared resources (recipes, meal plans, lists associated with a `householdId`). A user querying for recipes might receive both their personal recipes (`householdId` is null) and recipes from households they are a member of.
+  - **Leaving/Removal:** Delete the relevant `HouseholdMember` record. Define logic for the last administrator leaving (e.g., error, auto-promotion, deletion of household if empty).
+
+## 6. Non-Functional Requirements
 
 - **Security:** All authentication and data transmission must use HTTPS. Passwords must be securely hashed and salted. Implement best practices against common web vulnerabilities (OWASP Top 10).
 - **Privacy:** Comply with relevant data privacy regulations (e.g., GDPR, CCPA). Clearly define data ownership and sharing consent.
 - **Performance:** Authentication and basic profile operations should be near-instantaneous. Loading shared data should be performant.
 - **Scalability:** The system must handle growth in users and households without significant degradation.
 
-### 5.1 Acceptance Criteria
+### 6.1 Acceptance Criteria
 
 - **Registration:**
   - Given valid email and password, when a user signs up, an account is created.
@@ -129,7 +157,7 @@ This document details the requirements for user account management and sharing f
   - Given a shared shopping list, when one member checks off an item, the change is reflected for other members.
   - Shared shopping lists display price information and comparison results consistently for all members of the household.
 
-### 5.2 Constraints
+### 6.2 Constraints
 
 - **Authentication:** Initial implementation relies solely on email/password. OAuth providers are out of scope for v1.
 - **Email Service:** Functionality like email verification and password reset depends on a reliable third-party email sending service.
@@ -138,7 +166,7 @@ This document details the requirements for user account management and sharing f
 - **Data Isolation:** Strict separation must be maintained between personal data and household data, and between different households.
 - **Platform:** Functionality must work consistently across iOS and Android via Capacitor.
 
-## 6. Design & UX Considerations
+## 7. Design & UX Considerations
 
 - Clear onboarding flow for registration and login.
 - Intuitive interface for managing profile settings.
@@ -146,7 +174,7 @@ This document details the requirements for user account management and sharing f
 - Visual indicators for shared vs. personal items (recipes, plans, price preferences/views).
 - Notifications for invitations and potentially significant changes in shared plans/lists.
 
-## 7. Future Considerations / Out of Scope (v1)
+## 8. Future Considerations / Out of Scope (v1)
 
 - More granular permission levels within households.
 - Sharing with users outside of a household (e.g., sending a recipe link).
