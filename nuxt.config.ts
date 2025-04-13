@@ -4,7 +4,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/ionic', '@nuxt/ui', '@nuxt/icon'],
+  modules: [
+    '@nuxtjs/ionic',
+    '@nuxt/ui',
+    '@nuxt/icon',
+    '@nuxt/image',
+  ],
 
   ssr: false,
 
