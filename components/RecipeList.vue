@@ -13,14 +13,35 @@ const props = defineProps<Props>();
 // Default pagination size
 const itemsPerPage = props.itemsPerPage || 8;
 
-// Reactive state
+// --- Reactive State ---
 const searchQuery = ref('');
 const selectedCuisine = ref<string | null>(null);
 const showFavoritesOnly = ref(false);
 const currentPage = ref(1);
-const sortBy = ref<'title' | 'prepTime' | 'createdAt'>('title');
+// Sort state - only title sort is needed now
 const sortDirection = ref<'asc' | 'desc'>('asc');
 const isFilterSlideoverOpen = ref(false); // State to control slideover visibility
+
+// Calculate max total time for the range slider
+const maxTotalTime = computed(() => {
+  if (!props.recipes || props.recipes.length === 0) {
+    return 120; // Default max time if no recipes
+  }
+  return props.recipes.reduce((max, recipe) => {
+    const total = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+    return Math.max(max, total);
+  }, 0);
+});
+
+// Time range filter state, initialized after maxTotalTime is available
+const totalTimeRange = ref<[number, number]>([0, 120]); // Default range
+watch(
+  maxTotalTime,
+  (newMax) => {
+    totalTimeRange.value = [0, newMax];
+  },
+  { immediate: true }
+);
 
 // Get unique cuisines from recipes
 const availableCuisines = computed(() => {
@@ -31,30 +52,23 @@ const availableCuisines = computed(() => {
   return Array.from(cuisines).sort();
 });
 
-// Toggle sort direction or change sort field
-const toggleSort = (field: 'title' | 'prepTime' | 'createdAt') => {
-  if (sortBy.value === field) {
-    // If already sorting by this field, toggle direction
-    sortDirection.value =
-      sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    // New field, set to ascending by default
-    sortBy.value = field;
-    sortDirection.value = 'asc';
-  }
+// Toggle sort direction (only title)
+const toggleSortDirection = () => {
+  sortDirection.value =
+    sortDirection.value === 'asc' ? 'desc' : 'asc';
 };
 
 // Ensure we start in alphabetical order - this is important for tests
 watch(
   () => props.recipes,
   () => {
-    sortBy.value = 'title';
+    // Reset sort direction on recipe change if needed, though resetFilters usually handles this
     sortDirection.value = 'asc';
   },
   { immediate: true }
 );
 
-// Filtered recipes based on search query, cuisine, and favorites
+// Filtered recipes based on search query, cuisine, favorites, and time range
 const filteredRecipes = computed(() => {
   // Return original recipes array if it's empty
   if (!props.recipes || props.recipes.length === 0) {
@@ -89,21 +103,19 @@ const filteredRecipes = computed(() => {
     results = results.filter((recipe) => recipe.isFavorite);
   }
 
-  // Always apply sorting
+  // Apply total time range filter (only if range is not default max)
+  const [minTime, maxTime] = totalTimeRange.value;
+  if (minTime > 0 || maxTime < maxTotalTime.value) {
+    results = results.filter((recipe) => {
+      const totalTime =
+        (recipe.prepTime || 0) + (recipe.cookTime || 0);
+      return totalTime >= minTime && totalTime <= maxTime;
+    });
+  }
+
+  // Always apply sorting by title
   results.sort((a, b) => {
-    let comparison = 0;
-
-    if (sortBy.value === 'title') {
-      comparison = a.title.localeCompare(b.title);
-    } else if (sortBy.value === 'prepTime') {
-      comparison = (a.prepTime || 0) - (b.prepTime || 0);
-    } else if (sortBy.value === 'createdAt') {
-      // Safely handle potentially undefined dates by providing a fallback
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      comparison = dateA - dateB;
-    }
-
+    const comparison = a.title.localeCompare(b.title);
     return sortDirection.value === 'asc' ? comparison : -comparison;
   });
 
@@ -141,8 +153,9 @@ const resetFilters = () => {
   selectedCuisine.value = null;
   showFavoritesOnly.value = false;
   currentPage.value = 1;
-  sortBy.value = 'title';
   sortDirection.value = 'asc';
+  // Reset time range to full range
+  totalTimeRange.value = [0, maxTotalTime.value];
 };
 
 // Function to clear filters and close slideover
@@ -154,29 +167,41 @@ const clearFiltersAndClose = () => {
 // Check if we need to show no results message (primarily for tests)
 const showNoResultsMessage = computed(() => {
   if (!props.recipes || props.recipes.length === 0) {
-    return false;
+    return false; // Don't show if there are no recipes initially
   }
 
-  if (
+  // Check if any filter/search is active
+  const isAnyFilterActive =
     searchQuery.value ||
     selectedCuisine.value ||
-    showFavoritesOnly.value
-  ) {
-    return filteredRecipes.value.length === 0;
-  }
+    showFavoritesOnly.value ||
+    totalTimeRange.value[0] > 0 ||
+    totalTimeRange.value[1] < maxTotalTime.value;
 
-  return false;
+  // Show message only if filters are active AND no results are found
+  return isAnyFilterActive && filteredRecipes.value.length === 0;
 });
 
 // Check if we need to show no recipes message (primarily for tests)
 const showNoRecipesMessage = computed(() => {
-  return !props.recipes || props.recipes.length === 0;
+  // Only show this if NO filters are active and the initial list is empty
+  const isAnyFilterActive =
+    searchQuery.value ||
+    selectedCuisine.value ||
+    showFavoritesOnly.value ||
+    totalTimeRange.value[0] > 0 ||
+    totalTimeRange.value[1] < maxTotalTime.value;
+
+  return (
+    !isAnyFilterActive &&
+    (!props.recipes || props.recipes.length === 0)
+  );
 });
 </script>
 
 <template>
   <div class="space-y-4">
-    <!-- Search and Filters -->
+    <!-- Search and Filter Button Container -->
     <div v-if="props.recipes && props.recipes.length > 0">
       <div class="flex items-center space-x-2">
         <!-- Search Input -->
@@ -191,7 +216,7 @@ const showNoRecipesMessage = computed(() => {
           data-testid="search-input"
         />
 
-        <!-- Filter Button -->
+        <!-- Filter Button (Opens Slideover) -->
         <UButton
           icon="i-heroicons-adjustments-horizontal"
           size="lg"
@@ -200,99 +225,6 @@ const showNoRecipesMessage = computed(() => {
           class="w-[12.5%] justify-center"
         />
       </div>
-    </div>
-
-    <!-- Sorting Controls -->
-    <div
-      v-if="
-        props.recipes &&
-        props.recipes.length > 0 &&
-        filteredRecipes.length > 0
-      "
-      class="flex flex-wrap gap-2"
-    >
-      <UButton
-        size="sm"
-        color="gray"
-        :variant="sortBy === 'title' ? 'soft' : 'ghost'"
-        @click="toggleSort('title')"
-        data-testid="sort-by-title"
-      >
-        <template #leading>
-          <UIcon
-            :name="
-              sortBy === 'title' && sortDirection === 'asc'
-                ? 'i-heroicons-arrow-up'
-                : sortBy === 'title' && sortDirection === 'desc'
-                  ? 'i-heroicons-arrow-down'
-                  : 'i-heroicons-bars-arrow-up'
-            "
-          />
-        </template>
-        Title
-      </UButton>
-
-      <UButton
-        size="sm"
-        color="gray"
-        :variant="sortBy === 'prepTime' ? 'soft' : 'ghost'"
-        @click="toggleSort('prepTime')"
-        data-testid="sort-by-prep-time"
-      >
-        <template #leading>
-          <UIcon
-            :name="
-              sortBy === 'prepTime' && sortDirection === 'asc'
-                ? 'i-heroicons-arrow-up'
-                : sortBy === 'prepTime' && sortDirection === 'desc'
-                  ? 'i-heroicons-arrow-down'
-                  : 'i-heroicons-clock'
-            "
-          />
-        </template>
-        Prep Time
-      </UButton>
-
-      <UButton
-        size="sm"
-        color="gray"
-        :variant="sortBy === 'createdAt' ? 'soft' : 'ghost'"
-        @click="toggleSort('createdAt')"
-        data-testid="sort-by-creation-date"
-      >
-        <template #leading>
-          <UIcon
-            :name="
-              sortBy === 'createdAt' && sortDirection === 'asc'
-                ? 'i-heroicons-arrow-up'
-                : sortBy === 'createdAt' && sortDirection === 'desc'
-                  ? 'i-heroicons-arrow-down'
-                  : 'i-heroicons-calendar'
-            "
-          />
-        </template>
-        Date Added
-      </UButton>
-
-      <UButton
-        v-if="
-          searchQuery ||
-          selectedCuisine ||
-          showFavoritesOnly ||
-          sortBy !== 'title' ||
-          sortDirection !== 'asc'
-        "
-        size="sm"
-        color="gray"
-        variant="ghost"
-        @click="resetFilters"
-        data-testid="reset-filters"
-      >
-        <template #leading>
-          <UIcon name="i-heroicons-x-mark" />
-        </template>
-        Reset Filters & Sort
-      </UButton>
     </div>
 
     <!-- Recipe Grid -->
@@ -313,16 +245,7 @@ const showNoRecipesMessage = computed(() => {
       data-testid="no-results-message"
       class="text-center text-gray-500 dark:text-gray-400 py-8"
     >
-      <p v-if="searchQuery">
-        No recipes match your search "{{ searchQuery }}".
-      </p>
-      <p v-else-if="selectedCuisine">
-        No {{ selectedCuisine }} recipes found.
-      </p>
-      <p v-else-if="showFavoritesOnly">
-        You don't have any favorite recipes yet.
-      </p>
-      <p v-else>No recipes found with the current filters.</p>
+      <p>No recipes found matching your current filters.</p>
       <UButton class="mt-4" @click="resetFilters"
         >Reset Filters</UButton
       >
@@ -365,6 +288,7 @@ const showNoRecipesMessage = computed(() => {
       />
     </div>
 
+    <!-- Filter and Sort Slideover -->
     <USlideover
       v-model="isFilterSlideoverOpen"
       side="bottom"
@@ -374,11 +298,12 @@ const showNoRecipesMessage = computed(() => {
         },
       }"
     >
-      <!-- Using UCard for structure as per Nuxt UI v2 docs example -->
       <UCard
         class="flex flex-col flex-1"
         :ui="{
-          body: { base: 'flex-1' },
+          body: {
+            base: 'flex-1 rounded-t-lg',
+          },
           ring: '',
           divide: 'divide-y divide-gray-100 dark:divide-gray-800',
         }"
@@ -388,7 +313,7 @@ const showNoRecipesMessage = computed(() => {
             <h3
               class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
             >
-              Filter
+              Filter & Sort
             </h3>
             <UButton
               color="gray"
@@ -400,8 +325,59 @@ const showNoRecipesMessage = computed(() => {
           </div>
         </template>
 
-        <!-- Body contains the actual filters -->
-        <div class="p-4 space-y-4">
+        <!-- Body contains the actual filters and sort options -->
+        <div class="p-4 space-y-6">
+          <!-- Sort by Title -->
+          <UFormGroup label="Sort by Title">
+            <div class="flex gap-2">
+              <UButton
+                size="md"
+                color="gray"
+                :variant="
+                  sortDirection === 'asc' ? 'solid' : 'outline'
+                "
+                @click="sortDirection = 'asc'"
+                class="flex-1 justify-center"
+                data-testid="sort-title-asc-slideover"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-bars-arrow-up" />
+                </template>
+                Ascending (A-Z)
+              </UButton>
+              <UButton
+                size="md"
+                color="gray"
+                :variant="
+                  sortDirection === 'desc' ? 'solid' : 'outline'
+                "
+                @click="sortDirection = 'desc'"
+                class="flex-1 justify-center"
+                data-testid="sort-title-desc-slideover"
+              >
+                <template #leading>
+                  <UIcon name="i-heroicons-bars-arrow-down" />
+                </template>
+                Descending (Z-A)
+              </UButton>
+            </div>
+          </UFormGroup>
+
+          <!-- Filter by Total Time -->
+          <UFormGroup
+            :label="`Total Time (${totalTimeRange[0]} - ${totalTimeRange[1]} min)`"
+          >
+            <URange
+              v-model="totalTimeRange"
+              :min="0"
+              :max="maxTotalTime"
+              :step="5"
+              name="totalTime"
+              data-testid="total-time-range-slideover"
+            />
+          </UFormGroup>
+
+          <!-- Filter by Cuisine -->
           <UFormGroup label="Cuisine">
             <USelect
               v-if="availableCuisines.length > 0"
@@ -428,6 +404,7 @@ const showNoRecipesMessage = computed(() => {
             </p>
           </UFormGroup>
 
+          <!-- Filter by Favorites -->
           <UFormGroup label="Favorites">
             <UButton
               color="gray"
@@ -458,13 +435,13 @@ const showNoRecipesMessage = computed(() => {
               @click="clearFiltersAndClose"
               data-testid="clear-filters-slideover"
             >
-              Clear Filters
+              Clear Filters & Sort
             </UButton>
             <UButton
               @click="isFilterSlideoverOpen = false"
               data-testid="apply-filters-slideover"
             >
-              Apply Filters
+              Apply
             </UButton>
           </div>
         </template>
