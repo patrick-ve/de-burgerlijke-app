@@ -1,20 +1,46 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import RecipeForm from '../components/RecipeForm.vue';
-import type { Recipe, Ingredient, Step, Utensil } from '~/types/recipe'; // Assuming types/recipe.ts exists
+import type {
+  Recipe,
+  Ingredient,
+  Step,
+  Utensil,
+} from '~/types/recipe'; // Assuming types/recipe.ts exists
 
 // Mock Nuxt UI components used in RecipeForm
-const UInput = { template: '<input :name="$attrs.name" :value="$attrs.modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', inheritAttrs: false, emits: ['update:modelValue'] };
-const UTextarea = { template: '<textarea :name="$attrs.name" :value="$attrs.modelValue" @input="$emit(\'update:modelValue\', $event.target.value)"></textarea>', inheritAttrs: false, emits: ['update:modelValue'] };
+const UInput = {
+  template:
+    '<input :name="$attrs.name" :value="$attrs.modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  inheritAttrs: false,
+  emits: ['update:modelValue'],
+};
+const UTextarea = {
+  template:
+    '<textarea :name="$attrs.name" :value="$attrs.modelValue" @input="$emit(\'update:modelValue\', $event.target.value)"></textarea>',
+  inheritAttrs: false,
+  emits: ['update:modelValue'],
+};
 const UButton = {
-  template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot />{{ label }}</button>',
+  template:
+    '<button v-bind="$attrs" @click="$emit(\'click\')"><slot />{{ label }}</button>',
   props: ['label'],
   emits: ['click'],
-  inheritAttrs: false // Prevent attributes from rendering on the root if it's already the button
+  inheritAttrs: false, // Prevent attributes from rendering on the root if it's already the button
 };
-const UCard = { template: '<div><slot name="header" /><slot /></div>' };
-const UFormGroup = { template: '<div><label><slot name="label" />{{ label }}</label><slot /></div>', props: ['label', 'name'] };
-const UFieldset = { template: '<fieldset><legend><slot name="legend" />{{ legend }}</legend><slot /></fieldset>', props: ['legend'] };
+const UCard = {
+  template: '<div><slot name="header" /><slot /></div>',
+};
+const UFormGroup = {
+  template:
+    '<div><label><slot name="label" />{{ label }}</label><slot /></div>',
+  props: ['label', 'name'],
+};
+const UFieldset = {
+  template:
+    '<fieldset><legend><slot name="legend" />{{ legend }}</legend><slot /></fieldset>',
+  props: ['legend'],
+};
 const UIcon = { template: '<i class="icon"></i>' }; // Mock UIcon
 
 describe('RecipeForm.vue', () => {
@@ -24,19 +50,21 @@ describe('RecipeForm.vue', () => {
     id: 'test-id',
     title: 'Test Recipe',
     description: 'Test Description',
-    prepTime: '10 min',
-    cookTime: '20 min',
+    prepTime: 10,
+    cookTime: 20,
     cuisine: 'Test Cuisine',
     portions: 4,
     ingredients: [
-      { id: 'ing1', quantity: 1, unit: 'cup', name: 'Flour', notes: '' }
+      {
+        id: 'ing1',
+        quantity: 1,
+        unit: 'cup',
+        name: 'Flour',
+        notes: '',
+      },
     ],
-    steps: [
-      { id: 'step1', description: 'Mix flour', order: 1 }
-    ],
-    utensils: [
-      { id: 'ut1', name: 'Bowl' }
-    ],
+    steps: [{ id: 'step1', description: 'Mix flour', order: 1 }],
+    utensils: [{ id: 'ut1', name: 'Bowl' }],
     isFavorite: false,
     userId: 'user1',
     householdId: null,
@@ -54,15 +82,15 @@ describe('RecipeForm.vue', () => {
       },
       global: {
         components: {
-            UInput,
-            UTextarea,
-            UButton,
-            UCard,
-            UFormGroup,
-            UFieldset,
-            UIcon,
-        }
-      }
+          UInput,
+          UTextarea,
+          UButton,
+          UCard,
+          UFormGroup,
+          UFieldset,
+          UIcon,
+        },
+      },
     });
   };
 
@@ -73,12 +101,48 @@ describe('RecipeForm.vue', () => {
   it('renders correctly with initial data', () => {
     expect(wrapper.exists()).toBe(true);
     // Cast element to specific types to access 'value'
-    expect((wrapper.find('input[name="title"]').element as HTMLInputElement).value).toBe(initialRecipeData.title);
-    expect((wrapper.find('textarea[name="description"]').element as HTMLTextAreaElement).value).toBe(initialRecipeData.description);
-    expect((wrapper.find('input[name="prepTime"]').element as HTMLInputElement).value).toBe(initialRecipeData.prepTime);
-    expect((wrapper.find('input[name="cookTime"]').element as HTMLInputElement).value).toBe(initialRecipeData.cookTime);
-    expect((wrapper.find('input[name="cuisine"]').element as HTMLInputElement).value).toBe(initialRecipeData.cuisine);
-    expect((wrapper.find('input[name="portions"]').element as HTMLInputElement).value).toBe(String(initialRecipeData.portions));
+    expect(
+      (
+        wrapper.find('input[name="title"]')
+          .element as HTMLInputElement
+      ).value
+    ).toBe(initialRecipeData.title);
+    expect(
+      (
+        wrapper.find('textarea[name="description"]')
+          .element as HTMLTextAreaElement
+      ).value
+    ).toBe(initialRecipeData.description);
+    expect(
+      parseInt(
+        (
+          wrapper.find('input[name="prepTime"]')
+            .element as HTMLInputElement
+        ).value,
+        10
+      )
+    ).toBe(initialRecipeData.prepTime);
+    expect(
+      parseInt(
+        (
+          wrapper.find('input[name="cookTime"]')
+            .element as HTMLInputElement
+        ).value,
+        10
+      )
+    ).toBe(initialRecipeData.cookTime);
+    expect(
+      (
+        wrapper.find('input[name="cuisine"]')
+          .element as HTMLInputElement
+      ).value
+    ).toBe(initialRecipeData.cuisine);
+    expect(
+      (
+        wrapper.find('input[name="portions"]')
+          .element as HTMLInputElement
+      ).value
+    ).toBe(String(initialRecipeData.portions));
   });
 
   it('updates form data on input', async () => {
@@ -92,7 +156,9 @@ describe('RecipeForm.vue', () => {
     const portionsInput = wrapper.find('input[name="portions"]');
     await portionsInput.setValue(newPortions);
     // Access baseFormData for simple fields
-    expect(wrapper.vm.baseFormData.portions).toBe(parseInt(newPortions));
+    expect(wrapper.vm.baseFormData.portions).toBe(
+      parseInt(newPortions)
+    );
   });
 
   it('emits "submit" event with form data when submitted', async () => {
@@ -110,7 +176,9 @@ describe('RecipeForm.vue', () => {
 
     // Check data in the emitted event
     expect(emittedData.title).toBe(updatedTitle);
-    expect(emittedData.description).toBe(initialRecipeData.description);
+    expect(emittedData.description).toBe(
+      initialRecipeData.description
+    );
     expect(emittedData.portions).toBe(initialRecipeData.portions);
     expect(emittedData.ingredients.length).toBe(1);
     expect(emittedData.steps.length).toBe(1);
@@ -119,53 +187,79 @@ describe('RecipeForm.vue', () => {
 
   it('renders fields for ingredients', () => {
     const ingredientGroups = wrapper.findAll('.ingredient-group');
-    expect(ingredientGroups.length).toBe(initialRecipeData.ingredients.length);
+    expect(ingredientGroups.length).toBe(
+      initialRecipeData.ingredients.length
+    );
 
-    const firstIngredientQtyInput = ingredientGroups[0].find('input[name^="ingredient-quantity-"]');
+    const firstIngredientQtyInput = ingredientGroups[0].find(
+      'input[name^="ingredient-quantity-"]'
+    );
     expect(firstIngredientQtyInput.exists()).toBe(true);
-    expect((firstIngredientQtyInput.element as HTMLInputElement).value).toBe(String(initialRecipeData.ingredients[0].quantity));
+    expect(
+      (firstIngredientQtyInput.element as HTMLInputElement).value
+    ).toBe(String(initialRecipeData.ingredients[0].quantity));
   });
 
-   it('renders fields for steps', () => {
+  it('renders fields for steps', () => {
     const stepGroups = wrapper.findAll('.step-group');
     expect(stepGroups.length).toBe(initialRecipeData.steps.length);
 
-    const firstStepTextarea = stepGroups[0].find('textarea[name^="step-description-"]');
+    const firstStepTextarea = stepGroups[0].find(
+      'textarea[name^="step-description-"]'
+    );
     expect(firstStepTextarea.exists()).toBe(true);
-    expect((firstStepTextarea.element as HTMLTextAreaElement).value).toBe(initialRecipeData.steps[0].description);
+    expect(
+      (firstStepTextarea.element as HTMLTextAreaElement).value
+    ).toBe(initialRecipeData.steps[0].description);
   });
 
   it('renders fields for utensils', () => {
     const utensilGroups = wrapper.findAll('.utensil-group');
-    expect(utensilGroups.length).toBe(initialRecipeData.utensils.length);
+    expect(utensilGroups.length).toBe(
+      initialRecipeData.utensils.length
+    );
 
-    const firstUtensilInput = utensilGroups[0].find('input[name^="utensil-name-"]');
+    const firstUtensilInput = utensilGroups[0].find(
+      'input[name^="utensil-name-"]'
+    );
     expect(firstUtensilInput.exists()).toBe(true);
-    expect((firstUtensilInput.element as HTMLInputElement).value).toBe(initialRecipeData.utensils[0].name);
+    expect(
+      (firstUtensilInput.element as HTMLInputElement).value
+    ).toBe(initialRecipeData.utensils[0].name);
   });
 
-  // --- Tests for Adding/Removing Items --- 
+  // --- Tests for Adding/Removing Items ---
 
   it('adds a new ingredient field when add ingredient button is clicked', async () => {
     const initialCount = wrapper.findAll('.ingredient-group').length;
-    const addButton = wrapper.find('[data-testid="add-ingredient-button"]');
+    const addButton = wrapper.find(
+      '[data-testid="add-ingredient-button"]'
+    );
     await addButton.trigger('click');
-    expect(wrapper.findAll('.ingredient-group').length).toBe(initialCount + 1);
+    expect(wrapper.findAll('.ingredient-group').length).toBe(
+      initialCount + 1
+    );
     // Remove check against internal state, rely on DOM check and submit event check
     // expect(wrapper.vm.ingredientFields.value.length).toBe(initialCount + 1);
   });
 
   it('removes an ingredient field when remove button is clicked', async () => {
     // Ensure there's more than one ingredient to test removal
-    await wrapper.find('[data-testid="add-ingredient-button"]').trigger('click');
+    await wrapper
+      .find('[data-testid="add-ingredient-button"]')
+      .trigger('click');
     const initialCount = wrapper.findAll('.ingredient-group').length;
     expect(initialCount).toBeGreaterThan(1); // Make sure we have something to remove
 
-    const removeButton = wrapper.find('[data-testid="remove-ingredient-button"]'); // Target the first remove button
+    const removeButton = wrapper.find(
+      '[data-testid="remove-ingredient-button"]'
+    ); // Target the first remove button
     expect(removeButton.exists()).toBe(true); // Check if the button exists before clicking
     await removeButton.trigger('click');
 
-    expect(wrapper.findAll('.ingredient-group').length).toBe(initialCount - 1);
+    expect(wrapper.findAll('.ingredient-group').length).toBe(
+      initialCount - 1
+    );
     // Remove check against internal state, rely on DOM check and submit event check
     // expect(wrapper.vm.ingredientFields.value.length).toBe(initialCount - 1);
   });
@@ -174,55 +268,74 @@ describe('RecipeForm.vue', () => {
     const initialCount = wrapper.findAll('.step-group').length;
     const addButton = wrapper.find('[data-testid="add-step-button"]');
     await addButton.trigger('click');
-    expect(wrapper.findAll('.step-group').length).toBe(initialCount + 1);
+    expect(wrapper.findAll('.step-group').length).toBe(
+      initialCount + 1
+    );
     // Remove check against internal state, rely on DOM check and submit event check
     // expect(wrapper.vm.stepFields.value.length).toBe(initialCount + 1);
   });
 
   it('removes a step field when remove button is clicked', async () => {
     // Ensure there's more than one step to test removal
-    await wrapper.find('[data-testid="add-step-button"]').trigger('click');
+    await wrapper
+      .find('[data-testid="add-step-button"]')
+      .trigger('click');
     const initialCount = wrapper.findAll('.step-group').length;
     expect(initialCount).toBeGreaterThan(1); // Make sure we have something to remove
 
-    const removeButton = wrapper.find('[data-testid="remove-step-button"]'); // Target the first remove button
+    const removeButton = wrapper.find(
+      '[data-testid="remove-step-button"]'
+    ); // Target the first remove button
     expect(removeButton.exists()).toBe(true); // Check if the button exists before clicking
     await removeButton.trigger('click');
 
-    expect(wrapper.findAll('.step-group').length).toBe(initialCount - 1);
+    expect(wrapper.findAll('.step-group').length).toBe(
+      initialCount - 1
+    );
     // Remove check against internal state, rely on DOM check and submit event check
     // expect(wrapper.vm.stepFields.value.length).toBe(initialCount - 1);
-
   });
 
   it('adds a new utensil field when add utensil button is clicked', async () => {
     const initialCount = wrapper.findAll('.utensil-group').length;
-    const addButton = wrapper.find('[data-testid="add-utensil-button"]');
+    const addButton = wrapper.find(
+      '[data-testid="add-utensil-button"]'
+    );
     await addButton.trigger('click');
-    expect(wrapper.findAll('.utensil-group').length).toBe(initialCount + 1);
+    expect(wrapper.findAll('.utensil-group').length).toBe(
+      initialCount + 1
+    );
     // Remove check against internal state, rely on DOM check and submit event check
     // expect(wrapper.vm.utensilFields.value.length).toBe(initialCount + 1);
   });
 
   it('removes a utensil field when remove button is clicked', async () => {
-      // Add one to ensure removal is possible if initial state has 0 or 1
-      await wrapper.find('[data-testid="add-utensil-button"]').trigger('click'); 
-      const initialCount = wrapper.findAll('.utensil-group').length;
-      expect(initialCount).toBeGreaterThan(0); // Make sure we have something to remove
+    // Add one to ensure removal is possible if initial state has 0 or 1
+    await wrapper
+      .find('[data-testid="add-utensil-button"]')
+      .trigger('click');
+    const initialCount = wrapper.findAll('.utensil-group').length;
+    expect(initialCount).toBeGreaterThan(0); // Make sure we have something to remove
 
-      const removeButton = wrapper.find('[data-testid="remove-utensil-button"]'); // Target the first remove button
-      expect(removeButton.exists()).toBe(true);
-      await removeButton.trigger('click');
+    const removeButton = wrapper.find(
+      '[data-testid="remove-utensil-button"]'
+    ); // Target the first remove button
+    expect(removeButton.exists()).toBe(true);
+    await removeButton.trigger('click');
 
-      expect(wrapper.findAll('.utensil-group').length).toBe(initialCount - 1);
-      // Remove check against internal state, rely on DOM check and submit event check
-      // expect(wrapper.vm.utensilFields.value.length).toBe(initialCount - 1);
-    });
+    expect(wrapper.findAll('.utensil-group').length).toBe(
+      initialCount - 1
+    );
+    // Remove check against internal state, rely on DOM check and submit event check
+    // expect(wrapper.vm.utensilFields.value.length).toBe(initialCount - 1);
+  });
 
   // --- End Add/Remove Tests ---
 
   it('emits "cancel" event when cancel button is clicked', async () => {
-    const cancelButton = wrapper.find('[data-testid="cancel-button"]');
+    const cancelButton = wrapper.find(
+      '[data-testid="cancel-button"]'
+    );
     expect(cancelButton.exists()).toBe(true);
     await cancelButton.trigger('click');
     const emittedCancel = wrapper.emitted('cancel');
@@ -232,16 +345,18 @@ describe('RecipeForm.vue', () => {
 
   // Add a test for the submit button
   it('emits "submit" event when submit button is clicked', async () => {
-      const submitButton = wrapper.find('[data-testid="submit-button"]');
-      expect(submitButton.exists()).toBe(true);
+    const submitButton = wrapper.find(
+      '[data-testid="submit-button"]'
+    );
+    expect(submitButton.exists()).toBe(true);
 
-      // No need to call handleSubmit directly, trigger the form submission
-      await wrapper.find('form').trigger('submit.prevent');
+    // No need to call handleSubmit directly, trigger the form submission
+    await wrapper.find('form').trigger('submit.prevent');
 
-      const emittedSubmit = wrapper.emitted('submit');
-      expect(emittedSubmit).toBeTruthy();
-      expect(emittedSubmit!.length).toBe(1);
-      const emittedData = emittedSubmit![0][0] as Recipe;
-      expect(emittedData.title).toBe(initialRecipeData.title); // Check against initial (or modified) data
+    const emittedSubmit = wrapper.emitted('submit');
+    expect(emittedSubmit).toBeTruthy();
+    expect(emittedSubmit!.length).toBe(1);
+    const emittedData = emittedSubmit![0][0] as Recipe;
+    expect(emittedData.title).toBe(initialRecipeData.title); // Check against initial (or modified) data
   });
-}); 
+});
