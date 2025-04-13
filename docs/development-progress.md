@@ -59,9 +59,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
     - [ ] Identify/extract Ingredients (quantity, unit, name).
     - [ ] Identify/extract Steps (ordered).
     - [ ] Identify/extract Utensils.
-- [ ] **User Review & Edit:**
-    - [ ] UI for reviewing parsed recipe data before saving.
-    - [ ] Functionality to edit parsed fields.
+- [x] **User Review & Edit:**
+    - [x] UI for reviewing parsed recipe data before saving (`components/RecipeForm.vue`).
+    - [x] Functionality to edit parsed fields (`components/RecipeForm.vue`, `composables/useFieldArray.ts`).
 
 #### 4.2 Recipe Management
 - [ ] **Recipe Storage:**
