@@ -22,10 +22,10 @@
     <Teleport to="#header-right-action" v-if="isMounted">
       <UButton
         v-if="headerState.showRightAction"
-        icon="i-heroicons-check"
-        variant="ghost"
         color="primary"
-        aria-label="Save"
+        aria-label="Sla recept op"
+        label="Opslaan"
+        class="font-bold"
         @click="triggerRightAction"
       />
     </Teleport>
@@ -115,7 +115,7 @@ onMounted(async () => {
   isMounted.value = true;
 
   setHeader({
-    title: 'Create a new recipe',
+    title: 'Nieuw recept',
     showLeftAction: true, // Controls visibility via v-if on the button
     showRightAction: true, // Controls visibility via v-if on the button
     leftActionHandler: defaultLeftAction, // Assign the actual logic

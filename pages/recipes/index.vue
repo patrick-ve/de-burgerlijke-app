@@ -6,10 +6,10 @@
     <Teleport to="#header-right-action" v-if="isMounted">
       <UButton
         v-if="headerState.showRightAction"
-        icon="i-heroicons-plus-circle"
-        variant="ghost"
         color="primary"
-        aria-label="Add Recipe"
+        aria-label="Voeg nieuw recept toe"
+        label="Voeg toe"
+        class="font-bold"
         @click="triggerRightAction"
       />
     </Teleport>
@@ -183,7 +183,7 @@ onMounted(async () => {
   isMounted.value = true;
 
   setHeader({
-    title: 'Recipes',
+    title: 'Mijn recepten',
     showLeftAction: false, // No back button needed here usually
     showRightAction: true,
     rightActionHandler: navigateToAddRecipe,
