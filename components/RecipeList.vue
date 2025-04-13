@@ -214,6 +214,56 @@ const showNoRecipesMessage = computed(() => {
     (!props.recipes || props.recipes.length === 0)
   );
 });
+
+// Computed property to get active filter labels
+const activeFilters = computed(() => {
+  const filters: { key: string; label: string }[] = [];
+
+  if (selectedCuisine.value) {
+    const cuisineLabel = cuisineFilterOptions.value.find(
+      (o) => o.value === selectedCuisine.value
+    )?.label;
+    if (cuisineLabel) {
+      filters.push({
+        key: 'cuisine',
+        label: `${cuisineLabel}`,
+      });
+    }
+  }
+
+  if (selectedTimeFilter.value !== null) {
+    const timeLabel = timeFilterOptions.find(
+      (o) => o.value === selectedTimeFilter.value
+    )?.label;
+    if (timeLabel && timeLabel !== 'Elke tijd') {
+      // Don't show badge for default
+      filters.push({ key: 'time', label: `${timeLabel}` });
+    }
+  }
+
+  if (showFavoritesOnly.value) {
+    filters.push({ key: 'favorites', label: 'Favorieten' });
+  }
+
+  // Check if sorting is non-default (asc)
+  if (sortDirection.value !== 'asc') {
+    const sortLabel = sortOptions.find(
+      (o) => o.value === sortDirection.value
+    )?.label;
+    if (sortLabel) {
+      // Shorten label for badge
+      const shortSortLabel = sortLabel.includes('Oplopend')
+        ? 'A-Z'
+        : 'Z-A';
+      filters.push({
+        key: 'sort',
+        label: `Sortering: ${shortSortLabel}`,
+      });
+    }
+  }
+
+  return filters;
+});
 </script>
 
 <template>
@@ -242,6 +292,32 @@ const showNoRecipesMessage = computed(() => {
           class="w-[12.5%] justify-center"
         />
       </div>
+    </div>
+
+    <!-- Active Filters Display -->
+    <div
+      v-if="activeFilters.length > 0"
+      class="flex flex-wrap items-center gap-2 mt-2"
+      data-testid="active-filters-display"
+    >
+      <UBadge
+        v-for="filter in activeFilters"
+        :key="filter.key"
+        variant="soft"
+        size="sm"
+        class="border-primary border-[1px] p-1 px-2"
+      >
+        {{ filter.label }}
+      </UBadge>
+
+      <UButton
+        label="Reset filters"
+        color="gray"
+        size="2xs"
+        icon="i-heroicons-x-circle"
+        @click="resetFilters"
+        data-testid="reset-filters-button"
+      />
     </div>
 
     <!-- Recipe Grid -->
@@ -322,7 +398,7 @@ const showNoRecipesMessage = computed(() => {
       <UCard
         class="flex flex-col flex-1"
         :ui="{
-          header: { padding: 'p-4' },
+          header: { padding: 'py-2 px-4' },
           body: {
             padding: 'p-4',
             base: 'flex-1',
