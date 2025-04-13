@@ -1,32 +1,38 @@
 export interface Ingredient {
-  quantity: number | null; // Allow null for cases like "pinch of salt"
+  id: string; // Or number, depending on DB schema
+  quantity: number | null; // Allow null for ingredients without specific quantity
   unit: string | null;
   name: string;
-  originalText?: string; // Original text before parsing
+  notes?: string | null;
 }
 
 export interface Step {
-  order: number;
+  id: string; // Or number
   description: string;
-  timerDuration?: number; // Duration in seconds
+  order: number;
+}
+
+export interface Utensil {
+  id: string; // Or number
+  name: string;
 }
 
 export interface Recipe {
-  id: string; // Unique identifier
-  userId?: string; // Link to user (if applicable, consider for later)
-  householdId?: string; // Link to household (if applicable)
+  id?: string | null; // Optional for new recipes
   title: string;
-  description?: string;
-  sourceUrl?: string;
-  imageUrl?: string;
+  description?: string | null;
+  prepTime?: string | null;
+  cookTime?: string | null;
+  cuisine?: string | null;
   portions: number;
-  prepTime?: string; // e.g., "15 minutes"
-  cookTime?: string; // e.g., "30 minutes"
-  cuisineType?: string;
   ingredients: Ingredient[];
   steps: Step[];
-  utensils?: string[];
-  isFavorite: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  utensils: Utensil[]; // Changed from string[] to Utensil[]
+  isFavorite?: boolean;
+  userId?: string | null;
+  householdId?: string | null;
+  sourceUrl?: string | null;
+  imageUrl?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 } 
