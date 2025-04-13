@@ -22,6 +22,16 @@ const currentPage = ref(1);
 const sortDirection = ref<'asc' | 'desc'>('asc');
 const isFilterSlideoverOpen = ref(false); // State to control slideover visibility
 
+// Time filter options and state - UPDATED for specific ranges
+const timeFilterOptions = [
+  { label: 'Elke tijd', value: null }, // Default/reset option
+  { label: '< 20 min', value: 'under_20' },
+  { label: '20 - 45 min', value: '20_to_45' },
+  { label: '> 45 min', value: 'over_45' },
+];
+// UPDATED type to string | null
+const selectedTimeFilter = ref<string | null>(null); // Holds the selected time range identifier
+
 // Calculate max total time for the range slider
 const maxTotalTime = computed(() => {
   if (!props.recipes || props.recipes.length === 0) {
@@ -43,32 +53,38 @@ watch(
   { immediate: true }
 );
 
-// Get unique cuisines from recipes
-const availableCuisines = computed(() => {
+// Get unique cuisines from recipes & format for USelectMenu
+const cuisineFilterOptions = computed(() => {
   const cuisines = new Set<string>();
   props.recipes.forEach((recipe) => {
     if (recipe.cuisine) cuisines.add(recipe.cuisine);
   });
-  return Array.from(cuisines).sort();
+  const sortedCuisines = Array.from(cuisines).sort();
+  // Add "Any Cuisine" option
+  return [
+    { label: 'Elke keuken', value: null },
+    ...sortedCuisines.map((cuisine) => ({
+      label: cuisine,
+      value: cuisine,
+    })),
+  ];
 });
 
-// Toggle sort direction (only title)
-const toggleSortDirection = () => {
-  sortDirection.value =
-    sortDirection.value === 'asc' ? 'desc' : 'asc';
-};
-
-// Ensure we start in alphabetical order - this is important for tests
-watch(
-  () => props.recipes,
-  () => {
-    // Reset sort direction on recipe change if needed, though resetFilters usually handles this
-    sortDirection.value = 'asc';
+// Options for Sort USelectMenu - ADDED ICONS
+const sortOptions = [
+  {
+    label: 'Oplopend (A-Z)',
+    value: 'asc',
+    icon: 'i-heroicons-bars-arrow-up',
   },
-  { immediate: true }
-);
+  {
+    label: 'Aflopend (Z-A)',
+    value: 'desc',
+    icon: 'i-heroicons-bars-arrow-down',
+  },
+];
 
-// Filtered recipes based on search query, cuisine, favorites, and time range
+// Filtered recipes based on search query, cuisine, favorites, and time checkbox
 const filteredRecipes = computed(() => {
   // Return original recipes array if it's empty
   if (!props.recipes || props.recipes.length === 0) {
@@ -103,13 +119,23 @@ const filteredRecipes = computed(() => {
     results = results.filter((recipe) => recipe.isFavorite);
   }
 
-  // Apply total time range filter (only if range is not default max)
-  const [minTime, maxTime] = totalTimeRange.value;
-  if (minTime > 0 || maxTime < maxTotalTime.value) {
+  // Apply time range filter (from USelectMenu) - UPDATED logic for ranges
+  if (selectedTimeFilter.value !== null) {
     results = results.filter((recipe) => {
       const totalTime =
         (recipe.prepTime || 0) + (recipe.cookTime || 0);
-      return totalTime >= minTime && totalTime <= maxTime;
+      if (totalTime <= 0) return false; // Exclude recipes with no time unless 'Any Time' is selected
+
+      switch (selectedTimeFilter.value) {
+        case 'under_20':
+          return totalTime < 20;
+        case '20_to_45':
+          return totalTime >= 20 && totalTime <= 45;
+        case 'over_45':
+          return totalTime > 45;
+        default:
+          return true; // Should not happen if value is not null, but good fallback
+      }
     });
   }
 
@@ -154,14 +180,7 @@ const resetFilters = () => {
   showFavoritesOnly.value = false;
   currentPage.value = 1;
   sortDirection.value = 'asc';
-  // Reset time range to full range
-  totalTimeRange.value = [0, maxTotalTime.value];
-};
-
-// Function to clear filters and close slideover
-const clearFiltersAndClose = () => {
-  resetFilters();
-  isFilterSlideoverOpen.value = false;
+  selectedTimeFilter.value = null; // Reset time filter select
 };
 
 // Check if we need to show no results message (primarily for tests)
@@ -175,8 +194,7 @@ const showNoResultsMessage = computed(() => {
     searchQuery.value ||
     selectedCuisine.value ||
     showFavoritesOnly.value ||
-    totalTimeRange.value[0] > 0 ||
-    totalTimeRange.value[1] < maxTotalTime.value;
+    selectedTimeFilter.value !== null; // Check if time filter is selected
 
   // Show message only if filters are active AND no results are found
   return isAnyFilterActive && filteredRecipes.value.length === 0;
@@ -189,8 +207,7 @@ const showNoRecipesMessage = computed(() => {
     searchQuery.value ||
     selectedCuisine.value ||
     showFavoritesOnly.value ||
-    totalTimeRange.value[0] > 0 ||
-    totalTimeRange.value[1] < maxTotalTime.value;
+    selectedTimeFilter.value !== null; // Check if time filter is selected
 
   return (
     !isAnyFilterActive &&
@@ -243,11 +260,14 @@ const showNoRecipesMessage = computed(() => {
     <div
       v-else-if="showNoResultsMessage"
       data-testid="no-results-message"
-      class="text-center text-gray-500 dark:text-gray-400 py-8"
+      class="text-center text-gray-500 py-8"
     >
-      <p>No recipes found matching your current filters.</p>
+      <p>
+        Geen recepten gevonden die overeenkomen met uw huidige
+        filters.
+      </p>
       <UButton class="mt-4" @click="resetFilters"
-        >Reset Filters</UButton
+        >Filters resetten</UButton
       >
     </div>
 
@@ -255,9 +275,9 @@ const showNoRecipesMessage = computed(() => {
     <div
       v-else-if="showNoRecipesMessage"
       data-testid="no-recipes-message"
-      class="text-center text-gray-500 dark:text-gray-400 py-8"
+      class="text-center text-gray-500 py-8"
     >
-      <p>No recipes found.</p>
+      <p>Geen recepten gevonden.</p>
     </div>
 
     <!-- Pagination Controls -->
@@ -297,23 +317,25 @@ const showNoRecipesMessage = computed(() => {
           background: 'bg-black/40 backdrop-blur-sm',
         },
       }"
+      prevent-close
     >
       <UCard
         class="flex flex-col flex-1"
         :ui="{
+          header: { padding: 'p-4' },
           body: {
-            base: 'flex-1 rounded-t-lg',
+            padding: 'p-4',
+            base: 'flex-1',
           },
+          footer: { padding: 'p-4' },
           ring: '',
-          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+          divide: 'divide-y divide-gray-100',
         }"
       >
         <template #header>
           <div class="flex items-center justify-between">
-            <h3
-              class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
-            >
-              Filter & Sort
+            <h3 class="text-lg font-semibold leading-6 text-gray-900">
+              Filteren & Sorteren
             </h3>
             <UButton
               color="gray"
@@ -326,122 +348,94 @@ const showNoRecipesMessage = computed(() => {
         </template>
 
         <!-- Body contains the actual filters and sort options -->
-        <div class="p-4 space-y-6">
+        <div class="grid grid-cols-2 gap-4">
           <!-- Sort by Title -->
-          <UFormGroup label="Sort by Title">
-            <div class="flex gap-2">
-              <UButton
-                size="md"
-                color="gray"
-                :variant="
-                  sortDirection === 'asc' ? 'solid' : 'outline'
-                "
-                @click="sortDirection = 'asc'"
-                class="flex-1 justify-center"
-                data-testid="sort-title-asc-slideover"
-              >
-                <template #leading>
-                  <UIcon name="i-heroicons-bars-arrow-up" />
-                </template>
-                Ascending (A-Z)
-              </UButton>
-              <UButton
-                size="md"
-                color="gray"
-                :variant="
-                  sortDirection === 'desc' ? 'solid' : 'outline'
-                "
-                @click="sortDirection = 'desc'"
-                class="flex-1 justify-center"
-                data-testid="sort-title-desc-slideover"
-              >
-                <template #leading>
-                  <UIcon name="i-heroicons-bars-arrow-down" />
-                </template>
-                Descending (Z-A)
-              </UButton>
-            </div>
-          </UFormGroup>
-
-          <!-- Filter by Total Time -->
-          <UFormGroup
-            :label="`Total Time (${totalTimeRange[0]} - ${totalTimeRange[1]} min)`"
-          >
-            <URange
-              v-model="totalTimeRange"
-              :min="0"
-              :max="maxTotalTime"
-              :step="5"
-              name="totalTime"
-              data-testid="total-time-range-slideover"
+          <UFormGroup label="Sorteren op titel">
+            <USelectMenu
+              v-model="sortDirection"
+              :options="sortOptions"
+              value-attribute="value"
+              option-attribute="label"
+              size="md"
+              class="w-full"
+              data-testid="sort-select-slideover"
             />
           </UFormGroup>
 
-          <!-- Filter by Cuisine -->
-          <UFormGroup label="Cuisine">
-            <USelect
-              v-if="availableCuisines.length > 0"
-              :model-value="selectedCuisine ?? undefined"
-              @update:model-value="
-                (val: string | null) =>
-                  (selectedCuisine = val || null)
-              "
-              :options="availableCuisines"
-              placeholder="Filter op keuken"
+          <!-- Quick Recipes -->
+          <UFormGroup label="Max. tijd">
+            <USelectMenu
+              v-model="selectedTimeFilter"
+              :options="timeFilterOptions"
+              value-attribute="value"
+              option-attribute="label"
+              placeholder="Selecteer tijd"
               size="md"
-              data-testid="cuisine-filter-slideover"
               class="w-full"
+              data-testid="time-filter-select-slideover"
             >
-              <template #leading>
-                <UIcon name="i-heroicons-globe-europe-africa" />
+              <template #label>
+                <!-- Display selected label or default -->
+                {{
+                  timeFilterOptions.find(
+                    (o) => o.value === selectedTimeFilter
+                  )?.label ?? 'Elke tijd'
+                }}
               </template>
-            </USelect>
-            <p
-              v-else
-              class="text-sm text-gray-500 dark:text-gray-400"
+            </USelectMenu>
+          </UFormGroup>
+
+          <!-- Filter by Cuisine -->
+          <UFormGroup label="Keuken">
+            <USelectMenu
+              v-if="cuisineFilterOptions.length > 1"
+              v-model="selectedCuisine"
+              :options="cuisineFilterOptions"
+              value-attribute="value"
+              option-attribute="label"
+              placeholder="Selecteer keuken"
+              size="md"
+              class="w-full"
+              data-testid="cuisine-select-slideover"
             >
-              No cuisines available.
+              <template #label>
+                {{
+                  cuisineFilterOptions.find(
+                    (o) => o.value === selectedCuisine
+                  )?.label ?? 'Elke keuken'
+                }}
+              </template>
+            </USelectMenu>
+            <p v-else class="text-sm text-gray-500 mt-1">
+              Geen keukens beschikbaar.
             </p>
           </UFormGroup>
 
           <!-- Filter by Favorites -->
-          <UFormGroup label="Favorites">
-            <UButton
-              color="gray"
-              :variant="showFavoritesOnly ? 'solid' : 'outline'"
-              size="md"
-              @click="showFavoritesOnly = !showFavoritesOnly"
-              data-testid="favorite-filter-toggle-slideover"
-              class="w-full justify-center"
-            >
-              <template #leading>
-                <UIcon
-                  :name="
-                    showFavoritesOnly
-                      ? 'i-heroicons-heart-solid'
-                      : 'i-heroicons-heart'
-                  "
-                />
-              </template>
-              Show Favorites Only
-            </UButton>
+          <UFormGroup label="Favoriete recepten">
+            <div class="translate-y-2">
+              <UCheckbox
+                v-model="showFavoritesOnly"
+                data-testid="favorite-checkbox-slideover"
+                :label="
+                  showFavoritesOnly
+                    ? 'Toon alle recepten'
+                    : 'Toon favoriete recepten'
+                "
+              />
+            </div>
           </UFormGroup>
         </div>
 
         <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton
-              variant="outline"
-              @click="clearFiltersAndClose"
-              data-testid="clear-filters-slideover"
-            >
-              Clear Filters & Sort
-            </UButton>
+          <div class="flex justify-end gap-4">
             <UButton
               @click="isFilterSlideoverOpen = false"
               data-testid="apply-filters-slideover"
+              class="flex-1 font-bold"
+              size="lg"
             >
-              Apply
+              Toepassen
             </UButton>
           </div>
         </template>
