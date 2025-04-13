@@ -31,6 +31,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
    - Edge cases and error handling are verified
    - Performance implications are considered
 
+## General UI / Core Components
+
+- [x] `components/TheHeader.vue`: Improved alignment using CSS Grid (`grid-cols-[1fr_auto_1fr]`) to ensure title is always centered.
+
 ## Recipes (`recipes-prd.md`)
 
 ### Core Components & Tests
@@ -263,3 +267,38 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Modify list fetching/updating APIs to use `householdId`.
   - [ ] Ensure real-time (or near real-time) updates for shared list changes (checking off items). Consider WebSockets or polling.
 - [ ] **Permissions:** Implement backend checks based on `HouseholdMember` status for all shared CRUD operations.
+
+## Development Progress
+
+### Features Implemented
+
+- **Dynamic Header:**
+  - Created `composables/useHeaderState.ts` to manage header configuration (title, action visibility, handlers) using `useState`.
+  - Created `components/TheHeader.vue` with a title prop and target divs (`#header-left-action`, `#header-right-action`) for teleported actions.
+  - Integrated `TheHeader` into `app.vue`, providing the title from `useHeaderState`.
+  - Refactored Action Buttons: Moved the definition of action buttons from `app.vue` to individual pages using `<Teleport>`.
+  - Updated `pages/recipes/new.vue`:
+    - Uses `useHeaderState` to set title, visibility flags, and action handlers.
+    - Teleports Back and Save buttons to the header.
+  - **Updated `pages/recipes/index.vue`:**
+    - Uses `useHeaderState` to set title ("Recipes") and action handler.
+    - Teleports an "Add" button to the header's right action slot, navigating to `/recipes/new`.
+  - **Updated `pages/recipes/[id].vue`:**
+    - Uses `useHeaderState` to set an initial title ("Loading Recipe...") and action handler.
+    - Teleports a "Back" button to the header's left action slot.
+    - Watches the fetched recipe data to dynamically update the header title to the recipe's name or "Recipe Not Found".
+    - Removed the static back link.
+- **Recipe Form Page (`pages/recipes/new.vue`):**
+  - Setup basic structure with placeholder save logic.
+  - Included `RecipeForm` component (assuming it exists).
+  - Added `useHead` for page title.
+  - Removed the static `<h1>` and `<NuxtLink>`.
+
+### Next Steps
+
+- Implement the actual API calls in `pages/recipes/new.vue` and `pages/recipes/[id].vue`.
+- Refine `handleSave` in `pages/recipes/new.vue` to correctly retrieve data from `RecipeForm`.
+- Implement the `RecipeForm.vue` component.
+- Apply header configuration and teleported actions to other relevant pages.
+- Style `TheHeader.vue` further if necessary.
+- Ensure correct padding/layout adjustments in `app.vue`'s CSS for the sticky header.
