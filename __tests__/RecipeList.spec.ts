@@ -171,14 +171,6 @@ describe('RecipeList.vue', () => {
     ).toBe(false);
   });
 
-  it.todo('filters recipes based on selected cuisine', () => {
-    // TODO: Implement cuisine filter dropdown/buttons and logic
-    // const cuisineFilter = wrapper.find('[data-testid="cuisine-filter"]')
-    // await cuisineFilter.setValue('Italian') // Assuming a select dropdown
-    // expect(wrapper.findAllComponents(RecipeCard).length).toBe(1)
-    // expect(wrapper.findComponent(RecipeCard).props('recipe').title).toBe('Spaghetti Carbonara')
-  });
-
   it('filters recipes based on selected cuisine', async () => {
     const cuisineFilter = wrapper.find(
       '[data-testid="cuisine-filter"]'
@@ -190,14 +182,6 @@ describe('RecipeList.vue', () => {
     expect(recipeCards[0].props('recipe').title).toBe(
       'Spaghetti Carbonara'
     );
-  });
-
-  it.todo('filters recipes based on favorite status', () => {
-    // TODO: Implement favorite filter toggle and logic
-    // const favoriteToggle = wrapper.find('[data-testid="favorite-filter-toggle"]')
-    // await favoriteToggle.trigger('click')
-    // expect(wrapper.findAllComponents(RecipeCard).length).toBe(1)
-    // expect(wrapper.findComponent(RecipeCard).props('recipe').title).toBe('Spaghetti Carbonara')
   });
 
   it('filters recipes based on favorite status', async () => {
@@ -265,10 +249,6 @@ describe('RecipeList.vue', () => {
     }
   });
 
-  it.todo('sorts recipes by prep time (ascending/descending)', () => {
-    // TODO: Implement sorting controls and logic
-  });
-
   it('sorts recipes by prep time (ascending/descending)', async () => {
     // Click for prep time sorting (ascending first)
     const sortByPrepTimeButton = wrapper.find(
@@ -300,13 +280,6 @@ describe('RecipeList.vue', () => {
     ); // 15 mins
   });
 
-  it.todo(
-    'sorts recipes by creation date (ascending/descending)',
-    () => {
-      // TODO: Implement sorting controls and logic
-    }
-  );
-
   it('sorts recipes by creation date (ascending/descending)', async () => {
     // Click for creation date sorting (ascending first)
     const sortByCreationDateButton = wrapper.find(
@@ -336,17 +309,6 @@ describe('RecipeList.vue', () => {
       'Spaghetti Carbonara'
     ); // Jan 15
     expect(recipeCards[2].props('recipe').title).toBe('Apple Pie'); // Jan 1
-  });
-
-  it.todo('handles pagination correctly', () => {
-    // TODO: Implement pagination controls and logic
-    // const lotsOfRecipes = Array.from({ length: 20 }, (_, i) => ({ ...mockRecipes[0], id: `${i + 1}`, title: `Recipe ${i + 1}` }))
-    // wrapper = mount(RecipeList, { props: { recipes: lotsOfRecipes, itemsPerPage: 5 } })
-    // expect(wrapper.findAllComponents(RecipeCard).length).toBe(5)
-    // const nextPageButton = wrapper.find('[data-testid="next-page"]')
-    // await nextPageButton.trigger('click')
-    // expect(wrapper.findAllComponents(RecipeCard).length).toBe(5)
-    // // Add assertions for which recipes are shown
   });
 
   it('handles pagination correctly', async () => {
@@ -404,17 +366,6 @@ describe('RecipeList.vue', () => {
     await nextTick();
     expect(wrapper.findAllComponents(RecipeCard).length).toBe(6);
   });
-
-  it.todo(
-    'displays a message when filters result in no matches',
-    async () => {
-      // TODO: Implement filter logic and test this case
-      // const searchInput = wrapper.find('input[type="search"]')
-      // await searchInput.setValue('NonExistentRecipe')
-      // expect(wrapper.findAllComponents(RecipeCard).length).toBe(0)
-      // expect(wrapper.find('[data-testid="no-results-message"]').exists()).toBe(true)
-    }
-  );
 
   it('displays a message when filters result in no matches', async () => {
     // First, create a new wrapper for this test to ensure isolation
