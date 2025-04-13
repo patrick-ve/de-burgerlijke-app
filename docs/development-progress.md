@@ -34,6 +34,25 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 ## General UI / Core Components
 
 - [x] `components/TheHeader.vue`: Improved alignment using CSS Grid (`grid-cols-[1fr_auto_1fr]`) to ensure title is always centered.
+- [x] `components/RecipeCard.vue`: Display basic recipe info.
+- [x] `__tests__/RecipeCard.spec.ts`: Unit tests for `RecipeCard`.
+- [x] `components/RecipeDetailView.vue`: Display full recipe details.
+- [x] `__tests__/RecipeDetailView.spec.ts`: Unit tests for `RecipeDetailView`.
+- [x] `components/RecipeForm.vue`: Form for creating/editing recipes.
+- [x] `__tests__/RecipeForm.spec.ts`: Unit tests for `RecipeForm`.
+- [-] `components/RecipeList.vue`: Component to display multiple `RecipeCard`s with filtering/sorting/pagination (Basic structure created).
+- [-] `__tests__/RecipeList.spec.ts`: Unit tests for `RecipeList` (Basic tests added).
+- [x] `pages/recipes/index.vue`: Page to display `RecipeList`.
+- [x] `pages/recipes/[id].vue`: Page to display `RecipeDetailView` for a specific recipe.
+- [x] `pages/recipes/new.vue`: Page to display `RecipeForm` for creating new recipes.
+- [x] **Favorites:**
+  - [x] UI toggle button (`RecipeCard.vue`).
+  - [ ] Persistence for favorite status (backend).
+  - [ ] Dedicated "Favorites" view/filter.
+- [ ] **Portion Adjustment:**
+  - [ ] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions.
+  - [ ] Logic to scale ingredient quantities proportionally.
+  - [ ] Update stored recipe data.
 
 ## Recipes (`recipes-prd.md`)
 
