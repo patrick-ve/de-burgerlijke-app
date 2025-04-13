@@ -1,5 +1,11 @@
+export interface Supermarket {
+  id: string; // Unique identifier
+  name: 'Albert Heijn' | 'Jumbo' | 'Aldi' | 'Other';
+  url: string; // e.g., 'https://www.ah.nl', 'https://www.jumbo.nl'
+}
+
 export interface PriceInfo {
-  supermarket: string; // e.g., 'Albert Heijn', 'Jumbo'
+  supermarket: Supermarket;
   productId?: string; // Supermarket-specific product ID
   price: number; // Price in cents or smallest currency unit
   unitSize?: string; // e.g., "500g", "1L"

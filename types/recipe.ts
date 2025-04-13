@@ -21,8 +21,8 @@ export interface Recipe {
   id?: string | null; // Optional for new recipes
   title: string;
   description?: string | null;
-  prepTime?: string | null;
-  cookTime?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
   cuisine?: string | null;
   portions: number;
   ingredients: Ingredient[];
