@@ -32,12 +32,14 @@ import {
 } from 'vue';
 import type { Recipe } from '~/types/recipe'; // Assuming Recipe type exists
 import { useHeaderState } from '~/composables/useHeaderState';
+import { useMockRecipes } from '~/composables/useMockRecipes'; // Import the composable
 
 const route = useRoute();
 const { headerState, setHeader, resetHeader, defaultLeftAction } =
   useHeaderState();
 const isMounted = ref(false);
 const recipeId = computed(() => route.params.id as string);
+const { findRecipeById } = useMockRecipes(); // Get the finder function
 
 // Handler to trigger the action stored in state
 const triggerLeftAction = () => {
@@ -51,53 +53,15 @@ const {
   data: recipe,
   pending,
   error,
-} = await useAsyncData<Recipe | null>(
+} = await useAsyncData<Recipe | null | undefined>( // Allow undefined type
   `recipe-${recipeId.value}`,
   async () => {
     console.log(`Fetching recipe with ID: ${recipeId.value}`);
-    // Replace with actual fetch logic
-    // Example: return await $fetch(`/api/recipes/${recipeId.value}`)
-    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
-    // Dummy data for testing - replace with actual data structure
-    if (recipeId.value === '1') {
-      return {
-        id: '1',
-        title: 'Spaghetti Carbonara',
-        description: 'A classic Roman pasta dish.',
-        prepTime: 10,
-        cookTime: 15,
-        cuisine: 'Italian',
-        portions: 2,
-        ingredients: [
-          { id: 'i1', quantity: 200, unit: 'g', name: 'Spaghetti' },
-        ],
-        steps: [{ id: 's1', order: 1, description: 'Cook pasta.' }],
-        utensils: [],
-        isFavorite: true,
-      };
-    } else if (recipeId.value === '2') {
-      return {
-        id: '2',
-        title: 'Chicken Stir-Fry',
-        description: 'Quick and easy weeknight meal.',
-        prepTime: 15,
-        cookTime: 10,
-        cuisine: 'Asian',
-        portions: 3,
-        ingredients: [
-          {
-            id: 'i6',
-            quantity: 300,
-            unit: 'g',
-            name: 'Chicken Breast',
-          },
-        ],
-        steps: [{ id: 's5', order: 1, description: 'Heat oil.' }],
-        utensils: [],
-        isFavorite: false,
-      };
-    }
-    return null; // Recipe not found
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Use the composable to find the recipe
+    const foundRecipe = findRecipeById(recipeId.value);
+    return foundRecipe; // Return the found recipe or undefined
   },
   {
     watch: [recipeId], // Refetch when ID changes
