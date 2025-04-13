@@ -312,12 +312,21 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - Included `RecipeForm` component (assuming it exists).
   - Added `useHead` for page title.
   - Removed the static `<h1>` and `<NuxtLink>`.
+- Updated component logic (filtering, reset, computed properties) to support the new UI elements.
+- Arranged filter/sort controls (Title Sort, Quick Recipes, Cuisine, Favorites) into a 2x2 grid layout.
+- Replaced the 'Quick Recipes' checkbox with a `USelectMenu` offering specific time ranges: '< 20 min', '20-45 min', '> 45 min', and 'Any Time'.
+- Updated filtering logic to handle the new time range selections.
+- Replaced the 'Cuisine' filter (`USelect`) with a searchable `USelectMenu`, including an 'Any Cuisine' option.
+- Replaced the 'Sort by Title' toggle button (`UButton`) with a `USelectMenu` offering 'Ascending' and 'Descending' options.
+- Removed search capability from the Cuisine filter.
+- Added icons to the 'Sort by Title' select menu options.
+- Replaced the 'Favorites' toggle button (`UButton`) with a `UCheckbox`.
+- Replaced the 'Favorites' checkbox (`UCheckbox`) with a `UToggle`.
+- Removed the text label for the 'Favorites' toggle and added on/off icons instead.
 
-### Next Steps
-
-- Implement the actual API calls in `pages/recipes/new.vue` and `pages/recipes/[id].vue`.
-- Refine `handleSave` in `pages/recipes/new.vue` to correctly retrieve data from `RecipeForm`.
-- Implement the `RecipeForm.vue` component.
-- Apply header configuration and teleported actions to other relevant pages.
-- Style `TheHeader.vue` further if necessary.
-- Ensure correct padding/layout adjustments in `app.vue`'s CSS for the sticky header.
+- **Refactor(`RecipeList.vue`):** Simplified the filter slideover footer by removing the "Cancel" button. Closing the slideover via the "X" button or the "Apply" button now confirms the selected filters.
+- **Feature(`RecipeList.vue`):** Added filter and sort functionality within a slideover.
+- **Feature(`RecipeList.vue`):** Implemented search, pagination, and display of recipes using `RecipeCard`.
+- **Component(`RecipeCard.vue`):** Created component to display individual recipe details.
+- **Types(`recipe.ts`):** Defined the `Recipe` interface.
+- **Component(`RecipeList.vue`):** Initial setup for displaying a list of recipes.
