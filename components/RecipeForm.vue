@@ -3,6 +3,7 @@ import { ref, reactive, watch, computed } from 'vue';
 import type { PropType } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import type { Recipe, Ingredient, Step, Utensil } from '~/types/recipe';
+import { useFieldArray } from '~/composables/useFieldArray'; // Import the composable
 
 const props = defineProps({
   initialRecipe: {
@@ -17,119 +18,150 @@ const props = defineProps({
 
 const emit = defineEmits<{ (e: 'submit', recipe: Recipe): void; (e: 'cancel'): void }>();
 
-// Deep clone initial data or set default structure
-const getDefaultFormData = (): Recipe => ({
-  // Initialize with default/empty values, use null for optional fields
-  id: null,
+// Define default structure for the main form data (excluding arrays)
+const getDefaultBaseFormData = (): Omit<Recipe, 'ingredients' | 'steps' | 'utensils' | 'id' | 'createdAt' | 'updatedAt'> => ({
   title: '',
   description: null,
   prepTime: null,
   cookTime: null,
   cuisine: null,
   portions: 1,
-  ingredients: [{ id: uuidv4(), quantity: null, unit: null, name: '', notes: null }],
-  steps: [{ id: uuidv4(), description: '', order: 1 }],
-  utensils: [{ id: uuidv4(), name: '' }],
   isFavorite: false,
-  userId: null, // Should be set server-side or based on logged-in user
+  userId: null,
   householdId: null,
   sourceUrl: null,
   imageUrl: null,
 });
 
-// Use reactive for the form data object
-const formData = reactive<Recipe>(getDefaultFormData());
+// Use reactive for the base form data
+const baseFormData = reactive(getDefaultBaseFormData());
 
-// Watch for changes in initialRecipe prop to reset the form
+// --- Use useFieldArray for dynamic sections --- 
+
+const ingredientFactory = (): Omit<Ingredient, 'id'> => ({ quantity: null, unit: null, name: '', notes: null });
+const { fields: ingredientFields, append: appendIngredient, remove: removeIngredient, replace: replaceIngredients } = useFieldArray<Ingredient>('ingredients', { itemFactory: ingredientFactory });
+
+const stepFactory = (): Omit<Step, 'id'> => ({ description: '', order: 1 }); // Order will be recalculated
+const { fields: stepFields, append: appendStep, remove: removeStep, replace: replaceSteps } = useFieldArray<Step>('steps', { itemFactory: stepFactory });
+
+const utensilFactory = (): Omit<Utensil, 'id'> => ({ name: '' });
+const { fields: utensilFields, append: appendUtensil, remove: removeUtensil, replace: replaceUtensils } = useFieldArray<Utensil>('utensils', { itemFactory: utensilFactory });
+
+// --- Watch for initial data changes ---
 watch(
   () => props.initialRecipe,
   (newInitialRecipe) => {
-    // Deep copy to avoid mutating the prop
-    const recipeToEdit = newInitialRecipe ? JSON.parse(JSON.stringify(newInitialRecipe)) : getDefaultFormData();
-    // Ensure dynamic arrays have unique IDs if missing
-    recipeToEdit.ingredients = recipeToEdit.ingredients.map((ing: Ingredient) => ({ ...ing, id: ing.id || uuidv4() }));
-    recipeToEdit.steps = recipeToEdit.steps.map((step: Step) => ({ ...step, id: step.id || uuidv4() }));
-    recipeToEdit.utensils = recipeToEdit.utensils.map((utensil: Utensil) => ({ ...utensil, id: utensil.id || uuidv4() }));
-    // Update reactive formData
-    Object.assign(formData, recipeToEdit);
+    if (newInitialRecipe) {
+      // Deep copy to avoid mutating the prop
+      const recipeToEdit = JSON.parse(JSON.stringify(newInitialRecipe));
+      // Update base form data
+      Object.assign(baseFormData, {
+          title: recipeToEdit.title,
+          description: recipeToEdit.description,
+          prepTime: recipeToEdit.prepTime,
+          cookTime: recipeToEdit.cookTime,
+          cuisine: recipeToEdit.cuisine,
+          portions: recipeToEdit.portions,
+          isFavorite: recipeToEdit.isFavorite,
+          userId: recipeToEdit.userId,
+          householdId: recipeToEdit.householdId,
+          sourceUrl: recipeToEdit.sourceUrl,
+          imageUrl: recipeToEdit.imageUrl,
+      });
+      // Replace array data using composable's replace function
+      // Provide a default item with ID if the initial array is null/empty
+      replaceIngredients(recipeToEdit.ingredients && recipeToEdit.ingredients.length > 0 
+        ? recipeToEdit.ingredients 
+        : [{ ...ingredientFactory(), id: uuidv4() }]);
+      replaceSteps(recipeToEdit.steps && recipeToEdit.steps.length > 0 
+        ? recipeToEdit.steps 
+        : [{ ...stepFactory(), id: uuidv4() }]);
+      replaceUtensils(recipeToEdit.utensils || []); // Allow empty utensils
+    } else {
+      // Reset to defaults, ensuring at least one item with ID
+      Object.assign(baseFormData, getDefaultBaseFormData());
+      replaceIngredients([{ ...ingredientFactory(), id: uuidv4() }]);
+      replaceSteps([{ ...stepFactory(), id: uuidv4() }]);
+      replaceUtensils([]); // Start with no utensils on reset
+    }
+     // Ensure at least one item exists if arrays are empty after load/reset
+     // This check is likely redundant now due to the logic above but kept for safety
+     if (ingredientFields.value.length === 0) appendIngredient();
+     if (stepFields.value.length === 0) appendStep();
+     // Utensils can be empty
+
   },
   { immediate: true, deep: true }
 );
 
-// --- Helper function to update nullable string fields ---
-const updateNullableStringField = (field: 'description' | 'prepTime' | 'cookTime' | 'cuisine', value: string) => {
-  formData[field] = value.trim() === '' ? null : value;
-};
-
-// --- Ingredient Management ---
-const addIngredient = () => {
-  formData.ingredients.push({ id: uuidv4(), quantity: null, unit: null, name: '', notes: null });
-};
-
-const removeIngredient = (index: number) => {
-  if (formData.ingredients.length > 1) { // Keep at least one ingredient field
-    formData.ingredients.splice(index, 1);
+// --- Helper function to update nullable string fields in baseFormData ---
+const updateNullableStringField = (field: keyof typeof baseFormData, value: string) => {
+  // Only update fields that exist in baseFormData
+  if (field in baseFormData) {
+     (baseFormData as any)[field] = value.trim() === '' ? null : value;
   }
 };
 
-const updateIngredientField = (index: number, field: keyof Ingredient, value: string | number) => {
-  const ingredient = formData.ingredients[index];
+// --- Specific Update Handlers for Array Fields ---
+const updateIngredientField = (index: number, field: keyof Omit<Ingredient, 'id'>, value: string | number | null) => {
+  const ingredient = ingredientFields.value[index];
   if (!ingredient) return;
+
+  let processedValue: string | number | null = value;
 
   switch (field) {
     case 'quantity':
-      const num = typeof value === 'string' ? parseFloat(value) : value;
-      ingredient.quantity = isNaN(num) || value === '' ? null : num;
+      const num = typeof value === 'string' && value.trim() !== '' ? parseFloat(value) : value;
+      processedValue = (typeof num === 'number' && !isNaN(num)) ? num : null;
       break;
     case 'unit':
     case 'notes':
-      // Ensure value is treated as string for trim() and assignment
-      const strValue = String(value); 
-      ingredient[field] = strValue.trim() === '' ? null : strValue;
+      processedValue = typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
       break;
-    case 'name': // Name is required, should not be null
-      ingredient.name = String(value); // Ensure value is string
+    case 'name': // Name is required, trim but don't set to null
+      processedValue = typeof value === 'string' ? value.trim() : '';
       break;
-    // id is handled internally
   }
+
+  // Use spread operator to update the item reactively
+  ingredientFields.value[index] = { ...ingredient, [field]: processedValue };
 };
 
-// --- Step Management ---
-const addStep = () => {
-  const nextOrder = formData.steps.length > 0 ? Math.max(...formData.steps.map(s => s.order)) + 1 : 1;
-  formData.steps.push({ id: uuidv4(), description: '', order: nextOrder });
+const updateStepDescription = (index: number, value: string) => {
+  const step = stepFields.value[index];
+  if (!step) return;
+  stepFields.value[index] = { ...step, description: value.trim() }; // Update reactively
 };
 
-const removeStep = (index: number) => {
-  if (formData.steps.length > 1) { // Keep at least one step field
-    formData.steps.splice(index, 1);
-    // Re-order remaining steps
-    formData.steps.forEach((step, i) => step.order = i + 1);
-  }
-};
-
-// --- Utensil Management ---
-const addUtensil = () => {
-  formData.utensils.push({ id: uuidv4(), name: '' });
-};
-
-const removeUtensil = (index: number) => {
-  // Allow removing all utensils
-  formData.utensils.splice(index, 1);
+const updateUtensilName = (index: number, value: string) => {
+  const utensil = utensilFields.value[index];
+  if (!utensil) return;
+  utensilFields.value[index] = { ...utensil, name: value.trim() }; // Update reactively
 };
 
 // --- Submission and Cancellation ---
 const handleSubmit = () => {
-  // Perform basic validation or cleanup if needed before emitting
-  // e.g., remove empty ingredient/step/utensil entries
-  const cleanedData = JSON.parse(JSON.stringify(formData)); // Deep clone before potential modification
+  // Construct the final Recipe object
+  const finalRecipe: Recipe = {
+    ...baseFormData,
+    id: props.initialRecipe?.id || null, // Use existing ID or null for new
+    ingredients: ingredientFields.value
+        .map(ing => ({...ing, name: ing.name.trim()})) // Ensure name is trimmed
+        .filter(ing => ing.name !== ''), // Filter out ingredients without a name
+    steps: stepFields.value
+        .map(step => ({...step, description: step.description.trim()})) // Ensure description is trimmed
+        .filter(step => step.description !== '') // Filter out steps without description
+        .map((step, i) => ({ ...step, order: i + 1 })), // Recalculate order
+    utensils: utensilFields.value
+        .map(ut => ({...ut, name: ut.name.trim()})) // Ensure name is trimmed
+        .filter(ut => ut.name !== ''), // Filter out empty utensils
+    // Timestamps should be handled server-side or just before submission if needed client-side
+    createdAt: props.initialRecipe?.createdAt ?? new Date(), // Keep original or set new
+    updatedAt: new Date(), // Always set update time
+    userId: props.initialRecipe?.userId ?? baseFormData.userId, // Keep original user ID if editing
+  };
 
-  cleanedData.ingredients = cleanedData.ingredients.filter((ing: Ingredient) => ing.name.trim() !== '');
-  cleanedData.steps = cleanedData.steps.filter((step: Step) => step.description.trim() !== '');
-  cleanedData.utensils = cleanedData.utensils.filter((utensil: Utensil) => utensil.name.trim() !== '');
-  cleanedData.steps.forEach((step: Step, i: number) => step.order = i + 1); // Ensure order is sequential
-
-  emit('submit', cleanedData);
+  emit('submit', finalRecipe);
 };
 
 const handleCancel = () => {
@@ -150,12 +182,12 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
         <!-- Basic Info -->
         <UFieldset legend="Basic Information" class="space-y-4">
            <UFormGroup label="Title" name="title" required>
-             <UInput v-model="formData.title" name="title" placeholder="e.g., Chocolate Chip Cookies" required />
+             <UInput v-model="baseFormData.title" name="title" placeholder="e.g., Chocolate Chip Cookies" required />
            </UFormGroup>
 
            <UFormGroup label="Description" name="description">
              <UTextarea
-               :model-value="formData.description ?? ''"
+               :model-value="baseFormData.description ?? ''"
                @update:model-value="value => updateNullableStringField('description', value)"
                name="description"
                placeholder="A short summary of the recipe"
@@ -166,7 +198,7 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
              <UFormGroup label="Prep Time" name="prepTime">
                <UInput
-                 :model-value="formData.prepTime ?? ''"
+                 :model-value="baseFormData.prepTime ?? ''"
                  @update:model-value="value => updateNullableStringField('prepTime', value)"
                  name="prepTime"
                  placeholder="e.g., 15 min"
@@ -174,7 +206,7 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
              </UFormGroup>
              <UFormGroup label="Cook Time" name="cookTime">
                <UInput
-                 :model-value="formData.cookTime ?? ''"
+                 :model-value="baseFormData.cookTime ?? ''"
                  @update:model-value="value => updateNullableStringField('cookTime', value)"
                  name="cookTime"
                  placeholder="e.g., 30 min"
@@ -182,7 +214,7 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
              </UFormGroup>
              <UFormGroup label="Cuisine" name="cuisine">
                <UInput
-                 :model-value="formData.cuisine ?? ''"
+                 :model-value="baseFormData.cuisine ?? ''"
                  @update:model-value="value => updateNullableStringField('cuisine', value)"
                  name="cuisine"
                  placeholder="e.g., Italian"
@@ -191,13 +223,13 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
            </div>
 
            <UFormGroup label="Portions" name="portions" required>
-             <UInput v-model.number="formData.portions" type="number" name="portions" :min="1" required />
+             <UInput v-model.number="baseFormData.portions" type="number" name="portions" :min="1" required />
            </UFormGroup>
         </UFieldset>
 
         <!-- Ingredients -->
         <UFieldset legend="Ingredients" class="space-y-4">
-          <div v-for="(ingredient, index) in formData.ingredients" :key="ingredient.id" class="ingredient-group grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr_auto] gap-2 items-end border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
+          <div v-for="(ingredient, index) in ingredientFields" :key="ingredient.id" class="ingredient-group grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr_auto] gap-2 items-end border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
             <UFormGroup label="Quantity" :name="`ingredient-quantity-${index}`" class="col-span-1 sm:col-span-1">
               <UInput
                 :model-value="ingredient.quantity ?? ''"
@@ -219,7 +251,8 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
             </UFormGroup>
             <UFormGroup label="Name" :name="`ingredient-name-${index}`" class="col-span-full sm:col-span-1" required>
               <UInput
-                v-model="ingredient.name" 
+                :model-value="ingredient.name"
+                @update:model-value="value => updateIngredientField(index, 'name', value)"
                 :name="`ingredient-name-${index}`"
                 placeholder="e.g., All-purpose Flour"
                 required
@@ -234,7 +267,7 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
                 />
              </UFormGroup>
             <UButton
-              v-if="formData.ingredients.length > 1"
+              v-if="ingredientFields.length > 1"
               icon="i-heroicons-trash"
               color="red"
               variant="soft"
@@ -252,17 +285,18 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
             variant="outline"
             class="add-ingredient"
             data-testid="add-ingredient-button"
-            @click="addIngredient"
+            @click="appendIngredient()"
           />
         </UFieldset>
 
         <!-- Steps -->
         <UFieldset legend="Steps" class="space-y-4">
-          <div v-for="(step, index) in formData.steps" :key="step.id" class="step-group flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
+          <div v-for="(step, index) in stepFields" :key="step.id" class="step-group flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
             <span class="mt-2 font-medium text-gray-500 dark:text-gray-400">{{ index + 1 }}.</span>
             <UFormGroup :label="`Step ${index + 1}`" :name="`step-description-${index}`" class="flex-grow" required>
                <UTextarea
-                 v-model="step.description"
+                 :model-value="step.description"
+                 @update:model-value="value => updateStepDescription(index, value)"
                  :name="`step-description-${index}`"
                  placeholder="e.g., Mix dry ingredients"
                  required
@@ -270,7 +304,7 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
                 />
             </UFormGroup>
             <UButton
-              v-if="formData.steps.length > 1"
+              v-if="stepFields.length > 1"
               icon="i-heroicons-trash"
               color="red"
               variant="soft"
@@ -288,16 +322,17 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
             variant="outline"
             class="add-step"
             data-testid="add-step-button"
-            @click="addStep"
+            @click="appendStep()"
           />
         </UFieldset>
 
         <!-- Utensils -->
         <UFieldset legend="Utensils" class="space-y-4">
-          <div v-for="(utensil, index) in formData.utensils" :key="utensil.id" class="utensil-group flex items-end gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
+          <div v-for="(utensil, index) in utensilFields" :key="utensil.id" class="utensil-group flex items-end gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
             <UFormGroup label="Utensil Name" :name="`utensil-name-${index}`" class="flex-grow" required>
               <UInput
-                v-model="utensil.name"
+                :model-value="utensil.name"
+                @update:model-value="value => updateUtensilName(index, value)"
                 :name="`utensil-name-${index}`"
                 placeholder="e.g., Mixing bowl, Whisk"
                 required
@@ -321,10 +356,9 @@ const formTitle = computed(() => props.initialRecipe?.id ? 'Edit Recipe' : 'Crea
             variant="outline"
             class="add-utensil"
             data-testid="add-utensil-button"
-            @click="addUtensil"
+            @click="appendUtensil()"
           />
         </UFieldset>
-
       </div>
 
       <!-- Actions -->
