@@ -367,7 +367,15 @@ const showNoRecipesMessage = computed(() => {
       />
     </div>
 
-    <USlideover v-model="isFilterSlideoverOpen" side="bottom">
+    <USlideover
+      v-model="isFilterSlideoverOpen"
+      side="bottom"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
       <!-- Using UCard for structure as per Nuxt UI v2 docs example -->
       <UCard
         class="flex flex-col flex-1"
