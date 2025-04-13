@@ -1,11 +1,41 @@
 <template>
   <div class="p-4">
     <RecipeList :recipes="recipes" />
+
+    <!-- Teleport Add button to the header -->
+    <Teleport to="#header-right-action" v-if="isMounted">
+      <UButton
+        v-if="headerState.showRightAction"
+        icon="i-heroicons-plus-circle"
+        variant="ghost"
+        color="primary"
+        aria-label="Add Recipe"
+        @click="triggerRightAction"
+      />
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Recipe } from '~/types/recipe'; // Assuming Recipe type is defined here
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import type { Recipe } from '~/types/recipe';
+import { useHeaderState } from '~/composables/useHeaderState';
+
+const router = useRouter();
+const { headerState, setHeader, resetHeader } = useHeaderState();
+const isMounted = ref(false);
+
+// Action handler for the Add button
+const navigateToAddRecipe = () => {
+  router.push('/recipes/new');
+};
+
+// Handler to trigger the action stored in state
+const triggerRightAction = () => {
+  if (headerState.value.rightActionHandler) {
+    headerState.value.rightActionHandler();
+  }
+};
 
 // Placeholder for fetching recipes data
 const recipes = ref<Recipe[]>([
@@ -148,7 +178,24 @@ const recipes = ref<Recipe[]>([
   },
 ]);
 
+onMounted(async () => {
+  await nextTick();
+  isMounted.value = true;
+
+  setHeader({
+    title: 'Recipes',
+    showLeftAction: false, // No back button needed here usually
+    showRightAction: true,
+    rightActionHandler: navigateToAddRecipe,
+  });
+});
+
+onUnmounted(() => {
+  resetHeader();
+  isMounted.value = false;
+});
+
 useHead({
-  title: 'Recipes',
+  title: 'Recipes', // Browser tab title
 });
 </script>
