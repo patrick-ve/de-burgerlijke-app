@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-This document outlines the requirements for the Recipe & Grocery Planner App, a mobile application designed to help couples and households organize recipes, plan meals, and manage grocery shopping efficiently. The core functionality revolves around importing recipes, structuring them using AI, scheduling meals, and generating shopping lists.
+This document outlines the requirements for the Recipe & Grocery Planner App, a mobile application designed to help couples and households organize recipes, plan meals, manage grocery shopping efficiently, and gain insights into grocery pricing. The core functionality revolves around importing recipes, structuring them using AI, scheduling meals, generating shopping lists with price optimization, and viewing historical price trends.
 
 ## 2. Goals
 
@@ -11,6 +11,8 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - Automate grocery list generation based on planned meals.
 - Provide an intuitive and user-friendly interface for recipe management and meal planning.
 - Enhance the cooking experience with integrated timers.
+- Empower users to make cost-effective grocery shopping decisions by providing price comparisons and historical data.
+- Help users track and understand grocery price inflation over time.
 
 ## 3. User Stories
 
@@ -23,6 +25,10 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - **As a user, I want to** generate a shopping list based on my scheduled meals for the upcoming week **so that** I know exactly what ingredients to buy.
 - **As a user, I want to** adjust the number of portions for a recipe **so that** the ingredient amounts in the recipe details and the shopping list update accordingly.
 - **As a user, I want to** view and manage my scheduled meals in a calendar or weekly view **so that** I have a clear overview of my meal plan.
+- **As a user concerned about budget, I want to** see the estimated total cost of my generated shopping list **so that** I can anticipate my grocery expenses.
+- **As a user concerned about budget, I want to** see price options for items on my shopping list from different Dutch supermarkets **so that** I can find the cheapest place to buy them.
+- **As a user concerned about inflation, I want to** view historical price trends for specific grocery items **so that** I can understand how prices have changed over time.
+- **As a user, I want to** be able to select a preferred supermarket or find the overall cheapest combination for my shopping list **so that** I can optimize my shopping strategy.
 
 ## 4. Features & Requirements
 
@@ -63,20 +69,30 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - **Scheduling:** Allow users to drag-and-drop or assign saved recipes to specific dates/days.
 - **Multiple Meals per Day:** (Optional - Future consideration) Allow scheduling for different meal times (breakfast, lunch, dinner).
 
-### 4.5 Grocery List Generation
+### 4.5 Grocery List Generation & Pricing
 
 - **List Creation:** Generate a consolidated grocery list based on all recipes scheduled for a defined upcoming period (e.g., the next 7 days).
-- **Ingredient Aggregation:** Combine identical ingredients from different recipes, summing their quantities (respecting units).
+- **Ingredient Aggregation:** Combine identical ingredients from different recipes, summing their quantities (respecting units). Standardize ingredient names where possible for price matching.
 - **Portion Scaling:** Ensure ingredient quantities in the shopping list reflect the portion adjustments made by the user for each scheduled recipe.
-- **List Management:** Allow users to check off items as they shop, manually add items, and edit quantities.
+- **Price Fetching:**
+  - For items on the generated list, fetch current prices from supported Dutch supermarkets (e.g., Albert Heijn, Jumbo, Lidl, Plus).
+  - Match standardized ingredients to supermarket product databases. Handle ambiguities or missing items gracefully.
+- **Cheapest Option Calculation:**
+  - Provide an option to calculate the cheapest overall basket based on the list across selected/all supported supermarkets.
+  - Allow users to select preferred supermarkets for comparison.
+- **Price Display:**
+  - Display the price per item and per supermarket.
+  - Show the estimated total cost for the list per selected supermarket and the cheapest overall option.
+- **List Management:** Allow users to check off items as they shop, manually add items (including attempting to price match), and edit quantities. Prices should update accordingly.
 
 ### 4.6 Non-Functional Requirements
 
 - **Platform:** Mobile-first application (iOS & Android via Capacitor).
-- **Performance:** The app should be responsive. Recipe parsing may take a few seconds, and users should be informed of the progress.
-- **Scalability:** The backend should handle a growing number of users and recipes.
-- **Usability:** The interface should be intuitive and easy to navigate for non-technical users.
-- **Offline Access:** (Consideration) Allow access to saved recipes and potentially the last generated shopping list even when offline. Meal planning might require connectivity.
+- **Performance:** The app should be responsive. Recipe parsing may take a few seconds. Price fetching should be reasonably fast, potentially asynchronous, with progress indicators.
+- **Scalability:** The backend should handle a growing number of users, recipes, and price data points.
+- **Usability:** The interface should be intuitive and easy to navigate for non-technical users. Price information should be clearly presented.
+- **Data Accuracy & Freshness:** Price data should be updated regularly (e.g., daily) and sourced reliably. Users should be informed about the potential for slight discrepancies or delays.
+- **Offline Access:** (Consideration) Allow access to saved recipes and potentially the last generated shopping list (including last known prices) even when offline. Meal planning and live price fetching require connectivity.
 
 ### 4.7 Acceptance Criteria
 
@@ -105,19 +121,26 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
   - Given meals scheduled for the upcoming week, when the user requests a grocery list, a list is generated.
   - The generated list correctly aggregates identical ingredients from all scheduled recipes for the period.
   - Ingredient quantities on the list accurately reflect any portion adjustments made to the scheduled recipes.
+  - Current prices for list items are fetched and displayed from supported supermarkets.
+  - The estimated total cost is calculated and displayed for selected supermarkets and/or the cheapest combination.
   - The user can successfully check off items on the generated grocery list.
+- **Cheapest Option:**
+  - Given a generated shopping list, when the user requests the cheapest option, the system calculates and displays the store(s) offering the lowest total price for the items.
 - **UI/UX:**
-  - All interactive elements respond within 1 second.
-  - Recipe parsing progress is clearly indicated to the user.
-  - Navigation between different sections (recipes, planner, grocery list) is intuitive.
+  - All interactive elements respond within 1 second (excluding network-dependent operations like price fetching).
+  - Recipe parsing and price fetching progress are clearly indicated to the user.
+  - Navigation between different sections (recipes, planner, grocery list, price insights) is intuitive.
+  - Price comparisons and historical trends are presented clearly.
 
 ### 4.8 Constraints
 
 - **Technology Stack:** The application must be built using Nuxt 3, Vue 3, TypeScript, Capacitor.js, and Nuxt UI/Tailwind CSS as specified.
 - **LLM Dependency:** Recipe parsing accuracy is dependent on the capabilities and potential costs associated with the chosen LLM. Error handling for failed parsing is required.
 - **OCR Dependency:** Image recipe import accuracy depends on the quality of the image and the OCR service.
-- **Scope:** Features listed under "Future Considerations / Out of Scope (v1)" are explicitly excluded from the initial release.
-- **Offline Functionality:** Full offline functionality is a consideration, not a hard requirement for v1, except for potentially viewing saved recipes and the last generated list. Core features like parsing and planning may require network connectivity.
+- **Price Data Source:** Accuracy and availability depend on external sources (supermarket APIs, reliable scraping methods) for Dutch supermarkets. This may require ongoing maintenance. Specific supermarkets covered in v1 need definition (e.g., Albert Heijn, Jumbo initially).
+- **Ingredient Matching:** Matching recipe ingredients (e.g., "flour", "1 large onion") to specific supermarket SKUs can be ambiguous and may require heuristics or user clarification.
+- **Scope:** Features listed under "Future Considerations / Out of Scope (v1)" are explicitly excluded from the initial release. Historical price trend details are covered in a separate PRD (`groceries-pricing-insights-prd.md`).
+- **Offline Functionality:** Full offline functionality is a consideration, not a hard requirement for v1, except for potentially viewing saved recipes and the last generated list (with cached prices). Core features like parsing, planning, and live price fetching require network connectivity.
 - **Platform:** Primary focus is on mobile app experience via Capacitor; a web version is secondary.
 
 ## 5. Design & UX Considerations
@@ -127,14 +150,20 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - Clear visual distinction between ingredients, steps, and timers.
 - Intuitive drag-and-drop or selection mechanism for meal scheduling.
 - Progress indicators for recipe parsing.
-- Easy-to-use interface for managing the shopping list (checking items, editing).
+- Easy-to-use interface for managing the shopping list (checking items, editing, viewing prices per store).
+- Clear presentation of price comparison results.
+- (Refer to `groceries-pricing-insights-prd.md` for historical trend visualization)
 
 ## 6. Future Considerations / Out of Scope (v1)
 
-- User accounts and sharing recipes/plans between household members.
+- User accounts and sharing recipes/plans between household members (Covered in `user-accounts-sharing-prd.md`, but integration with pricing is v1).
 - Integration with online grocery stores for ordering.
 - Pantry tracking (managing existing inventory to adjust shopping lists).
 - Nutritional information calculation.
 - Recipe ratings and reviews.
 - Advanced search and filtering (by cuisine, dietary restrictions, ingredients).
 - Importing recipes from other formats or apps.
+- Price alerts for specific items.
+- Budget tracking features.
+- Support for more supermarkets or international stores.
+- Loyalty card integration.

@@ -83,6 +83,7 @@ This document details the requirements for user account management and sharing f
 - **Shopping List Sharing:**
   - The shopping list generated from the household meal plan is automatically shared.
   - Members can view, add items to, and check off items from the shared list.
+  - Shared lists should also reflect the price fetching and comparison features available (e.g., seeing the cheapest options based on household preferences or collectively).
 - **Permissions:** Access control should be based on household membership. Ensure users outside a household cannot access its shared data.
 
 ## 5. Non-Functional Requirements
@@ -126,6 +127,7 @@ This document details the requirements for user account management and sharing f
 - **Shopping List Sharing:**
   - Given a shared household meal plan, the generated shopping list is accessible to all members.
   - Given a shared shopping list, when one member checks off an item, the change is reflected for other members.
+  - Shared shopping lists display price information and comparison results consistently for all members of the household.
 
 ### 5.2 Constraints
 
@@ -141,7 +143,7 @@ This document details the requirements for user account management and sharing f
 - Clear onboarding flow for registration and login.
 - Intuitive interface for managing profile settings.
 - Simple and clear process for creating, joining, and managing households.
-- Visual indicators for shared vs. personal items (recipes, plans).
+- Visual indicators for shared vs. personal items (recipes, plans, price preferences/views).
 - Notifications for invitations and potentially significant changes in shared plans/lists.
 
 ## 7. Future Considerations / Out of Scope (v1)
