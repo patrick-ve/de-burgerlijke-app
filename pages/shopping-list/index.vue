@@ -13,6 +13,7 @@ const {
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
 const isMounted = ref(false);
+const isClearConfirmationModalOpen = ref(false);
 
 // Define Head for the page
 useHead({
@@ -31,9 +32,12 @@ const handleItemDelete = (itemId: string) => {
 
 // Handler to trigger the action stored in state
 const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
+  isClearConfirmationModalOpen.value = true;
+};
+
+const confirmClearList = () => {
+  clearList();
+  isClearConfirmationModalOpen.value = false;
 };
 
 onMounted(async () => {
@@ -83,5 +87,48 @@ onMounted(async () => {
         @click="triggerRightAction"
       />
     </Teleport>
+
+    <!-- Confirmation Modal -->
+    <UModal
+      v-model="isClearConfirmationModalOpen"
+      :ui="{
+        base: '-translate-y-64',
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+        }"
+      >
+        <template #header>
+          <h3 class="text-lg font-semibold">Weet je het zeker?</h3>
+        </template>
+
+        <p class="text-gray-600">
+          Wil je de boodschappenlijst echt helemaal leegmaken? Deze
+          actie kan niet ongedaan worden gemaakt.
+        </p>
+
+        <template #footer>
+          <div class="flex justify-end space-x-3">
+            <UButton
+              label="Annuleren"
+              color="gray"
+              variant="ghost"
+              @click="isClearConfirmationModalOpen = false"
+            />
+            <UButton
+              label="Bevestigen"
+              color="red"
+              @click="confirmClearList"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
   </div>
 </template>

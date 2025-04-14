@@ -146,6 +146,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [x] **Ingredient Aggregation & Standardization (Client-side):**
   - [-] Logic to combine identical ingredients (sum quantities, respect units). (Basic implementation in composable)
   - [-] Implement ingredient name standardization. (Basic implementation in composable)
+  - [x] Improved aggregation logic in `useShoppingList` to handle unit variations (null/empty) and basic pluralization ("cloves" -> "clove").
 - [x] **Portion Scaling Integration (Client-side):** Ensure generated list quantities reflect scheduled meal portions.
 - [ ] **Price Fetching:**
   - [ ] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus).
@@ -156,10 +157,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [ ] **Price Display:**
   - [ ] UI (`components/ShoppingList.vue`) to display price per item/supermarket.
   - [ ] Display total estimated cost per store / cheapest option.
-- [ ] **List Management:**
-  - [ ] UI (`components/ShoppingList.vue`) for checking off items.
+- [x] **List Management:**
+  - [x] UI (`components/ShoppingList.vue`) for checking off items.
   - [ ] UI for manually adding/editing items.
   - [ ] Update list status/item status in the backend.
+  - [x] Added confirmation modal when clearing the shopping list (`pages/shopping-list/index.vue`).
 
 ## Groceries Pricing Insights (`groceries-pricing-insights-prd.md`)
 
@@ -306,7 +308,16 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar.
   - Added a "Reset filters" button next to the active filter badges.
 - **`BottomNav.vue`**: Added slide-up transition when the component appears/disappears.
+- **`ShoppingList.vue`**: Added 'Maak leeg' button to shopping list header to clear the list.
 
 #### Changed
 
 - \*\*`RecipeList.vue`
+
+* Refactored recipe list page to use `useMockRecipes` composable.
+* Refactored shopping list page header to use `useHeaderState` composable.
+
+### Shopping List
+
+- Added delete animation to shopping list items.
+- Implemented basic shopping list component structure.
