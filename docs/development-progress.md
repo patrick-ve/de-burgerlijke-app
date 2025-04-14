@@ -357,3 +357,6 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **`types/recipe.ts`:** Defined the `Recipe` interface.
 - Moved recipe utensils list from Instructions tab to Ingredients tab in `RecipeDetailView`.
 - Applied consistent styling for ingredients and utensils lists.
+- Hide the bottom action bar in RecipeDetailView when the 'Bereiding' tab is active.
+- Added a slide-up transition effect to the bottom action bar in `RecipeDetailView.vue`.
+- Changed the default open tab in `RecipeDetailView.vue` to "Ingrediënten".
