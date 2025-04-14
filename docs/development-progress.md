@@ -50,9 +50,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Persistence for favorite status (backend).
   - [ ] Dedicated "Favorites" view/filter.
 - [ ] **Portion Adjustment:**
-  - [ ] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions.
-  - [ ] Logic to scale ingredient quantities proportionally.
-  - [ ] Update stored recipe data.
+  - [-] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions. (Slideover UI implemented)
+  - [ ] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
+  - [ ] Update stored recipe data. (Needed for shopping list)
 
 ## Recipes (`recipes-prd.md`)
 
@@ -110,9 +110,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Persistence for favorite status (backend).
   - [ ] Dedicated "Favorites" view/filter.
 - [ ] **Portion Adjustment:**
-  - [ ] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions.
-  - [ ] Logic to scale ingredient quantities proportionally.
-  - [ ] Update stored recipe data.
+  - [-] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions. (Slideover UI implemented)
+  - [ ] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
+  - [ ] Update stored recipe data. (Needed for shopping list)
 
 #### 4.3 Cooking Assistance
 
@@ -322,6 +322,12 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **`RecipeDetailView.vue` UI:**
   - Improved metadata section: Added recipe image display (`<NuxtImg>`), icons (`<UIcon>`) for prep time, cook time, and portions, and applied modern Tailwind styling.
   - Added icons to the Ingredients/Instructions tabs.
+- **`RecipeDetailView.vue` Portion Adjustment for Shopping List:**
+  - Added a fixed bottom action bar with a "Voeg toe aan boodschappenlijst" button.
+  - Implemented a `USlideover` triggered by the button, containing UI controls (buttons, input) to adjust portions.
+  - Added a preview list of scaled ingredients within the slideover.
+  - Included a dynamic CTA button in the slideover footer (`Voeg X porties toe aan boodschappenlijst`).
+  - Added placeholder logic for the final 'add to list' action.
 
 #### Changed
 
