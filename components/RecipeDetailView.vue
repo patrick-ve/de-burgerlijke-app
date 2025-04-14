@@ -139,7 +139,7 @@ const showInstructions = computed(() => true); // Always render instructions for
           <li
             v-for="(ingredient, index) in recipe.ingredients"
             :key="`ingredient-${index}`"
-            class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
+            class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100 last:border-b-0"
             data-testid="ingredient-item"
           >
             <span
@@ -168,7 +168,7 @@ const showInstructions = computed(() => true); // Always render instructions for
             <li
               v-for="(utensil, index) in recipe.utensils"
               :key="`utensil-${utensil.id || index}`"
-              class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
+              class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100 last:border-b-0"
               data-testid="utensil-item"
             >
               <span
@@ -192,7 +192,7 @@ const showInstructions = computed(() => true); // Always render instructions for
             <li
               v-for="(step, index) in localSteps"
               :key="`step-${step.id || index}`"
-              class="flex items-start gap-3 pb-2 border-b border-gray-100"
+              class="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0"
               data-testid="step-item"
             >
               <UCheckbox
