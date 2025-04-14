@@ -67,4 +67,4 @@
         3. Implement proper caching strategies.
         4. Use hardware acceleration for animations.
 
-When you have made progress, I want you to update docs/development-progress.md to help the user understand what has been worked on.
+When you have made progress, I want you to update docs/development-progress.md to help the user understand what has been worked on. Do not add any dates (as LLMs are not good with understanding dates), just add new items to the changelog.
