@@ -10,9 +10,12 @@
         aria-label="Voeg nieuw recept toe"
         label="Voeg toe"
         class="font-bold text-xs"
-        @click="triggerRightAction"
+        @click="openAddModal"
       />
     </Teleport>
+
+    <!-- Add Recipe Modal -->
+    <AddRecipeModal v-model:isOpen="isAddModalOpen" />
   </div>
 </template>
 
@@ -21,23 +24,30 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 // import type { Recipe } from '~/types/recipe'; // No longer needed here
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useMockRecipes } from '~/composables/useMockRecipes'; // Import the new composable
+import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the modal component
 
 const router = useRouter();
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const isMounted = ref(false);
 const { recipes } = useMockRecipes(); // Get recipes from the composable
+const isAddModalOpen = ref(false); // State for modal visibility
 
-// Action handler for the Add button
-const navigateToAddRecipe = () => {
-  router.push('/recipes/new');
+// Function to open the modal
+const openAddModal = () => {
+  isAddModalOpen.value = true;
 };
 
-// Handler to trigger the action stored in state
-const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
-};
+// REMOVED - Action handler for navigating directly to /recipes/new
+// const navigateToAddRecipe = () => {
+//   router.push('/recipes/new');
+// };
+
+// Handler to trigger the action stored in state - NO LONGER NEEDED FOR THIS BUTTON
+// const triggerRightAction = () => {
+//   if (headerState.value.rightActionHandler) {
+//     headerState.value.rightActionHandler();
+//   }
+// };
 
 // Placeholder for fetching recipes data - REMOVED
 // const recipes = ref<Recipe[]>([...]);
@@ -50,7 +60,7 @@ onMounted(async () => {
     title: 'Mijn recepten',
     showLeftAction: false, // No back button needed here usually
     showRightAction: true,
-    rightActionHandler: navigateToAddRecipe,
+    // rightActionHandler: navigateToAddRecipe, // Removed old handler
   });
 });
 

@@ -92,7 +92,6 @@ onMounted(async () => {
     <UModal
       v-model="isClearConfirmationModalOpen"
       :ui="{
-        base: '-translate-y-64',
         overlay: {
           background: 'bg-black/40 backdrop-blur-sm',
         },
