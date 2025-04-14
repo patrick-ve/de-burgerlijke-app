@@ -10,8 +10,8 @@ const localSteps = ref(
   props.recipe.steps.map((step) => ({ ...step }))
 );
 
-// Initialize to instructions to match the test expectation
-const selectedTab = ref('instructions');
+// Initialize to ingredients
+const selectedTab = ref('ingredients');
 
 const items = [
   {
@@ -308,19 +308,29 @@ const handleAddPortionsToShoppingList = () => {
   </section>
 
   <!-- Fixed Bottom Action Bar -->
-  <div
-    class="fixed bottom-16 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+  <Transition
+    enter-active-class="transition duration-300 ease-out"
+    enter-from-class="transform translate-y-full"
+    enter-to-class="transform translate-y-0"
+    leave-active-class="transition duration-200 ease-in"
+    leave-from-class="transform translate-y-0"
+    leave-to-class="transform translate-y-full"
   >
-    <UButton
-      block
-      size="lg"
-      label="Voeg toe aan boodschappenlijst"
-      icon="i-heroicons-shopping-cart"
-      @click="openPortionSlideover"
-      data-testid="add-to-list-button"
-      class="font-bold"
-    />
-  </div>
+    <div
+      v-if="selectedTab !== 'instructions'"
+      class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+    >
+      <UButton
+        block
+        size="lg"
+        label="Voeg toe aan boodschappenlijst"
+        icon="i-heroicons-shopping-cart"
+        @click="openPortionSlideover"
+        data-testid="add-to-list-button"
+        class="font-bold"
+      />
+    </div>
+  </Transition>
 
   <!-- Portion Adjustment Slideover -->
   <USlideover
