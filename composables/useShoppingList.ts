@@ -108,6 +108,20 @@ export function useShoppingList() {
   };
 
   /**
+   * Deletes an item from the shopping list by its ID.
+   */
+  const deleteItem = (itemId: string) => {
+    const index = shoppingListItems.value.findIndex(
+      (item) => item.id === itemId
+    );
+    if (index !== -1) {
+      shoppingListItems.value.splice(index, 1);
+    } else {
+      console.warn('Attempted to delete non-existent item:', itemId);
+    }
+  };
+
+  /**
    * Clears all items from the shopping list.
    */
   const clearList = () => {
@@ -121,6 +135,7 @@ export function useShoppingList() {
     items,
     addIngredients,
     updateItem,
+    deleteItem,
     clearList,
     // Expose other functions as needed
   };

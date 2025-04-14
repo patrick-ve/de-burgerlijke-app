@@ -7,6 +7,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:item', item: ShoppingListItem): void;
+  (e: 'delete', id: string): void;
 }>();
 
 // Function to handle checkbox changes and emit update
@@ -35,12 +36,12 @@ const formatItemDetails = (item: ShoppingListItem): string => {
 </script>
 
 <template>
-  <div v-if="items.length > 0" class="space-y-2">
-    <ul data-testid="shopping-list">
+  <div v-if="items.length > 0" class="space-y-1">
+    <ul data-testid="shopping-list" class="space-y-1">
       <li
         v-for="item in items"
         :key="item.id"
-        class="flex items-center gap-3 p-3 border border-gray-200 rounded-md bg-white shadow-sm transition-colors"
+        class="flex items-center gap-3 py-1 px-2 border border-gray-200 rounded-md bg-white shadow-sm transition-colors"
         :class="{
           'bg-gray-50 opacity-70': item.isChecked,
         }"
@@ -72,7 +73,17 @@ const formatItemDetails = (item: ShoppingListItem): string => {
           </p>
         </div>
         <!-- Placeholder for price info/actions -->
-        <!-- <div class="ml-auto"> ... </div> -->
+        <UButton
+          icon="i-heroicons-trash"
+          size="xs"
+          color="red"
+          variant="ghost"
+          square
+          :aria-label="`Verwijder ${item.ingredientName}`"
+          data-testid="delete-item-button"
+          @click="emit('delete', item.id)"
+          class="ml-auto flex-shrink-0"
+        />
       </li>
     </ul>
   </div>

@@ -8,6 +8,7 @@ import { useHeaderState } from '~/composables/useHeaderState';
 const {
   items: shoppingListItems,
   updateItem,
+  deleteItem,
   clearList,
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
@@ -21,6 +22,11 @@ useHead({
 // Handle item updates (e.g., checking/unchecking)
 const handleItemUpdate = (item: ShoppingListItem) => {
   updateItem(item);
+};
+
+// Handle item deletion
+const handleItemDelete = (itemId: string) => {
+  deleteItem(itemId);
 };
 
 // Handler to trigger the action stored in state
@@ -49,6 +55,7 @@ onMounted(async () => {
       <ShoppingList
         :items="shoppingListItems"
         @update:item="handleItemUpdate"
+        @delete="handleItemDelete"
       />
 
       <!-- Placeholder for Actions -->
