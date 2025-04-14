@@ -15,13 +15,17 @@
     </Teleport>
 
     <!-- Add Recipe Modal -->
-    <AddRecipeModal v-model:isOpen="isAddModalOpen" />
+    <AddRecipeModal
+      v-model:isOpen="isAddModalOpen"
+      @recipeParsed="handleRecipeParsed"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 // import type { Recipe } from '~/types/recipe'; // No longer needed here
+import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import DTO type
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useMockRecipes } from '~/composables/useMockRecipes'; // Import the new composable
 import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the modal component
@@ -29,12 +33,18 @@ import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the moda
 const router = useRouter();
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const isMounted = ref(false);
-const { recipes } = useMockRecipes(); // Get recipes from the composable
+const { recipes, addRecipe } = useMockRecipes(); // Get recipes and addRecipe from the composable
 const isAddModalOpen = ref(false); // State for modal visibility
 
 // Function to open the modal
 const openAddModal = () => {
   isAddModalOpen.value = true;
+};
+
+// Handler function for the recipeParsed event
+const handleRecipeParsed = (recipeData: AIRecipeDTO) => {
+  addRecipe(recipeData); // Call the addRecipe function from the composable
+  // Modal is closed by the AddRecipeModal component itself upon success
 };
 
 // REMOVED - Action handler for navigating directly to /recipes/new

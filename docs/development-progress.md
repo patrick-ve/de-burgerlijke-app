@@ -328,3 +328,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - Implemented state persistence for the shopping list using `useStorage` from VueUse, ensuring item status is maintained across page refreshes.
 
 - Aligned `server/utils/recipeSchema.ts` and the AI prompt in `server/api/recipe/url.post.ts` with the `types/recipe.ts` interface.
+
+## Recipe Management
+
+- Refactored `useMockRecipes.ts` to use `useStorage` for persistent recipe storage.
+- Added an `addRecipe` function to `useMockRecipes.ts` to handle adding new recipes from the `AddRecipeModal`.
+- Integrated the `addRecipe` function into `pages/recipes/index.vue` to save recipes parsed from the modal.
