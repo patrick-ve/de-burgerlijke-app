@@ -50,6 +50,62 @@ function parsePortions(
   return null; // Default or unable to parse
 }
 
+// Helper specifically for step timer parsing
+function parseStepTimer(
+  timerValue: string | number | null | undefined
+): number | null {
+  if (timerValue === null || timerValue === undefined) return null;
+
+  let durationMinutes: number | null = null;
+
+  if (typeof timerValue === 'number') {
+    // Heuristic:
+    // If number > 1000, assume milliseconds -> convert to minutes.
+    // If number <= 180 (3 min), assume seconds -> convert to minutes.
+    // Otherwise (181-1000), assume minutes (less likely for steps, but possible).
+    if (timerValue > 1000) {
+      // Plausibly milliseconds
+      durationMinutes = timerValue / 60000;
+    } else if (timerValue > 0 && timerValue <= 180) {
+      // Plausibly seconds
+      durationMinutes = timerValue / 60;
+    } else if (timerValue > 180) {
+      // Plausibly minutes
+      durationMinutes = timerValue;
+    }
+  } else if (typeof timerValue === 'string') {
+    let totalMinutes = 0;
+    const hourMatch = timerValue.match(/(\d+)\s*(?:hour|uur)/i);
+    const minMatch = timerValue.match(/(\d+)\s*(?:min|minuten)/i);
+    const secMatch = timerValue.match(/(\d+)\s*(?:sec|seconden)/i);
+
+    if (hourMatch) totalMinutes += parseInt(hourMatch[1], 10) * 60;
+    if (minMatch) totalMinutes += parseInt(minMatch[1], 10);
+    if (secMatch) totalMinutes += parseInt(secMatch[1], 10) / 60;
+
+    // Fallback for simple number strings (assume seconds?)
+    if (totalMinutes === 0) {
+      const digitMatch = timerValue.match(/\d+/);
+      if (digitMatch) {
+        const num = parseInt(digitMatch[0], 10);
+        // Heuristic: Assume seconds if just a number in a string & <= 180
+        if (num > 0 && num <= 180) {
+          totalMinutes = num / 60;
+        } else if (num > 180) {
+          // Assume minutes if > 180
+          totalMinutes = num;
+        }
+      }
+    }
+    durationMinutes = totalMinutes;
+  }
+
+  // Return null if parsing failed or resulted in 0 or negative
+  return durationMinutes !== null && durationMinutes > 0
+    ? durationMinutes
+    : null;
+}
+
 export const useRecipes = () => {
   // Use useStorage to make recipes persistent
   const storedRecipes = useStorage<Recipe[]>('recipes', []);
@@ -84,7 +140,7 @@ export const useRecipes = () => {
           id: uuidv4(), // Generate unique step ID
           order: index + 1,
           description: step.description,
-          timer: step.timer ?? null,
+          timer: parseStepTimer(step.timer), // Use the specific step timer parser
         }))
         // Ensure steps are sorted by order, just in case
         .sort((a, b) => a.order - b.order),

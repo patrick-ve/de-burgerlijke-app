@@ -1,15 +1,144 @@
 <script setup lang="ts">
-import type { Recipe, Ingredient } from '~/types/recipe';
+import type { Recipe, Ingredient, Step } from '~/types/recipe';
 import { useShoppingList } from '~/composables/useShoppingList';
+import { useIntervalFn } from '@vueuse/core';
+
+// --- Define Interface for Local Step with Timer State ---
+interface LocalStep extends Step {
+  isComplete?: boolean;
+  timerDurationMs: number | null;
+  timerIsRunning: boolean;
+  timerStartTime: number | null; // Store start timestamp (Date.now())
+  timerAccumulatedMs: number; // Store previously accumulated time when paused
+}
 
 const props = defineProps<{
   recipe: Recipe;
 }>();
 
-// Create a reactive copy of the steps to allow modification
-const localSteps = ref(
-  props.recipe.steps.map((step) => ({ ...step }))
+// Create a reactive copy of the steps with updated timer state
+const localSteps = ref<LocalStep[]>(
+  props.recipe.steps.map((step) => ({
+    ...step,
+    isComplete: false,
+    timerDurationMs: step.timer ?? null,
+    timerIsRunning: false,
+    timerStartTime: null, // Initialize start time as null
+    timerAccumulatedMs: 0, // Initialize accumulated time
+  }))
 );
+
+// --- Timer Management ---
+const activeTimers = ref<Record<string, { stop: () => void }>>({});
+
+// Helper to format seconds into MM:SS
+const formatTime = (totalSeconds: number): string => {
+  if (totalSeconds < 0) totalSeconds = 0; // Ensure non-negative
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60); // Floor the seconds part too
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+// Calculate elapsed SECONDS based on timestamps
+const calculateElapsedSeconds = (step: LocalStep): number => {
+  let elapsedMs = step.timerAccumulatedMs;
+  if (step.timerIsRunning && step.timerStartTime) {
+    // Add time elapsed since the timer was last started
+    elapsedMs += Date.now() - step.timerStartTime;
+  }
+  // Ensure we don't exceed the total duration if duration exists
+  if (step.timerDurationMs !== null) {
+    const totalDurationMs = step.timerDurationMs;
+    elapsedMs = Math.min(elapsedMs, totalDurationMs);
+  }
+  return Math.floor(elapsedMs / 1000); // Convert accumulated MS to seconds
+};
+
+// Calculate remaining seconds for a step's timer using timestamp-based elapsed time
+const calculateRemainingSeconds = (step: LocalStep): number => {
+  if (step.timerDurationMs === null) return 0;
+  const totalDurationSeconds = Math.floor(
+    step.timerDurationMs / 1000
+  );
+  const elapsedSeconds = calculateElapsedSeconds(step);
+  return Math.max(0, totalDurationSeconds - elapsedSeconds);
+};
+
+const startTimer = (stepId: string) => {
+  const step = localSteps.value.find((s) => s.id === stepId);
+  if (!step || step.timerIsRunning || step.timerDurationMs === null)
+    return;
+
+  const remainingSeconds = calculateRemainingSeconds(step);
+  if (remainingSeconds <= 0) return; // Don't start if already finished
+
+  step.timerStartTime = Date.now(); // Record start time
+  step.timerIsRunning = true;
+
+  // Use interval just to force updates for display, calculation is based on Date.now()
+  const { pause, resume } = useIntervalFn(() => {
+    // Check if the timer should stop based on accurate calculation
+    if (calculateRemainingSeconds(step) <= 0) {
+      // Ensure accumulated time is exactly the duration when finished
+      step.timerAccumulatedMs = step.timerDurationMs ?? 0;
+      pauseTimer(stepId); // Stop the interval and finalize state
+      // Optional: Add notification
+      // useNuxtApp().$toast.success(`Timer for step ${step.order} finished!`);
+    } else {
+      // Force reactivity update by making a meaningless change if needed,
+      // but usually the interval itself triggers updates.
+      // step.timerIsRunning = step.timerIsRunning; // Example if needed
+    }
+  }, 250); // Update display ~4 times/sec for smoother countdown appearance
+
+  activeTimers.value[stepId] = { stop: pause };
+  resume();
+};
+
+const pauseTimer = (stepId: string) => {
+  const step = localSteps.value.find((s) => s.id === stepId);
+  // Check if the step exists and is actually running
+  if (!step || !step.timerIsRunning) return;
+
+  // Add elapsed time since start to accumulated time BEFORE changing state
+  if (step.timerStartTime) {
+    step.timerAccumulatedMs += Date.now() - step.timerStartTime;
+  }
+
+  // Now update the state
+  step.timerIsRunning = false;
+  step.timerStartTime = null; // Clear start time
+
+  // Stop and remove the interval timer
+  if (activeTimers.value[stepId]) {
+    activeTimers.value[stepId].stop();
+    delete activeTimers.value[stepId];
+  }
+};
+
+const resetTimer = (stepId: string) => {
+  // Make sure timer is stopped and accumulated time is updated first
+  const step = localSteps.value.find((s) => s.id === stepId);
+  if (!step) return;
+
+  // If it was running, pause it to capture the last bit of elapsed time
+  if (step.timerIsRunning) {
+    pauseTimer(stepId);
+  }
+
+  // Now reset the accumulated time
+  step.timerAccumulatedMs = 0;
+  step.timerIsRunning = false; // Ensure it's marked as not running
+  step.timerStartTime = null; // Ensure start time is cleared
+
+  // No need to manually trigger update, changing accumulatedMs handles it
+};
+
+// Cleanup active timers on component unmount
+onUnmounted(() => {
+  Object.values(activeTimers.value).forEach(({ stop }) => stop());
+  activeTimers.value = {};
+});
 
 // Initialize to ingredients
 const selectedTab = ref('ingredients');
@@ -302,26 +431,93 @@ const handleAddPortionsToShoppingList = () => {
             <li
               v-for="(step, index) in localSteps"
               :key="`step-${step.id || index}`"
-              class="flex items-start gap-3 pb-2 border-b border-gray-100 last:border-b-0"
+              class="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-b-0"
               data-testid="step-item"
             >
               <UCheckbox
                 v-model="step.isComplete"
-                class="-py-1"
+                class="-mt-1"
                 :aria-label="`Mark step ${index + 1} as complete`"
                 data-testid="step-checkbox"
               />
-              <span
-                :class="[
-                  'flex-1',
-                  'text-gray-700',
-                  {
-                    'line-through text-gray-400': step.isComplete,
-                  },
-                ]"
-                data-testid="step-description"
-                >{{ step.description }}</span
-              >
+              <div class="flex-1 space-y-2">
+                <span
+                  :class="[
+                    'text-gray-700',
+                    {
+                      'line-through text-gray-400': step.isComplete,
+                    },
+                  ]"
+                  data-testid="step-description"
+                  >{{ step.description }}</span
+                >
+
+                <!-- Timer Display and Controls -->
+                <div
+                  v-if="step.timerDurationMs !== null"
+                  class="flex items-center gap-2 mt-1 text-xs"
+                  data-testid="step-timer-controls"
+                >
+                  <UIcon
+                    name="i-heroicons-clock"
+                    class="w-4 h-4 text-gray-400"
+                  />
+                  <span
+                    class="font-mono text-sm font-medium text-gray-600"
+                    :class="{
+                      'text-primary-600 font-bold':
+                        step.timerIsRunning,
+                    }"
+                    data-testid="step-timer-display"
+                  >
+                    {{ formatTime(calculateRemainingSeconds(step)) }}
+                  </span>
+                  <div class="flex items-center gap-1">
+                    <!-- Start Button -->
+                    <UButton
+                      v-if="
+                        !step.timerIsRunning &&
+                        calculateRemainingSeconds(step) > 0
+                      "
+                      icon="i-heroicons-play-solid"
+                      size="xs"
+                      color="gray"
+                      variant="ghost"
+                      square
+                      :padded="false"
+                      @click="startTimer(step.id)"
+                      aria-label="Start timer"
+                      data-testid="start-timer-button"
+                    />
+                    <!-- Pause Button -->
+                    <UButton
+                      v-if="step.timerIsRunning"
+                      icon="i-heroicons-pause-solid"
+                      size="xs"
+                      color="gray"
+                      variant="ghost"
+                      square
+                      :padded="false"
+                      @click="pauseTimer(step.id)"
+                      aria-label="Pause timer"
+                      data-testid="pause-timer-button"
+                    />
+                    <!-- Reset Button -->
+                    <UButton
+                      v-if="calculateElapsedSeconds(step) > 0"
+                      icon="i-heroicons-arrow-path"
+                      size="xs"
+                      color="gray"
+                      variant="ghost"
+                      square
+                      :padded="false"
+                      @click="resetTimer(step.id)"
+                      aria-label="Reset timer"
+                      data-testid="reset-timer-button"
+                    />
+                  </div>
+                </div>
+              </div>
             </li>
           </ol>
         </div>
