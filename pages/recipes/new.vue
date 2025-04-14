@@ -25,7 +25,7 @@
         color="primary"
         aria-label="Sla recept op"
         label="Opslaan"
-        class="font-bold"
+        class="font-bold text-xs"
         @click="triggerRightAction"
       />
     </Teleport>

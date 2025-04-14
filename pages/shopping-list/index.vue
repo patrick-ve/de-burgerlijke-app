@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useShoppingList } from '~/composables/useShoppingList';
 import type { ShoppingListItem } from '~/types/shopping-list';
+import { useHeaderState } from '~/composables/useHeaderState';
 
 // Use the composable to get shopping list state and actions
-const { items: shoppingListItems, updateItem } = useShoppingList();
+const {
+  items: shoppingListItems,
+  updateItem,
+  clearList,
+} = useShoppingList();
+const { headerState, setHeader } = useHeaderState();
+const isMounted = ref(false);
 
 // Define Head for the page
 useHead({
@@ -15,13 +23,27 @@ const handleItemUpdate = (item: ShoppingListItem) => {
   updateItem(item);
 };
 
-// TODO: Add functionality for clearing the list, saving, etc.
+// Handler to trigger the action stored in state
+const triggerRightAction = () => {
+  if (headerState.value.rightActionHandler) {
+    headerState.value.rightActionHandler();
+  }
+};
+
+onMounted(async () => {
+  await nextTick();
+  isMounted.value = true;
+
+  setHeader({
+    title: 'Boodschappenlijst',
+    showRightAction: true,
+    rightActionHandler: clearList,
+  });
+});
 </script>
 
 <template>
   <div>
-    <TheHeader title="Boodschappenlijst" />
-
     <UContainer class="py-4">
       <!-- Pass items to the ShoppingList component and listen for updates -->
       <ShoppingList
@@ -40,5 +62,19 @@ const handleItemUpdate = (item: ShoppingListItem) => {
     </UContainer>
 
     <BottomNav />
+
+    <!-- Teleport Clear button to the header -->
+    <Teleport to="#header-right-action" v-if="isMounted">
+      <UButton
+        v-if="
+          headerState.showRightAction && shoppingListItems.length > 0
+        "
+        color="red"
+        aria-label="Maak lijst leeg"
+        label="Maak leeg"
+        class="font-bold text-xs"
+        @click="triggerRightAction"
+      />
+    </Teleport>
   </div>
 </template>

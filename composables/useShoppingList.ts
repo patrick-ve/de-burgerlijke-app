@@ -107,12 +107,21 @@ export function useShoppingList() {
     }
   };
 
-  // TODO: Add functions for removing items, clearing the list, etc.
+  /**
+   * Clears all items from the shopping list.
+   */
+  const clearList = () => {
+    shoppingListItems.value = [];
+    console.log('Shopping List Cleared');
+  };
+
+  // TODO: Add functions for removing items, etc.
 
   return {
     items,
     addIngredients,
     updateItem,
+    clearList,
     // Expose other functions as needed
   };
 }

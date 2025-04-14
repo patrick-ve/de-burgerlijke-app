@@ -9,7 +9,7 @@
         color="primary"
         aria-label="Voeg nieuw recept toe"
         label="Voeg toe"
-        class="font-bold"
+        class="font-bold text-xs"
         @click="triggerRightAction"
       />
     </Teleport>
