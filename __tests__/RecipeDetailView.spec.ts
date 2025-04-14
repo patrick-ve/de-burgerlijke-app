@@ -79,21 +79,27 @@ describe('RecipeDetailView.vue', () => {
 
   // Helper function to find step elements reliably
   const findStepElements = () => {
-    const steps = wrapper.findAll('.space-y-4.text-sm > li');
-    return steps;
+    // Use data-testid for steps list and items
+    const stepsList = wrapper.find('[data-testid="steps-list"]');
+    return stepsList.findAll('[data-testid="step-item"]');
   };
 
   // Helper function to find ingredient elements reliably
   const findIngredientElements = () => {
-    const ingredients = wrapper.findAll('.space-y-2 > li');
-    return ingredients;
+    // Use data-testid for ingredients list and items
+    const ingredientsList = wrapper.find(
+      '[data-testid="ingredients-list"]'
+    );
+    return ingredientsList.findAll('[data-testid="ingredient-item"]');
   };
 
   // Helper function to find utensil elements reliably
   const findUtensilElements = () => {
-    // Find any list items within a grid class
-    const utensils = wrapper.findAll('.grid.grid-cols-2 > li');
-    return utensils;
+    // Use data-testid for utensils list and items
+    const utensilsList = wrapper.find(
+      '[data-testid="utensils-list"]'
+    );
+    return utensilsList.findAll('[data-testid="utensil-item"]');
   };
 
   beforeEach(() => {
@@ -168,11 +174,13 @@ describe('RecipeDetailView.vue', () => {
   });
 
   it('renders the steps list correctly with checkboxes', () => {
-    // Find checkboxes directly
-    const checkboxes = wrapper.findAll('input[type="checkbox"]');
+    // Find checkboxes using data-testid
+    const checkboxes = wrapper.findAll(
+      '[data-testid="step-checkbox"]'
+    );
     expect(checkboxes.length).toBe(mockRecipe.steps.length);
 
-    // Get all step elements
+    // Get all step elements using helper
     const steps = findStepElements();
 
     // Check first step text
@@ -187,13 +195,16 @@ describe('RecipeDetailView.vue', () => {
   });
 
   it('toggles step completion state and applies styling when checkbox is clicked', async () => {
-    const checkboxes = wrapper.findAll('input[type="checkbox"]');
-    const firstCheckboxInput = checkboxes[0];
-
-    // Find the parent li and its span for the first checkbox
     const steps = findStepElements();
     const firstStepLi = steps[0];
-    const stepTextSpan = firstStepLi.find('span.flex-1');
+
+    // Find the checkbox input directly using its data-testid
+    const firstCheckboxInput = firstStepLi.find(
+      '[data-testid="step-checkbox"]'
+    );
+    const stepTextSpan = firstStepLi.find(
+      '[data-testid="step-description"]'
+    );
 
     // Initial state - not completed
     expect(stepTextSpan.classes()).not.toContain('line-through');
@@ -259,20 +270,29 @@ describe('RecipeDetailView.vue', () => {
       props: { recipe: recipeWithoutUtensils },
       global: { components: { UTabs, UIcon, UCheckbox, NuxtImg } },
     });
-    // No utensils should be found
+    // Check if utensils section does NOT exist using data-testid when undefined
     expect(
-      localWrapperNoUtensils.findAll('.grid.grid-cols-2 > li').length
-    ).toBe(0);
+      localWrapperNoUtensils
+        .find('[data-testid="utensils-section"]')
+        .exists()
+    ).toBe(false);
 
     const recipeWithEmptyUtensils = { ...mockRecipe, utensils: [] };
     const localWrapperEmptyUtensils = mount(RecipeDetailView, {
       props: { recipe: recipeWithEmptyUtensils },
       global: { components: { UTabs, UIcon, UCheckbox, NuxtImg } },
     });
-    // No utensils should be found
+    // Check if utensils section does NOT exist using data-testid when empty array
     expect(
-      localWrapperEmptyUtensils.findAll('.grid.grid-cols-2 > li')
-        .length
+      localWrapperEmptyUtensils
+        .find('[data-testid="utensils-section"]')
+        .exists()
+    ).toBe(false);
+    // Consequently, no utensil items should exist
+    expect(
+      localWrapperEmptyUtensils.findAll(
+        '[data-testid="utensil-item"]'
+      ).length
     ).toBe(0);
   });
 });

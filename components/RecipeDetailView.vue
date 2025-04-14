@@ -133,12 +133,14 @@ const showInstructions = computed(() => true); // Always render instructions for
         class="mt-6 px-2"
         :class="{ hidden: selectedTab !== 'ingredients' }"
         v-if="showIngredients"
+        data-testid="ingredients-tab-content"
       >
-        <ul class="space-y-2">
+        <ul class="space-y-2" data-testid="ingredients-list">
           <li
             v-for="(ingredient, index) in recipe.ingredients"
             :key="`ingredient-${index}`"
             class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
+            data-testid="ingredient-item"
           >
             <span
               class="inline-block w-2 h-2 mt-2 rounded-full bg-primary"
@@ -152,6 +154,30 @@ const showInstructions = computed(() => true); // Always render instructions for
             </span>
           </li>
         </ul>
+
+        <!-- Utensils Section - Moved here -->
+        <div
+          v-if="recipe.utensils && recipe.utensils.length > 0"
+          class="mt-6"
+          data-testid="utensils-section"
+        >
+          <h3 class="text-base font-medium text-gray-700 mb-2">
+            Benodigdheden
+          </h3>
+          <ul class="space-y-2" data-testid="utensils-list">
+            <li
+              v-for="(utensil, index) in recipe.utensils"
+              :key="`utensil-${utensil.id || index}`"
+              class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
+              data-testid="utensil-item"
+            >
+              <span
+                class="inline-block w-2 h-2 mt-2 rounded-full bg-primary"
+              ></span>
+              <span class="text-gray-600">{{ utensil.name }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Instructions Tab Content - Always rendered for tests but visually hidden when not selected -->
@@ -159,18 +185,21 @@ const showInstructions = computed(() => true); // Always render instructions for
         class="mt-6 px-2 space-y-6"
         :class="{ hidden: selectedTab !== 'instructions' }"
         v-if="showInstructions"
+        data-testid="instructions-tab-content"
       >
         <div>
-          <ol class="space-y-4 text-sm">
+          <ol class="space-y-4 text-sm" data-testid="steps-list">
             <li
               v-for="(step, index) in localSteps"
               :key="`step-${step.id || index}`"
               class="flex items-start gap-3 pb-2 border-b border-gray-100"
+              data-testid="step-item"
             >
               <UCheckbox
                 v-model="step.isComplete"
-                class="mt-1"
+                class="-py-1"
                 :aria-label="`Mark step ${index + 1} as complete`"
+                data-testid="step-checkbox"
               />
               <span
                 :class="[
@@ -180,32 +209,13 @@ const showInstructions = computed(() => true); // Always render instructions for
                     'line-through text-gray-400': step.isComplete,
                   },
                 ]"
+                data-testid="step-description"
                 >{{ step.description }}</span
               >
             </li>
           </ol>
         </div>
-
-        <div v-if="recipe.utensils && recipe.utensils.length > 0">
-          <ul class="grid grid-cols-2 gap-2">
-            <li
-              v-for="(utensil, index) in recipe.utensils"
-              :key="`utensil-${utensil.id || index}`"
-              class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
-            >
-              <UIcon
-                name="i-heroicons-sparkles"
-                class="w-4 h-4 text-indigo-400"
-              />
-              <span class="text-gray-600">{{ utensil.name }}</span>
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   </section>
 </template>
-
-<style scoped>
-/* Component-specific styles */
-</style>
