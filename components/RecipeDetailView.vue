@@ -29,10 +29,98 @@ const items = [
 // Ensure both tabs content is accessible for testing
 const showIngredients = computed(() => true); // Always render ingredients for tests
 const showInstructions = computed(() => true); // Always render instructions for tests
+
+// --- State for Portion Adjustment Slideover ---
+const isPortionSlideoverOpen = ref(false);
+const adjustedPortions = ref(props.recipe.portions); // Initialize with recipe portions
+const originalPortions = computed(() => props.recipe.portions);
+
+// --- Functions for Portion Adjustment ---
+const openPortionSlideover = () => {
+  adjustedPortions.value = props.recipe.portions; // Reset to original portions on open
+  isPortionSlideoverOpen.value = true;
+};
+
+const incrementPortions = () => {
+  adjustedPortions.value++;
+};
+
+const decrementPortions = () => {
+  if (adjustedPortions.value > 1) {
+    adjustedPortions.value--;
+  }
+};
+
+const onPortionInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const value = parseInt(input.value, 10);
+  if (!isNaN(value) && value > 0) {
+    adjustedPortions.value = value;
+  } else {
+    // Reset to current value if input is invalid
+    input.value = adjustedPortions.value.toString();
+  }
+};
+
+// Helper to format quantity, handling potential fractions
+const formatQuantity = (
+  quantity: number | null | undefined
+): string => {
+  if (quantity === null || quantity === undefined) {
+    return '';
+  }
+  // Avoid showing .0 for whole numbers
+  if (quantity % 1 === 0) {
+    return quantity.toString();
+  }
+  // Format common fractions
+  const fractions: { [key: number]: string } = {
+    0.5: '½',
+    0.25: '¼',
+    0.75: '¾',
+    [1 / 3]: '⅓',
+    [2 / 3]: '⅔',
+  };
+  // Check for common fractions with tolerance
+  for (const val in fractions) {
+    if (Math.abs(quantity - parseFloat(val)) < 0.01) {
+      return fractions[val];
+    }
+  }
+  // Fallback to fixed decimal for other fractions
+  return quantity.toFixed(2).replace(/\.?0+$/, ''); // Keep up to 2 decimal places, remove trailing zeros
+};
+
+// Calculate scaled ingredients based on adjusted portions
+const scaledIngredients = computed(() => {
+  if (!props.recipe?.ingredients) return [];
+  const scaleFactor = adjustedPortions.value / originalPortions.value;
+  return props.recipe.ingredients.map((ingredient) => {
+    let scaledQuantity: number | null = null;
+    if (typeof ingredient.quantity === 'number') {
+      scaledQuantity = ingredient.quantity * scaleFactor;
+    }
+    return {
+      ...ingredient,
+      // Format the scaled quantity for display
+      displayQuantity: formatQuantity(scaledQuantity),
+    };
+  });
+});
+
+// Placeholder function for adding to shopping list
+const handleAddPortionsToShoppingList = () => {
+  console.log(
+    `Adding ${adjustedPortions.value} portions to shopping list - (Not Implemented)`
+  );
+  // TODO: Implement actual logic to add ingredients to shopping list
+  isPortionSlideoverOpen.value = false; // Close slideover after action
+};
 </script>
 
 <template>
-  <section>
+  <section class="pb-24">
+    <!-- Added padding-bottom to prevent overlap with fixed bar -->
     <div
       v-if="recipe.imageUrl"
       class="w-full h-56 sm:h-72 overflow-hidden shadow-md"
@@ -40,7 +128,7 @@ const showInstructions = computed(() => true); // Always render instructions for
       <NuxtImg
         :src="recipe.imageUrl"
         :alt="recipe.title"
-        class="w-full h-full object-cover mock-nuxt-img"
+        class="w-full h-auto object-cover aspect-video mock-nuxt-img"
         width="400"
         height="300"
         fit="cover"
@@ -162,7 +250,7 @@ const showInstructions = computed(() => true); // Always render instructions for
           data-testid="utensils-section"
         >
           <h3 class="text-base font-medium text-gray-700 mb-2">
-            Benodigdheden
+            Keukengerei
           </h3>
           <ul class="space-y-2" data-testid="utensils-list">
             <li
@@ -218,4 +306,138 @@ const showInstructions = computed(() => true); // Always render instructions for
       </div>
     </div>
   </section>
+
+  <!-- Fixed Bottom Action Bar -->
+  <div
+    class="fixed bottom-16 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+  >
+    <UButton
+      block
+      size="lg"
+      label="Voeg toe aan boodschappenlijst"
+      icon="i-heroicons-shopping-cart"
+      @click="openPortionSlideover"
+      data-testid="add-to-list-button"
+      class="font-bold"
+    />
+  </div>
+
+  <!-- Portion Adjustment Slideover -->
+  <USlideover
+    v-model="isPortionSlideoverOpen"
+    side="bottom"
+    :ui="{
+      overlay: {
+        background: 'bg-black/40 backdrop-blur-sm',
+      },
+      width: 'w-screen sm:max-w-md', // Adjust width as needed
+    }"
+    prevent-close
+  >
+    <UCard
+      class="flex flex-col flex-1"
+      :ui="{
+        header: { padding: 'py-3 px-4' },
+        body: { padding: 'p-4', base: 'flex-1' },
+        footer: { padding: 'p-4' },
+        ring: '',
+        divide: 'divide-y divide-gray-100',
+      }"
+    >
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-semibold leading-6 text-gray-900">
+            Porties aanpassen
+          </h3>
+          <UButton
+            color="gray"
+            variant="ghost"
+            icon="i-heroicons-x-mark-20-solid"
+            class="-my-1"
+            @click="isPortionSlideoverOpen = false"
+            data-testid="close-slideover-button"
+          />
+        </div>
+      </template>
+
+      <!-- Body: Portion Adjustment Controls & Ingredient Preview -->
+      <div class="space-y-4">
+        <!-- Portion Controls -->
+        <div class="flex items-center justify-center gap-0 pt-1 pb-2">
+          <UButton
+            icon="i-heroicons-minus-small"
+            size="sm"
+            color="primary"
+            square
+            variant="outline"
+            @click="decrementPortions"
+            :disabled="adjustedPortions <= 1"
+            aria-label="Verlaag porties"
+            data-testid="decrement-portions-button"
+          />
+          <input
+            type="number"
+            :value="adjustedPortions"
+            @input="onPortionInput"
+            min="1"
+            class="w-8 text-center text-base text-gray-900 font-bold border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 p-1 mx-1"
+            aria-label="Aantal porties"
+            data-testid="portions-input"
+          />
+          <UButton
+            icon="i-heroicons-plus-small"
+            size="sm"
+            color="primary"
+            square
+            variant="outline"
+            @click="incrementPortions"
+            aria-label="Verhoog porties"
+            data-testid="increment-portions-button"
+          />
+        </div>
+
+        <!-- Ingredient Preview -->
+        <div
+          class="max-h-60 overflow-y-auto px-2 -translate-y-4"
+          data-testid="ingredients-preview-list"
+        >
+          <h4 class="text-sm font-medium text-gray-500 mt-0 mb-1">
+            Ingrediënten voor {{ adjustedPortions }}
+            {{ adjustedPortions === 1 ? 'portie' : 'porties' }}:
+          </h4>
+          <ul class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <li
+              v-for="(ingredient, index) in scaledIngredients"
+              :key="`preview-ingredient-${index}`"
+              class="flex items-start gap-2 pb-1 border-b border-gray-100 last:border-b-0"
+            >
+              <span
+                class="inline-block w-1.5 h-1.5 mt-1.5 rounded-full bg-primary/70 flex-shrink-0"
+              ></span>
+              <span>
+                <span class="font-medium text-gray-800"
+                  >{{ ingredient.displayQuantity }}
+                  {{ ingredient.unit ?? '' }}
+                </span>
+                <span class="text-gray-600">
+                  {{ ' ' + ingredient.name }}</span
+                >
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <template #footer>
+        <UButton
+          block
+          size="lg"
+          class="font-bold"
+          :label="`Voeg ${adjustedPortions} ${adjustedPortions === 1 ? 'portie' : 'porties'} toe aan boodschappenlijst`"
+          @click="handleAddPortionsToShoppingList"
+          data-testid="confirm-add-portions-button"
+        />
+      </template>
+    </UCard>
+  </USlideover>
 </template>
