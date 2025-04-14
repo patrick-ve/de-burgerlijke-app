@@ -349,3 +349,5 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **`RecipeList.vue`:** Initial setup, search, pagination, and display using `RecipeCard`.
 - **`RecipeCard.vue`:** Created component to display individual recipe details.
 - **`types/recipe.ts`:** Defined the `Recipe` interface.
+- Moved recipe utensils list from Instructions tab to Ingredients tab in `RecipeDetailView`.
+- Applied consistent styling for ingredients and utensils lists.
