@@ -55,7 +55,7 @@ const formatItemDetails = (item: ShoppingListItem): string => {
         <UCheckbox
           :model-value="item.isChecked"
           @update:model-value="
-            (checked) => handleCheckChange(item, checked)
+            (checked: boolean) => handleCheckChange(item, checked)
           "
           :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
           data-testid="item-checkbox"

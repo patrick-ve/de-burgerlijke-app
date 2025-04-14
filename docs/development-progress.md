@@ -319,5 +319,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 ### Shopping List
 
-- Added delete animation to shopping list items.
-- Implemented basic shopping list component structure.
+- Initial implementation of the shopping list page and component.
+- Added functionality to add ingredients from recipes, update item status (checked/unchecked), delete items, and clear the list.
+- Implemented aggregation logic for ingredients added from multiple recipes.
+- Added unit and name standardization helpers.
+- Included visual feedback for checked items and transitions for adding/removing items.
+- Added a confirmation modal for clearing the entire list.
+- Implemented state persistence for the shopping list using `useStorage` from VueUse, ensuring item status is maintained across page refreshes.

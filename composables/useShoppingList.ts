@@ -1,11 +1,14 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useStorage } from '@vueuse/core';
 import type { ShoppingListItem } from '~/types/shopping-list';
 import type { Ingredient } from '~/types/recipe';
 import { v4 as uuidv4 } from 'uuid';
 
-// Simple client-side state for demonstration
-// TODO: Replace with server state management (e.g., useFetch/useAsyncData + API endpoints)
-const shoppingListItems = ref<ShoppingListItem[]>([]);
+// Use useStorage to persist the shopping list in localStorage
+const shoppingListItems = useStorage<ShoppingListItem[]>(
+  'shopping-list-items',
+  []
+);
 
 // Helper to standardize ingredient names (basic example)
 const standardizeName = (name: string): string => {
