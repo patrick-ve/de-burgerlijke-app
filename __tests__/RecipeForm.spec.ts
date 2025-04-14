@@ -182,7 +182,10 @@ describe('RecipeForm.vue', () => {
     expect(emittedData.portions).toBe(initialRecipeData.portions);
     expect(emittedData.ingredients.length).toBe(1);
     expect(emittedData.steps.length).toBe(1);
-    expect(emittedData.utensils.length).toBe(1);
+    // Check utensils safely
+    expect(emittedData.utensils?.length ?? 0).toBe(
+      initialRecipeData.utensils?.length ?? 0
+    );
   });
 
   it('renders fields for ingredients', () => {
@@ -215,17 +218,18 @@ describe('RecipeForm.vue', () => {
 
   it('renders fields for utensils', () => {
     const utensilGroups = wrapper.findAll('.utensil-group');
-    expect(utensilGroups.length).toBe(
-      initialRecipeData.utensils.length
-    );
+    const expectedLength = initialRecipeData.utensils?.length ?? 0;
+    expect(utensilGroups.length).toBe(expectedLength);
 
-    const firstUtensilInput = utensilGroups[0].find(
-      'input[name^="utensil-name-"]'
-    );
-    expect(firstUtensilInput.exists()).toBe(true);
-    expect(
-      (firstUtensilInput.element as HTMLInputElement).value
-    ).toBe(initialRecipeData.utensils[0].name);
+    if (expectedLength > 0 && initialRecipeData.utensils) {
+      const firstUtensilInput = utensilGroups[0].find(
+        'input[name^="utensil-name-"]'
+      );
+      expect(firstUtensilInput.exists()).toBe(true);
+      expect(
+        (firstUtensilInput.element as HTMLInputElement).value
+      ).toBe(initialRecipeData.utensils[0].name);
+    }
   });
 
   // --- Tests for Adding/Removing Items ---
