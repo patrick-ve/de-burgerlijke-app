@@ -100,12 +100,14 @@ const showInstructions = computed(() => true); // Always render instructions for
     <!-- Use a simplified tabs structure for better testing compatibility -->
     <div class="p-2 bg-white shadow-sm">
       <!-- Tab headers -->
-      <div class="flex bg-gray-50 p-1 rounded-lg">
+      <div
+        class="flex justify-between bg-gray-50 p-1 rounded-lg w-full"
+      >
         <button
           v-for="item in items"
           :key="item.key"
           @click="selectedTab = item.key"
-          class="flex items-center px-3 py-2 text-sm font-medium rounded-md"
+          class="flex flex-1 justify-center items-center px-3 py-2 text-sm font-medium rounded-md"
           :class="
             selectedTab === item.key
               ? 'bg-white text-primary-600 shadow-sm'
