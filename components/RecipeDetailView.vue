@@ -13,7 +13,7 @@ const items = [
   },
   {
     key: 'instructions',
-    label: 'Bereidingswijze',
+    label: 'Bereiding',
     icon: 'i-heroicons-book-open',
   },
 ];
@@ -104,14 +104,22 @@ const items = [
           },
         }"
       >
-        <template #default="{ item, selected }">
-          <div
-            class="flex items-center justify-center gap-2 px-3 py-2 h-full"
+        <template #icon="{ item, selected }">
+          <UIcon
+            :name="item.icon"
+            class="w-5 h-5 flex-shrink-0"
             :class="selected ? 'text-primary-500' : 'text-gray-400'"
-          >
-            <span>{{ item.label }}</span>
-          </div>
+          />
         </template>
+
+        <template #default="{ item, selected }">
+          <span
+            class="pl-2"
+            :class="selected ? 'text-primary-500' : 'text-gray-400'"
+            >{{ item.label }}</span
+          >
+        </template>
+
         <template #item="{ item }">
           <div v-if="item.key === 'ingredients'" class="mt-6 px-2">
             <ul class="space-y-2">
@@ -122,7 +130,7 @@ const items = [
                 class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
               >
                 <span
-                  class="inline-block w-2 h-2 mt-2 rounded-full bg-amber-400"
+                  class="inline-block w-2 h-2 mt-2 rounded-full bg-primary"
                 ></span>
                 <span>
                   <span class="font-medium"
@@ -139,15 +147,6 @@ const items = [
             class="mt-6 px-2 space-y-6"
           >
             <div>
-              <h3
-                class="text-lg font-medium text-gray-800 mb-3 flex items-center"
-              >
-                <UIcon
-                  name="i-heroicons-book-open"
-                  class="w-5 h-5 mr-2 text-primary-500"
-                />
-                Stappen
-              </h3>
               <ol class="space-y-4 text-sm">
                 <li
                   v-for="(step, index) in props.recipe.steps"
@@ -155,7 +154,7 @@ const items = [
                   class="flex items-start gap-2 pb-2 border-b text-sm border-gray-100"
                 >
                   <span
-                    class="inline-block w-2 h-2 mt-2 rounded-full bg-amber-400"
+                    class="inline-block w-2 h-2 mt-2 rounded-full bg-primary"
                   ></span>
                   <span class="text-gray-700">{{
                     step.description
@@ -170,15 +169,6 @@ const items = [
                 props.recipe.utensils.length > 0
               "
             >
-              <h3
-                class="text-lg font-medium text-gray-800 mb-3 flex items-center"
-              >
-                <UIcon
-                  name="i-heroicons-beaker"
-                  class="w-5 h-5 mr-2 text-indigo-500"
-                />
-                Keukengerei
-              </h3>
               <ul class="grid grid-cols-2 gap-2">
                 <li
                   v-for="(utensil, index) in props.recipe.utensils"
