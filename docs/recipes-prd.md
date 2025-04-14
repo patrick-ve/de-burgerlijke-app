@@ -21,6 +21,7 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - **As a user, I want to** see recipes automatically structured into ingredients, steps, portions, utensils, and metadata **so that** the information is consistent and easy to read.
 - **As a user, I want to** save my favorite recipes **so that** I can quickly access them later.
 - **As a user, I want to** start an in-app timer for cooking steps that require specific timing **so that** I don't need a separate timer device.
+- **As a user, I want to** mark cooking steps as complete **so that** I can track my progress while following a recipe.
 - **As a user, I want to** schedule recipes for specific days of the week **so that** I can plan my meals in advance.
 - **As a user, I want to** generate a shopping list based on my scheduled meals for the upcoming week **so that** I know exactly what ingredients to buy.
 - **As a user, I want to** adjust the number of portions for a recipe **so that** the ingredient amounts in the recipe details and the shopping list update accordingly.
@@ -62,6 +63,9 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
   - Provide an interactive element (e.g., a button) next to timed steps to start an in-app timer.
   - Display the remaining time prominently.
   - Allow multiple timers to run concurrently if needed.
+- **Step Completion:**
+  - Display each cooking step as an item that can be marked as complete (e.g., with a checkbox).
+  - Persist the completion status of steps for a given cooking session (or associate with the scheduled meal instance).
 
 ### 4.4 Meal Planning & Scheduling
 
@@ -106,7 +110,7 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
 - **Data Models (Conceptual):**
   - **Recipe:** `id`, `userId`, `title`, `description`, `sourceUrl?`, `imageUrl?`, `portions`, `prepTime?`, `cookTime?`, `cuisineType?`, `ingredients[]`, `steps[]`, `utensils[]`, `isFavorite`.
   - **Ingredient:** `quantity`, `unit`, `name`, `originalText?`.
-  - **Step:** `order`, `description`, `timerDuration?`.
+  - **Step:** `order`, `description`, `timerDuration?`, `isComplete?`.
   - **ScheduledMeal:** `id`, `userId`, `recipeId`, `date`, `portions`.
   - **ShoppingList:** `id`, `userId`, `startDate`, `endDate`, `items[]`, `status`.
   - **ShoppingListItem:** `ingredientName`, `standardizedName?`, `aggregatedQuantity`, `unit`, `isChecked`, `priceInfo[]?`.
@@ -148,6 +152,10 @@ This document outlines the requirements for the Recipe & Grocery Planner App, a 
   - Given a recipe step containing a time duration (e.g., "bake for 30 minutes"), a timer icon/button is displayed next to it.
   - When the user taps the timer icon, an in-app timer starts with the correct duration.
   - The timer accurately displays the remaining time and can be paused or reset.
+- **Step Completion:**
+  - Given a recipe view, each cooking step is displayed with a checkbox or similar interactive element.
+  - When the user marks a step as complete, its visual state changes to indicate completion (e.g., checked box, strikethrough text).
+  - The completion status of steps is saved and restored when the user returns to the recipe (within the context of the current cooking session or scheduled meal).
 - **Meal Scheduling:**
   - Given the weekly planner view, the user can successfully drag and drop (or select and assign) a saved recipe to a specific day.
   - The scheduled meal appears correctly on the chosen day in the planner view.
