@@ -54,6 +54,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [-] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions. (Slideover UI implemented)
   - [x] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
   - [ ] Update stored recipe data. (Needed for shopping list)
+- [x] `components/RecipeCookingTimer.vue`: Refactored timer logic for accurate display countdown using reactive state and endTime.
 
 ## Recipes (`recipes-prd.md`)
 
@@ -113,10 +114,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 #### 4.3 Cooking Assistance
 
-- [ ] **Step Timers:**
+- [x] **Step Timers:**
   - [ ] Detect timed actions in recipe steps (server-side parsing or client-side regex).
-  - [ ] Display interactive timer button next to relevant steps in `RecipeDetailView.vue`.
-  - [ ] Implement in-app timer functionality (UI component).
+  - [x] Display interactive timer button next to relevant steps in `RecipeDetailView.vue`.
+  - [x] Implement in-app timer functionality (`components/RecipeCookingTimer.vue`).
   - [ ] Handle multiple concurrent timers.
 - [ ] **Step Completion:**
   - [ ] Display steps with interactive checkboxes in `RecipeDetailView.vue`.
@@ -253,45 +254,40 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [ ] **Delete Account:**
   - [ ] UI confirmation flow.
   - [ ] Server API (`server/api/user/delete-account`).
+- [ ] Implement password strength validation.
+- [ ] **Household Association:** Display user's household.
+- [ ] **Profile Picture:**
+  - [ ] UI for upload.
+  - [ ] Backend storage (e.g., S3 compatible).
+  - [ ] Server API for upload/update.
 
 #### 4.3 Household Management
 
-- [ ] **Household Creation:**
+- [ ] **Create Household:**
   - [ ] UI (`components/HouseholdManager.vue`).
-  - [ ] Server API (`server/api/households/create`) to create household and set creator as admin.
-- [ ] **Invitations:**
-  - [ ] UI for sending invites (by email/username) in `components/HouseholdManager.vue`.
-  - [ ] Server API (`server/api/households/invite`) to create invitation record.
-  - [ ] Notification system (in-app/email) for received invitations.
-  - [ ] UI for accepting/declining invites.
-  - [ ] Server API (`server/api/households/respond-invite`) to handle acceptance/decline.
-- [ ] **Membership:**
-  - [ ] UI to display members in `components/HouseholdManager.vue`.
-  - [ ] Define database schema for `Household`, `HouseholdMember`, `HouseholdInvitation`.
-- [ ] **Roles:** Implement basic Admin/Member roles in backend logic.
-- [ ] **Leaving/Removing:**
-  - [ ] UI for members to leave.
-  - [ ] UI for admins to remove members.
-  - [ ] Server API (`server/api/households/leave`, `server/api/households/remove-member`).
-  - [ ] Define logic for last admin leaving.
+  - [ ] Server API (`server/api/household`) for creation.
+- [ ] **Join Household:**
+  - [ ] UI for entering invite code.
+  - [ ] Server API for joining via code.
+- [ ] **Invite Members:**
+  - [ ] UI to generate/display invite code (`components/HouseholdManager.vue`).
+  - [ ] Server API for generating/validating codes.
+- [ ] **Manage Members:**
+  - [ ] UI to view members (`components/HouseholdManager.vue`).
+  - [ ] UI to remove members (if owner).
+  - [ ] Server API for member management (roles/permissions later).
 
-#### 4.4 Sharing Mechanisms
+#### 4.4 Recipe Sharing
 
-- [ ] **Shared Scope Logic:** Backend APIs must enforce household membership for accessing shared resources.
-- [ ] **Recipe Sharing:**
-  - [ ] Modify `Recipe` model/schema (`householdId?`).
-  - [ ] UI option during recipe save/edit to assign to a household.
-  - [ ] Modify recipe list/fetch logic to include household recipes.
-- [ ] **Meal Plan Sharing:**
-  - [ ] Modify `ScheduledMeal` model/schema (`householdId?`).
-  - [ ] Ensure `components/MealPlanner.vue` operates on the household's shared plan.
-  - [ ] Modify scheduling APIs to associate with `householdId`.
-- [ ] **Shopping List Sharing:**
-  - [ ] Modify `ShoppingList` model/schema (`householdId?`).
-  - [ ] Ensure list generation uses the shared household meal plan.
-  - [ ] Modify list fetching/updating APIs to use `householdId`.
-  - [ ] Ensure real-time (or near real-time) updates for shared list changes (checking off items). Consider WebSockets or polling.
-- [ ] **Permissions:** Implement backend checks based on `HouseholdMember` status for all shared CRUD operations.
+- [ ] **Share with Household:**
+  - [ ] UI option/toggle during recipe save/edit.
+  - [ ] Backend logic to link recipe to household.
+- [ ] **Shared Recipe Visibility:** Ensure household members see shared recipes.
+
+#### 4.5 Permissions & Roles (Future)
+
+- [ ] Define roles (Owner, Member).
+- [ ] Implement basic permission checks (e.g., only owner can remove members).
 
 ## Changelog
 
@@ -299,6 +295,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 - **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
 - **`AddRecipeModal.vue`**: Corrected Zod parsing logic to handle the direct recipe object returned by the `/api/recipe/url` endpoint, resolving validation errors.
+- **`RecipeDetailView.vue`**: Refactored timer logic to correctly handle duration provided in milliseconds, fixing display issues (e.g., 20000ms now shows as 00:20 instead of 20000:00).
 
 #### Added
 
@@ -334,3 +331,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - Refactored `useRecipes.ts` to use `useStorage` for persistent recipe storage.
 - Added an `addRecipe` function to `useRecipes.ts` to handle adding new recipes from the `AddRecipeModal`.
 - Integrated the `addRecipe` function into `pages/recipes/index.vue` to save recipes parsed from the modal.
+
+### Recipe Detail View
+
+- Added timer functionality to instruction steps in `RecipeDetailView.vue`.
+
+### Refactoring
+
+- Extracted timer logic from `RecipeDetailView.vue` into a dedicated `RecipeCookingTimer.vue` component for better separation of concerns and simplified state management.
