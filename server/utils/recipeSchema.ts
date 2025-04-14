@@ -1,105 +1,129 @@
 import { z } from 'zod';
 
+// Define the enum part
+const specificUnits = z.enum([
+  'ml',
+  'l',
+  'el',
+  'tl',
+  'kop',
+  'g',
+  'kg',
+  'stuk',
+  'teen',
+  'snuf',
+  'mespunt',
+  'plak',
+  'bol',
+  'takje',
+  'blaadje',
+  'scheut',
+  'handvol',
+]);
+
+// Use union to explicitly allow string or null after preprocessing "null"
 export const unitSchema = z
-  .enum([
-    'ml',
-    'l',
-    'el',
-    'tl',
-    'kop',
-    'g',
-    'kg',
-    'stuk',
-    'teen',
-    'snuf',
-    'mespunt',
-    'plak',
-    'bol',
-    'takje',
-    'blaadje',
-    'scheut',
-    'handvol',
-  ])
-  .nullable()
-  .describe('Dutch measurement units for ingredients');
+  .preprocess(
+    (val) => (val === 'null' ? null : val),
+    z.union([z.string(), z.null()]) // Allow string OR null
+  )
+  .describe('Unit for ingredient (string or null)');
 
 export const ingredientSchema = z
   .object({
-    amount: z
+    quantity: z
       .number()
       .nullable()
-      .describe('Amount of the ingredient (positive number)'),
+      .describe('Amount of the ingredient (positive number or null)'),
     unit: unitSchema.describe(
       'Unit of measurement for the ingredient'
     ),
     name: z.string().describe('Name of the ingredient'),
+    notes: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Optional notes for the ingredient'),
   })
   .describe('Schema for an ingredient in the recipe');
 
-export const instructionSchema = z
+export const stepSchema = z
   .object({
-    step: z
+    order: z
       .number()
       .describe('Sequence number of the preparation step'),
-    text: z.string().describe('Description of the preparation step'),
+    description: z
+      .string()
+      .describe('Description of the preparation step'),
     timer: z
       .number()
+      .nullable()
       .optional()
-      .describe('Optional timer in minutes for this step'),
+      .describe(
+        'Optional timer in milliseconds for this step (can be null)'
+      ),
+    isComplete: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('Whether the step is complete'),
   })
   .describe('Schema for a preparation step in the recipe');
-
-export const substitutionSchema = z
-  .object({
-    ingredient: z.string(),
-    alternatives: z.array(z.string()),
-  })
-  .describe('Ingredient substitution suggestions');
-
-export const aiEnhancementsSchema = z
-  .object({
-    tips: z.array(z.string()),
-    substitutions: z.array(substitutionSchema),
-    pairingsSuggestions: z.array(z.string()),
-  })
-  .describe('AI-generated enhancements for the recipe');
-
-export const metadataSchema = z
-  .object({
-    servings: z
-      .number()
-      .positive()
-      .describe('Number of servings this recipe yields'),
-    cookingTime: z
-      .number()
-      .positive()
-      .describe('Total cooking time in minutes'),
-    cuisine: z
-      .string()
-      .describe('Type of cuisine (for example: Dutch, Italian)'),
-  })
-  .describe('Metadata about the recipe');
 
 export const recipeSchema = z
   .object({
     title: z.string().describe('Title of the recipe'),
     description: z
       .string()
+      .nullable()
       .optional()
       .describe('Optional description of the recipe'),
+    prepTime: z
+      .number()
+      .nullable()
+      .optional()
+      .describe('Optional preparation time in minutes'),
+    cookTime: z
+      .number()
+      .nullable()
+      .optional()
+      .describe('Optional cooking time in minutes'),
+    portions: z
+      .number()
+      .positive()
+      .describe('Number of portions this recipe yields'),
+    cuisine: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Optional type of cuisine (e.g., Dutch, Italian)'),
     ingredients: z
       .array(ingredientSchema)
       .describe('List of ingredients'),
-    instructions: z
-      .array(instructionSchema)
-      .describe('List of preparation steps'),
-    metadata: metadataSchema.describe('Metadata about the recipe'),
+    steps: z.array(stepSchema).describe('List of preparation steps'),
+    sourceUrl: z
+      .string()
+      .url()
+      .nullable()
+      .optional()
+      .describe('Optional source URL of the recipe'),
+    youtubeUrl: z
+      .string()
+      .url()
+      .nullable()
+      .optional()
+      .describe('Optional YouTube URL for the recipe'),
+    imageUrl: z
+      .string()
+      .url()
+      .nullable()
+      .optional()
+      .describe('Optional image URL for the recipe'),
   })
-  .describe('Main schema for a complete recipe');
+  .describe(
+    'Main schema for a complete recipe, aligned with types/recipe.ts'
+  );
 
 export type Recipe = z.infer<typeof recipeSchema>;
 export type Ingredient = z.infer<typeof ingredientSchema>;
-export type Instruction = z.infer<typeof instructionSchema>;
-export type RecipeMetadata = z.infer<typeof metadataSchema>;
-export type AiEnhancements = z.infer<typeof aiEnhancementsSchema>;
-export type Substitution = z.infer<typeof substitutionSchema>;
+export type Step = z.infer<typeof stepSchema>;
