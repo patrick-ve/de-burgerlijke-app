@@ -34,6 +34,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 ## General UI / Core Components
 
 - [x] `components/TheHeader.vue`: Improved alignment using CSS Grid (`grid-cols-[1fr_auto_1fr]`) to ensure title is always centered.
+- [x] `components/BottomNav.vue`: Conditionally render based on route depth (show only on root or level-1 routes).
 - [x] `components/RecipeCard.vue`: Display basic recipe info.
 - [x] `__tests__/RecipeCard.spec.ts`: Unit tests for `RecipeCard`.
 - [x] `components/RecipeDetailView.vue`: Display full recipe details.
@@ -301,62 +302,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **`RecipeList.vue`**:
   - Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar.
   - Added a "Reset filters" button next to the active filter badges.
+- **`BottomNav.vue`**: Added slide-up transition when the component appears/disappears.
 
 #### Changed
 
-- **`RecipeList.vue`**: Simplified the filter slideover footer by removing the "Cancel" button. Closing the slideover now confirms the selected filters.
-
----
-
-#### Added
-
-- **Dynamic Header System:**
-  - Introduced `composables/useHeaderState.ts` for centralized header state management.
-  - Created `components/TheHeader.vue` to display title and provide slots for actions.
-  - Integrated `TheHeader` into `app.vue`.
-  - Migrated action button definitions from `app.vue` to individual pages (`pages/recipes/new.vue`, `pages/recipes/index.vue`, `pages/recipes/[id].vue`) using `<Teleport>` and `useHeaderState`.
-- **Recipe Form Page (`pages/recipes/new.vue`):**
-  - Initial structure with placeholder logic.
-  - Integrated `RecipeForm` component.
-  - Added page title using `useHead`.
-- **`RecipeDetailView.vue` UI:**
-  - Improved metadata section: Added recipe image display (`<NuxtImg>`), icons (`<UIcon>`) for prep time, cook time, and portions, and applied modern Tailwind styling.
-  - Added icons to the Ingredients/Instructions tabs.
-- **`RecipeDetailView.vue` Portion Adjustment for Shopping List:**
-  - Added a fixed bottom action bar with a "Voeg toe aan boodschappenlijst" button.
-  - Implemented a `USlideover` triggered by the button, containing UI controls (buttons, input) to adjust portions.
-  - Added a preview list of scaled ingredients within the slideover.
-  - Included a dynamic CTA button in the slideover footer (`Voeg X porties toe aan boodschappenlijst`).
-  - Added placeholder logic for the final 'add to list' action.
-
-#### Changed
-
-- **`RecipeList.vue` Filter/Sort UI:**
-  - Implemented filter and sort functionality within a slideover.
-  - Arranged filter/sort controls (Title Sort, Quick Recipes, Cuisine, Favorites) into a 2x2 grid.
-  - Replaced 'Quick Recipes' checkbox with a `USelectMenu` for time ranges ('< 20 min', '20-45 min', '> 45 min', 'Any Time').
-  - Replaced 'Cuisine' `USelect` with a searchable `USelectMenu` ('Any Cuisine' option added, search removed).
-  - Replaced 'Sort by Title' toggle `UButton` with a `USelectMenu` ('Ascending'/'Descending' with icons).
-  - Replaced 'Favorites' `UButton` first with `UCheckbox`, then with a `UToggle` using on/off icons instead of a text label.
-  - Updated filtering logic to support new UI elements.
-
----
-
-#### Refactored
-
-- **Mock Recipe Data:**
-  - Centralized mock recipe data by creating `composables/useMockRecipes.ts`.
-  - Updated `pages/recipes/index.vue` and `pages/recipes/[id].vue` to utilize the new composable, removing duplicated data and logic.
-
----
-
-#### Added
-
-- **`RecipeList.vue`:** Initial setup, search, pagination, and display using `RecipeCard`.
-- **`RecipeCard.vue`:** Created component to display individual recipe details.
-- **`types/recipe.ts`:** Defined the `Recipe` interface.
-- Moved recipe utensils list from Instructions tab to Ingredients tab in `RecipeDetailView`.
-- Applied consistent styling for ingredients and utensils lists.
-- Hide the bottom action bar in RecipeDetailView when the 'Bereiding' tab is active.
-- Added a slide-up transition effect to the bottom action bar in `RecipeDetailView.vue`.
-- Changed the default open tab in `RecipeDetailView.vue` to "Ingrediënten".
+- \*\*`RecipeList.vue`
