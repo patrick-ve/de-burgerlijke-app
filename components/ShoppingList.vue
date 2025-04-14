@@ -37,7 +37,12 @@ const formatItemDetails = (item: ShoppingListItem): string => {
 
 <template>
   <div v-if="items.length > 0" class="space-y-1">
-    <ul data-testid="shopping-list" class="space-y-1">
+    <TransitionGroup
+      tag="ul"
+      name="list"
+      data-testid="shopping-list"
+      class="space-y-1 relative"
+    >
       <li
         v-for="item in items"
         :key="item.id"
@@ -85,7 +90,7 @@ const formatItemDetails = (item: ShoppingListItem): string => {
           class="ml-auto flex-shrink-0"
         />
       </li>
-    </ul>
+    </TransitionGroup>
   </div>
   <div
     v-else
@@ -95,3 +100,21 @@ const formatItemDetails = (item: ShoppingListItem): string => {
     Je boodschappenlijst is leeg.
   </div>
 </template>
+
+<style scoped>
+/* Leave animation */
+.list-leave-active {
+  transition: all 0.3s ease;
+  position: absolute; /* Important for smooth transition of remaining items */
+  width: 100%; /* Prevent item collapse during transition */
+}
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(20px) scaleY(0.8); /* Example: Slide right and shrink slightly */
+}
+
+/* Move transition for reordering items smoothly */
+.list-move {
+  transition: transform 0.3s ease;
+}
+</style>
