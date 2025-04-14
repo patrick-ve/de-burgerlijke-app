@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Recipe } from '~/types/recipe';
+import type { Recipe, Ingredient } from '~/types/recipe';
+import { useShoppingList } from '~/composables/useShoppingList';
 
 const props = defineProps<{
   recipe: Recipe;
@@ -96,24 +97,45 @@ const scaledIngredients = computed(() => {
   if (!props.recipe?.ingredients) return [];
   const scaleFactor = adjustedPortions.value / originalPortions.value;
   return props.recipe.ingredients.map((ingredient) => {
-    let scaledQuantity: number | null = null;
+    let scaledQuantityNum: number | null = null;
     if (typeof ingredient.quantity === 'number') {
-      scaledQuantity = ingredient.quantity * scaleFactor;
+      scaledQuantityNum = ingredient.quantity * scaleFactor;
     }
     return {
       ...ingredient,
+      // Keep original quantity if needed
+      // originalQuantity: ingredient.quantity,
+      // Store the calculated numeric quantity
+      scaledQuantity: scaledQuantityNum,
       // Format the scaled quantity for display
-      displayQuantity: formatQuantity(scaledQuantity),
+      displayQuantity: formatQuantity(scaledQuantityNum),
     };
   });
 });
 
-// Placeholder function for adding to shopping list
+// --- Use Shopping List Composable ---
+const { addIngredients } = useShoppingList();
+
+// Function to add scaled portions to the shopping list
 const handleAddPortionsToShoppingList = () => {
   console.log(
-    `Adding ${adjustedPortions.value} portions to shopping list - (Not Implemented)`
+    `Adding ${adjustedPortions.value} portions of ${props.recipe.title} to shopping list...`
   );
-  // TODO: Implement actual logic to add ingredients to shopping list
+
+  // Ensure we have ingredients to add and a recipe ID
+  if (scaledIngredients.value.length > 0 && props.recipe.id) {
+    // Type assertion might be needed if TS doesn't infer Ingredient & { scaledQuantity: number | null }
+    const ingredientsData = scaledIngredients.value as Array<
+      Ingredient & { scaledQuantity: number | null }
+    >;
+    addIngredients(ingredientsData, props.recipe.id);
+  } else {
+    console.warn(
+      'Could not add ingredients to list: No scaled ingredients data or recipe ID.'
+    );
+  }
+
+  // TODO: Add user feedback (e.g., Toast notification)
   isPortionSlideoverOpen.value = false; // Close slideover after action
 };
 </script>

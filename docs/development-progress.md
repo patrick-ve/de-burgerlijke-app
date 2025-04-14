@@ -52,7 +52,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Dedicated "Favorites" view/filter.
 - [ ] **Portion Adjustment:**
   - [-] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions. (Slideover UI implemented)
-  - [ ] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
+  - [x] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
   - [ ] Update stored recipe data. (Needed for shopping list)
 
 ## Recipes (`recipes-prd.md`)
@@ -112,8 +112,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Dedicated "Favorites" view/filter.
 - [ ] **Portion Adjustment:**
   - [-] UI element in `RecipeDetailView.vue` or `RecipeForm.vue` to adjust portions. (Slideover UI implemented)
-  - [ ] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
-  - [ ] Update stored recipe data. (Needed for shopping list)
+  - [x] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
 
 #### 4.3 Cooking Assistance
 
@@ -140,17 +139,17 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 #### 4.5 Grocery List Generation & Pricing
 
 - [ ] **List Creation:**
-  - [ ] UI button/action to generate list from scheduled meals for a period.
+  - [-] UI button/action to generate list from scheduled meals for a period. (Button exists in RecipeDetailView, uses composable)
   - [ ] Define database schema for `ShoppingList` and `ShoppingListItem` models.
-  - [ ] Server API endpoint to generate the list.
-- [ ] **Ingredient Aggregation & Standardization:**
-  - [ ] Logic to combine identical ingredients (sum quantities, respect units).
-  - [ ] Implement ingredient name standardization.
-- [ ] **Portion Scaling Integration:** Ensure generated list quantities reflect scheduled meal portions.
+- [ ] Server API endpoint to generate the list.
+- [x] Client-side state management using `composables/useShoppingList.ts` (initial implementation).
+- [x] **Ingredient Aggregation & Standardization (Client-side):**
+  - [-] Logic to combine identical ingredients (sum quantities, respect units). (Basic implementation in composable)
+  - [-] Implement ingredient name standardization. (Basic implementation in composable)
+- [x] **Portion Scaling Integration (Client-side):** Ensure generated list quantities reflect scheduled meal portions.
 - [ ] **Price Fetching:**
   - [ ] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus).
   - [ ] Implement robust ingredient-to-product matching logic.
-  - [ ] Handle missing items/prices gracefully.
 - [ ] **Cheapest Option Calculation:**
   - [ ] Server API logic to calculate cheapest overall basket.
   - [ ] UI to select preferred supermarkets for comparison.
@@ -170,6 +169,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [ ] `__tests__/PriceHistoryChart.spec.ts`: Unit tests for `PriceHistoryChart`.
 - [ ] `pages/groceries/insights.vue`: Page for searching and viewing price insights.
 - [ ] `__tests__/pages/groceries/insights.spec.ts`: Tests for the insights page.
+- [x] `components/ShoppingList.vue`: Component to display the generated shopping list.
+- [x] `__tests__/ShoppingList.spec.ts`: Unit tests for `ShoppingList`.
+- [x] `pages/shopping-list/index.vue`: Page to display the shopping list.
+- [x] `composables/useShoppingList.ts`: Composable for managing shopping list state (client-side).
 
 ### Features Checklist
 

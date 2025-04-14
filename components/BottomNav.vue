@@ -14,7 +14,7 @@ const navigation = [
   },
   {
     name: 'Boodschappen',
-    to: '/groceries',
+    to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
   },
 ];
