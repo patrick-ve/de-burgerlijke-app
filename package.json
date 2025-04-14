@@ -21,6 +21,7 @@
     "@nuxt/image": "^1.10.0",
     "@nuxt/ui": "2.21.1",
     "@nuxtjs/ionic": "0.16.0",
+    "@vueuse/nuxt": "^13.1.0",
     "ai": "^4.1.54",
     "cheerio": "^1.0.0",
     "nuxt": "^3.16.0",

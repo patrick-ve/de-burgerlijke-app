@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/icon',
     '@nuxt/image',
+    '@vueuse/nuxt',
   ],
 
   ssr: false,
