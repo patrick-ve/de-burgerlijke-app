@@ -10,6 +10,7 @@ export interface Step {
   id: string; // Or number
   description: string;
   order: number;
+  isComplete?: boolean; // Added optional completion status
 }
 
 export interface Utensil {
@@ -27,7 +28,7 @@ export interface Recipe {
   portions: number;
   ingredients: Ingredient[];
   steps: Step[];
-  utensils: Utensil[]; // Changed from string[] to Utensil[]
+  utensils?: Utensil[]; // Made optional and kept as Utensil[]
   isFavorite?: boolean;
   userId?: string | null;
   householdId?: string | null;
@@ -35,4 +36,4 @@ export interface Recipe {
   imageUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
-} 
+}
