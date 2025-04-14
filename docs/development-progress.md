@@ -121,6 +121,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Display interactive timer button next to relevant steps in `RecipeDetailView.vue`.
   - [ ] Implement in-app timer functionality (UI component).
   - [ ] Handle multiple concurrent timers.
+- [ ] **Step Completion:**
+  - [ ] Display steps with interactive checkboxes in `RecipeDetailView.vue`.
+  - [ ] Implement logic to track and persist step completion status (e.g., per scheduled meal instance or cooking session).
 
 #### 4.4 Meal Planning & Scheduling
 
@@ -287,78 +290,62 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Ensure real-time (or near real-time) updates for shared list changes (checking off items). Consider WebSockets or polling.
 - [ ] **Permissions:** Implement backend checks based on `HouseholdMember` status for all shared CRUD operations.
 
-## Development Progress
+## Changelog
 
-### Features Implemented
+#### Fixed
 
-- **Dynamic Header:**
-  - Created `composables/useHeaderState.ts` to manage header configuration (title, action visibility, handlers) using `useState`.
-  - Created `components/TheHeader.vue` with a title prop and target divs (`#header-left-action`, `#header-right-action`) for teleported actions.
-  - Integrated `TheHeader` into `app.vue`, providing the title from `useHeaderState`.
-  - Refactored Action Buttons: Moved the definition of action buttons from `app.vue` to individual pages using `<Teleport>`.
-  - Updated `pages/recipes/new.vue`:
-    - Uses `useHeaderState` to set title, visibility flags, and action handlers.
-    - Teleports Back and Save buttons to the header.
-  - **Updated `pages/recipes/index.vue`:**
-    - Uses `useHeaderState` to set title ("Recipes") and action handler.
-    - Teleports an "Add" button to the header's right action slot, navigating to `/recipes/new`.
-  - **Updated `pages/recipes/[id].vue`:**
-    - Uses `useHeaderState` to set an initial title ("Loading Recipe...") and action handler.
-    - Teleports a "Back" button to the header's left action slot.
-    - Watches the fetched recipe data to dynamically update the header title to the recipe's name or "Recipe Not Found".
-    - Removed the static back link.
+- **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
+
+#### Added
+
+- **`RecipeList.vue`**:
+  - Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar.
+  - Added a "Reset filters" button next to the active filter badges.
+
+#### Changed
+
+- **`RecipeList.vue`**: Simplified the filter slideover footer by removing the "Cancel" button. Closing the slideover now confirms the selected filters.
+
+---
+
+#### Added
+
+- **Dynamic Header System:**
+  - Introduced `composables/useHeaderState.ts` for centralized header state management.
+  - Created `components/TheHeader.vue` to display title and provide slots for actions.
+  - Integrated `TheHeader` into `app.vue`.
+  - Migrated action button definitions from `app.vue` to individual pages (`pages/recipes/new.vue`, `pages/recipes/index.vue`, `pages/recipes/[id].vue`) using `<Teleport>` and `useHeaderState`.
 - **Recipe Form Page (`pages/recipes/new.vue`):**
-  - Setup basic structure with placeholder save logic.
-  - Included `RecipeForm` component (assuming it exists).
-  - Added `useHead` for page title.
-  - Removed the static `<h1>` and `<NuxtLink>`.
-- Updated component logic (filtering, reset, computed properties) to support the new UI elements.
-- Arranged filter/sort controls (Title Sort, Quick Recipes, Cuisine, Favorites) into a 2x2 grid layout.
-- Replaced the 'Quick Recipes' checkbox with a `USelectMenu` offering specific time ranges: '< 20 min', '20-45 min', '> 45 min', and 'Any Time'.
-- Updated filtering logic to handle the new time range selections.
-- Replaced the 'Cuisine' filter (`USelect`) with a searchable `USelectMenu`, including an 'Any Cuisine' option.
-- Replaced the 'Sort by Title' toggle button (`UButton`) with a `USelectMenu` offering 'Ascending' and 'Descending' options.
-- Removed search capability from the Cuisine filter.
-- Added icons to the 'Sort by Title' select menu options.
-- Replaced the 'Favorites' toggle button (`UButton`) with a `UCheckbox`.
-- Replaced the 'Favorites' checkbox (`UCheckbox`) with a `UToggle`.
-- Removed the text label for the 'Favorites' toggle and added on/off icons instead.
-
-- **Refactor(`RecipeList.vue`):** Simplified the filter slideover footer by removing the "Cancel" button. Closing the slideover via the "X" button or the "Apply" button now confirms the selected filters.
-- **Feature(`RecipeList.vue`):** Added filter and sort functionality within a slideover.
-- **Feature(`RecipeList.vue`):** Implemented search, pagination, and display of recipes using `RecipeCard`.
-- **Component(`RecipeCard.vue`):** Created component to display individual recipe details.
-- **Types(`recipe.ts`):** Defined the `Recipe` interface.
-- **Component(`RecipeList.vue`):** Initial setup for displaying a list of recipes.
-
-## [Date - e.g., YYYY-MM-DD]
-
-### Added
-
-- Improved the UI for the recipe metadata section in `RecipeDetailView.vue`:
-  - Added display for the recipe image (`<NuxtImg>`).
-  - Used icons (`<UIcon>`) for prep time, cook time, and portions.
-  - Applied modern Tailwind CSS styling to the metadata section.
+  - Initial structure with placeholder logic.
+  - Integrated `RecipeForm` component.
+  - Added page title using `useHead`.
+- **`RecipeDetailView.vue` UI:**
+  - Improved metadata section: Added recipe image display (`<NuxtImg>`), icons (`<UIcon>`) for prep time, cook time, and portions, and applied modern Tailwind styling.
   - Added icons to the Ingredients/Instructions tabs.
 
-## [Unreleased] - YYYY-MM-DD
+#### Changed
 
-### Added
+- **`RecipeList.vue` Filter/Sort UI:**
+  - Implemented filter and sort functionality within a slideover.
+  - Arranged filter/sort controls (Title Sort, Quick Recipes, Cuisine, Favorites) into a 2x2 grid.
+  - Replaced 'Quick Recipes' checkbox with a `USelectMenu` for time ranges ('< 20 min', '20-45 min', '> 45 min', 'Any Time').
+  - Replaced 'Cuisine' `USelect` with a searchable `USelectMenu` ('Any Cuisine' option added, search removed).
+  - Replaced 'Sort by Title' toggle `UButton` with a `USelectMenu` ('Ascending'/'Descending' with icons).
+  - Replaced 'Favorites' `UButton` first with `UCheckbox`, then with a `UToggle` using on/off icons instead of a text label.
+  - Updated filtering logic to support new UI elements.
 
-- Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar in `RecipeList.vue`.
-- Added a "Reset filters" button that appears next to the active filter badges.
+---
 
-### Refactoring Mock Recipe Data
+#### Refactored
 
-- **Date:** 2024-07-27
-- **Summary:** Refactored mock recipe data handling to eliminate duplication between the recipe list page (`pages/recipes/index.vue`) and the recipe detail page (`pages/recipes/[id].vue`).
-- **Details:**
-  - Created a new composable `composables/useMockRecipes.ts` to centralize the mock recipe array.
-  - This composable exports the `recipes` array and a `findRecipeById` function.
-  - Updated `pages/recipes/index.vue` to fetch the list of recipes from the `useMockRecipes` composable.
-  - Updated `pages/recipes/[id].vue` to use the `findRecipeById` function from the `useMockRecipes` composable within `useAsyncData` to retrieve the specific recipe based on the route parameter, removing the previously hardcoded mock data.
-- **Impact:** Improved code maintainability by centralizing mock data and reducing redundancy.
+- **Mock Recipe Data:**
+  - Centralized mock recipe data by creating `composables/useMockRecipes.ts`.
+  - Updated `pages/recipes/index.vue` and `pages/recipes/[id].vue` to utilize the new composable, removing duplicated data and logic.
 
-## [Current Date] - Refinements
+---
 
-- **RecipeDetailView:** Fixed an issue where the tab icon was rendered twice by removing the redundant icon element from the default slot of the `UTabs` component.
+#### Added
+
+- **`RecipeList.vue`:** Initial setup, search, pagination, and display using `RecipeCard`.
+- **`RecipeCard.vue`:** Created component to display individual recipe details.
+- **`types/recipe.ts`:** Defined the `Recipe` interface.
