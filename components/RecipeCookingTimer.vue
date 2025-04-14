@@ -167,51 +167,50 @@ watch(
 <template>
   <div
     v-if="props.durationMs !== null"
-    class="flex items-center gap-2 mt-1 text-xs"
+    class="flex items-center justify-between gap-2 mt-1 text-xs p-2 px-4 bg-primary-500 text-white rounded-full w-1/2"
   >
-    <UIcon
-      name="i-heroicons-clock"
-      class="w-4 h-4 text-gray-400 flex-shrink-0"
-    />
-    <span
-      class="font-mono text-sm font-medium text-gray-600 min-w-[45px] text-right"
-      :class="{ 'text-primary-600 font-bold': isRunning }"
-    >
-      {{ formattedTime }}
-    </span>
-
+    <!-- Left: Play/Pause Buttons -->
     <div class="flex items-center gap-1">
-      <!-- Start Button -->
       <UButton
         v-if="canStart"
         icon="i-heroicons-play-solid"
-        size="xs"
-        color="gray"
-        variant="ghost"
+        size="md"
+        color="white"
+        variant="link"
         square
         :padded="false"
         @click="startTimer"
         aria-label="Start timer"
       />
-      <!-- Pause Button -->
       <UButton
         v-if="canPause"
         icon="i-heroicons-pause-solid"
-        size="xs"
-        color="gray"
-        variant="ghost"
+        size="md"
+        color="white"
+        variant="link"
         square
         :padded="false"
         @click="pauseTimer"
         aria-label="Pause timer"
       />
-      <!-- Reset Button -->
+    </div>
+
+    <!-- Center: Time Display -->
+    <span
+      class="text-base font-medium text-center flex-grow"
+      :class="{ 'font-bold': isRunning }"
+    >
+      {{ formattedTime }}
+    </span>
+
+    <!-- Right: Reset Button -->
+    <div class="flex items-center">
       <UButton
         v-if="canReset"
         icon="i-heroicons-arrow-path"
-        size="xs"
-        color="gray"
-        variant="ghost"
+        size="md"
+        color="white"
+        variant="link"
         square
         :padded="false"
         @click="resetTimer"

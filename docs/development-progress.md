@@ -339,3 +339,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 ### Refactoring
 
 - Extracted timer logic from `RecipeDetailView.vue` into a dedicated `RecipeCookingTimer.vue` component for better separation of concerns and simplified state management.
+
+## Development Progress
+
+- Added initial structure for recipe detail page.
+- Implemented basic layout for recipe header, ingredients, and instructions.
+- Added `RecipeCookingTimer` component with basic functionality (start, pause, reset).
+- Restyled `RecipeCookingTimer` component for better visual prominence.
+- Rearranged layout of `RecipeCookingTimer` for better control separation (Play/Pause | Time | Reset).
