@@ -9,8 +9,34 @@ const shoppingListItems = ref<ShoppingListItem[]>([]);
 
 // Helper to standardize ingredient names (basic example)
 const standardizeName = (name: string): string => {
-  return name.trim().toLowerCase();
-  // TODO: Implement more robust standardization (pluralization, variations etc.)
+  let std = name.trim().toLowerCase();
+  // Basic pluralization handling (add more rules as needed)
+  if (std.endsWith('s') && !std.endsWith('ss')) {
+    // Avoid changing 'passata', 'bass', etc.
+    const singularAttempt = std.slice(0, -1);
+    // Add specific known plurals you want to handle
+    const knownPlurals: { [key: string]: string } = {
+      cloves: 'clove',
+      // Add more: e.g., tomatoes: 'tomato'
+    };
+    if (knownPlurals[std]) {
+      return knownPlurals[std];
+    }
+    // Very basic check, might need a library for robust stemming
+    // For now, only handle explicitly defined known plurals
+  }
+  return std; // Return original lowercased/trimmed if no rule applies
+};
+
+// Helper to standardize units (treat null, undefined, '' as equivalent null)
+const standardizeUnit = (
+  unit: string | null | undefined
+): string | null => {
+  if (unit === null || unit === undefined || unit.trim() === '') {
+    return null;
+  }
+  // Optional: Add unit standardization (e.g., 'gram' -> 'g')
+  return unit.trim().toLowerCase();
 };
 
 export function useShoppingList() {
@@ -31,12 +57,12 @@ export function useShoppingList() {
 
       const stdName = standardizeName(ingredient.name);
       const quantity = ingredient.scaledQuantity;
-      const unit = ingredient.unit;
+      const unit = standardizeUnit(ingredient.unit); // Standardize the incoming unit
 
       const existingItemIndex = shoppingListItems.value.findIndex(
         (item) =>
           standardizeName(item.ingredientName) === stdName &&
-          item.unit === unit
+          standardizeUnit(item.unit) === unit // Compare standardized units
       );
 
       if (existingItemIndex > -1) {
@@ -70,10 +96,10 @@ export function useShoppingList() {
         // --- Add new item ---
         const newItem: ShoppingListItem = {
           id: uuidv4(), // Generate unique ID
-          ingredientName: ingredient.name,
-          standardizedName: stdName,
+          ingredientName: ingredient.name, // Store original name for display
+          standardizedName: stdName, // Store standardized name for comparison
           aggregatedQuantity: quantity,
-          unit: unit ?? null,
+          unit: ingredient.unit ?? null, // Store original unit for display (or null)
           isChecked: false,
           recipeIds: [recipeId],
           createdAt: new Date(),
