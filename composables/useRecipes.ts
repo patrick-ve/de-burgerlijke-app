@@ -50,7 +50,7 @@ function parsePortions(
   return null; // Default or unable to parse
 }
 
-export const useMockRecipes = () => {
+export const useRecipes = () => {
   // Use useStorage to make recipes persistent
   const storedRecipes = useStorage<Recipe[]>('recipes', []);
 
@@ -84,6 +84,7 @@ export const useMockRecipes = () => {
           id: uuidv4(), // Generate unique step ID
           order: index + 1,
           description: step.description,
+          timer: step.timer ?? null,
         }))
         // Ensure steps are sorted by order, just in case
         .sort((a, b) => a.order - b.order),

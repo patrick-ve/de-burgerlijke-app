@@ -314,7 +314,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 - \*\*`RecipeList.vue`
 
-* Refactored recipe list page to use `useMockRecipes` composable.
+* Refactored recipe list page to use `useRecipes` composable.
 * Refactored shopping list page header to use `useHeaderState` composable.
 
 ### Shopping List
@@ -331,6 +331,6 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 ## Recipe Management
 
-- Refactored `useMockRecipes.ts` to use `useStorage` for persistent recipe storage.
-- Added an `addRecipe` function to `useMockRecipes.ts` to handle adding new recipes from the `AddRecipeModal`.
+- Refactored `useRecipes.ts` to use `useStorage` for persistent recipe storage.
+- Added an `addRecipe` function to `useRecipes.ts` to handle adding new recipes from the `AddRecipeModal`.
 - Integrated the `addRecipe` function into `pages/recipes/index.vue` to save recipes parsed from the modal.

@@ -34,14 +34,14 @@ import {
 } from 'vue';
 import type { Recipe } from '~/types/recipe'; // Assuming Recipe type exists
 import { useHeaderState } from '~/composables/useHeaderState';
-import { useMockRecipes } from '~/composables/useMockRecipes'; // Import the composable
+import { useRecipes } from '~/composables/useRecipes'; // Import the composable
 
 const route = useRoute();
 const { headerState, setHeader, resetHeader, defaultLeftAction } =
   useHeaderState();
 const isMounted = ref(false);
 const recipeId = computed(() => route.params.id as string);
-const { findRecipeById } = useMockRecipes(); // Get the finder function
+const { findRecipeById } = useRecipes(); // Get the finder function
 
 // Handler to trigger the action stored in state
 const triggerLeftAction = () => {

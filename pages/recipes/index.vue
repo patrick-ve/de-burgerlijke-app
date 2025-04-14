@@ -27,13 +27,13 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 // import type { Recipe } from '~/types/recipe'; // No longer needed here
 import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import DTO type
 import { useHeaderState } from '~/composables/useHeaderState';
-import { useMockRecipes } from '~/composables/useMockRecipes'; // Import the new composable
+import { useRecipes } from '~/composables/useRecipes'; // Import the new composable
 import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the modal component
 
 const router = useRouter();
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const isMounted = ref(false);
-const { recipes, addRecipe } = useMockRecipes(); // Get recipes and addRecipe from the composable
+const { recipes, addRecipe } = useRecipes(); // Get recipes and addRecipe from the composable
 const isAddModalOpen = ref(false); // State for modal visibility
 
 // Function to open the modal
