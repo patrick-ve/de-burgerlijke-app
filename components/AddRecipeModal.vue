@@ -1,26 +1,15 @@
 <script setup lang="ts">
+import {
+  recipeSchema,
+  type AIRecipeDTO,
+} from '~/server/utils/recipeSchema';
+import { z } from 'zod';
+
 const isOpen = defineModel<boolean>('isOpen', { required: true });
-// Define the type for the parsed recipe data, mirroring the server structure
-// TODO: Move this to a shared types file (e.g., ~/types/recipe.ts)
-interface ParsedRecipeData {
-  title: string;
-  description?: string;
-  portions?: number;
-  prepTime?: string;
-  cookTime?: string;
-  cuisine?: string;
-  ingredients: {
-    quantity?: number | string;
-    unit?: string;
-    name: string;
-  }[];
-  steps: { description: string }[];
-  utensils?: string[];
-}
 
 // Define emits
 const emit = defineEmits<{
-  (e: 'recipeParsed', recipe: ParsedRecipeData): void;
+  (e: 'recipeParsed', recipe: AIRecipeDTO): void;
 }>();
 
 const url = ref('');
@@ -40,31 +29,35 @@ async function submitRecipeUrl() {
 
     // Make POST request to /api/recipe
     const response = await $fetch<{
-      success: boolean;
-      message: string;
-      recipe: ParsedRecipeData;
+      recipe: AIRecipeDTO; // Changed type to unknown for safe parsing
     }>('/api/recipe/url', {
       method: 'POST',
       body: { url: url.value },
     });
+
     console.log('API Response:', response);
 
-    if (response.success && response.recipe) {
+    // Safely parse the recipe data using Zod
+    const parsed = recipeSchema.safeParse(response.recipe);
+
+    if (parsed.success) {
       // Emit the parsed recipe data
-      emit('recipeParsed', response.recipe);
+      emit('recipeParsed', parsed.data); // Use parsed.data
       isOpen.value = false; // Close the modal
       url.value = ''; // Reset URL input
     } else {
-      // Handle cases where the API call succeeded but didn't return expected data
+      // Handle Zod validation errors
+      console.error('Zod validation failed:', parsed.error.errors);
       throw new Error(
-        response.message || 'Failed to parse recipe from URL.'
+        'Receptgegevens van API zijn ongeldig. Probeer een andere URL.'
       );
     }
   } catch (err: any) {
     console.error('Error submitting URL:', err);
-    // Use error message from the API if available, otherwise generic message
+    // Use error message from the API or Zod validation if available, otherwise generic message
     error.value =
-      err.data?.message ||
+      err.message || // Use the specific error message if available
+      err.data?.message || // Use API error message if available
       'URL versturen mislukt. Controleer de URL en probeer het opnieuw.';
   } finally {
     isLoading.value = false;

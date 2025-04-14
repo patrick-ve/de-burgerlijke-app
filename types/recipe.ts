@@ -10,6 +10,7 @@ export interface Step {
   id: string; // Or number
   description: string;
   order: number;
+  timer?: number | null;
   isComplete?: boolean; // Added optional completion status
 }
 
@@ -33,6 +34,7 @@ export interface Recipe {
   userId?: string | null;
   householdId?: string | null;
   sourceUrl?: string | null;
+  youtubeUrl?: string | null;
   imageUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;

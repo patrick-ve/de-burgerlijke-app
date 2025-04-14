@@ -124,6 +124,6 @@ export const recipeSchema = z
     'Main schema for a complete recipe, aligned with types/recipe.ts'
   );
 
-export type Recipe = z.infer<typeof recipeSchema>;
+export type AIRecipeDTO = z.infer<typeof recipeSchema>;
 export type Ingredient = z.infer<typeof ingredientSchema>;
 export type Step = z.infer<typeof stepSchema>;

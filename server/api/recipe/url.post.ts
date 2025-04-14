@@ -99,7 +99,9 @@ export default defineEventHandler(async (event) => {
     });
 
     console.log(recipe);
-    return recipe;
+    return {
+      recipe,
+    };
   } catch (error) {
     console.error('Recipe parsing error:', error);
     throw createError({

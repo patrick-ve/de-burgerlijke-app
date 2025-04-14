@@ -75,21 +75,18 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 #### 4.1 Recipe Input & Parsing
 
-- [ ] **URL Input:**
-  - [ ] UI for pasting URL.
-  - [ ] Server API endpoint (`server/api/`) to fetch URL content.
-  - [ ] LLM integration for parsing fetched HTML content.
+- [x] **URL Input:**
+  - [x] UI for pasting URL (`components/AddRecipeModal.vue`, integrated into `pages/recipes/index.vue`).
+  - [x] Server API endpoint (`server/api/recipe/url.post.ts`) to fetch URL content.
+  - [x] LLM integration for parsing fetched HTML content.
 - [ ] **Image Input:**
   - [ ] UI for uploading image.
-  - [ ] Server API endpoint (`server/api/`) to handle image upload.
-  - [ ] OCR integration (server-side).
-  - [ ] LLM integration for parsing OCR text.
-- [ ] **LLM Parsing & Structuring:**
-  - [ ] Identify/extract Title.
-  - [ ] Identify/extract Description/Metadata (prep time, cook time, cuisine, etc.).
-  - [ ] Identify/extract Portions.
-  - [ ] Identify/extract Ingredients (quantity, unit, name).
-  - [ ] Identify/extract Steps (ordered).
+- [x] **LLM Parsing & Structuring:**
+  - [x] Identify/extract Title.
+  - [x] Identify/extract Description/Metadata (prep time, cook time, cuisine, etc.).
+  - [x] Identify/extract Portions.
+  - [x] Identify/extract Ingredients (quantity, unit, name).
+  - [x] Identify/extract Steps (ordered).
   - [ ] Identify/extract Utensils.
 - [x] **User Review & Edit:**
   - [x] UI for reviewing parsed recipe data before saving (`components/RecipeForm.vue`).
@@ -301,9 +298,12 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 #### Fixed
 
 - **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
+- **`AddRecipeModal.vue`**: Corrected Zod parsing logic to handle the direct recipe object returned by the `/api/recipe/url` endpoint, resolving validation errors.
 
 #### Added
 
+- **`components/AddRecipeModal.vue`**: Created a modal component to capture a recipe URL from the user.
+- **`pages/recipes/index.vue`**: Integrated `AddRecipeModal` and updated the "Voeg toe" button to open this modal instead of navigating directly to the create page.
 - **`RecipeList.vue`**:
   - Display active filters (`cuisine`, `time`, `favorites`, `sort`) as badges below the search bar.
   - Added a "Reset filters" button next to the active filter badges.
@@ -326,3 +326,5 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - Included visual feedback for checked items and transitions for adding/removing items.
 - Added a confirmation modal for clearing the entire list.
 - Implemented state persistence for the shopping list using `useStorage` from VueUse, ensuring item status is maintained across page refreshes.
+
+- Aligned `server/utils/recipeSchema.ts` and the AI prompt in `server/api/recipe/url.post.ts` with the `types/recipe.ts` interface.
