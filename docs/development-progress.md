@@ -104,6 +104,12 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] Display Steps list (in dedicated tab).
   - [x] Display Utensils list (in dedicated tab).
   - [x] Display Portions.
+- [x] **Recipe Deletion:**
+  - [x] Added `deleteRecipe` function to `composables/useRecipes.ts`.
+  - [x] Implemented context menu trigger (ellipsis icon) in header on recipe detail page (`pages/recipes/[id].vue`).
+  - [x] Added "Verwijder recept" option in context menu.
+  - [x] Implemented confirmation modal (`UModal`) for delete action.
+  - [x] Added logic to call `deleteRecipe` and navigate back upon confirmation.
 - [ ] **Favorites:**
   - [x] UI toggle button (`RecipeCard.vue`).
   - [ ] Persistence for favorite status (backend).
@@ -118,9 +124,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Detect timed actions in recipe steps (server-side parsing or client-side regex).
   - [x] Display interactive timer button next to relevant steps in `RecipeDetailView.vue`.
   - [x] Implement in-app timer functionality (`components/RecipeCookingTimer.vue`).
-  - [ ] Handle multiple concurrent timers.
-- [ ] **Step Completion:**
-  - [ ] Display steps with interactive checkboxes in `RecipeDetailView.vue`.
+  - [x] Handle multiple concurrent timers.
+- [x] **Step Completion:**
+  - [x] Display steps with interactive checkboxes in `RecipeDetailView.vue`.
   - [ ] Implement logic to track and persist step completion status (e.g., per scheduled meal instance or cooking session).
 
 #### 4.4 Meal Planning & Scheduling
