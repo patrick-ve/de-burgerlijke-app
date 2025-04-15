@@ -16,6 +16,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     openaiApiKey: process.env.OPENAI_API_KEY,
+    firecrawlApiKey: process.env.FIRECRAWL_API_KEY,
     public: {},
   },
 
