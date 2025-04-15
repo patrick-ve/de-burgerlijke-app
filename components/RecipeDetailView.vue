@@ -2,6 +2,7 @@
 import type { Recipe, Ingredient, Step } from '~/types/recipe';
 import { useShoppingList } from '~/composables/useShoppingList';
 import { useYoutubeEmbed } from '~/composables/useYoutubeEmbed';
+import { ref, computed } from 'vue';
 
 // --- Interface for Local Step (Simpler) ---
 interface LocalStep extends Step {
@@ -342,7 +343,6 @@ const handleAddPortionsToShoppingList = () => {
             >
               <UCheckbox
                 v-model="step.isComplete"
-                class="-mt-1"
                 :aria-label="`Mark step ${index + 1} as complete`"
                 data-testid="step-checkbox"
               />
@@ -438,7 +438,7 @@ const handleAddPortionsToShoppingList = () => {
         </div>
       </template>
 
-      <!-- Body: Portion Adjustment Controls & Ingredient Preview -->
+      <!-- Body: Portion Adjustment Controls ONLY -->
       <div class="space-y-4">
         <!-- Portion Controls -->
         <div class="flex items-center justify-center gap-0 pt-1 pb-2">
@@ -458,7 +458,7 @@ const handleAddPortionsToShoppingList = () => {
             :value="adjustedPortions"
             @input="onPortionInput"
             min="1"
-            class="w-8 text-center text-base text-gray-900 font-bold border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 p-1 mx-1"
+            class="w-8 text-center text-base text-gray-900 font-bold border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 p-1"
             aria-label="Aantal porties"
             data-testid="portions-input"
           />
@@ -472,37 +472,11 @@ const handleAddPortionsToShoppingList = () => {
             aria-label="Verhoog porties"
             data-testid="increment-portions-button"
           />
-        </div>
-
-        <!-- Ingredient Preview -->
-        <div
-          class="max-h-60 overflow-y-auto px-2 -translate-y-4"
-          data-testid="ingredients-preview-list"
-        >
-          <h4 class="text-sm font-medium text-gray-500 mt-0 mb-1">
-            Ingrediënten voor {{ adjustedPortions }}
-            {{ adjustedPortions === 1 ? 'portie' : 'porties' }}:
-          </h4>
-          <ul class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <li
-              v-for="(ingredient, index) in scaledIngredients"
-              :key="`preview-ingredient-${index}`"
-              class="flex items-start gap-2 pb-1 border-b border-gray-100 last:border-b-0"
-            >
-              <span
-                class="inline-block w-1.5 h-1.5 mt-1.5 rounded-full bg-primary/70 flex-shrink-0"
-              ></span>
-              <span>
-                <span class="font-medium text-gray-800"
-                  >{{ ingredient.displayQuantity }}
-                  {{ ingredient.unit ?? '' }}
-                </span>
-                <span class="text-gray-600">
-                  {{ ' ' + ingredient.name }}</span
-                >
-              </span>
-            </li>
-          </ul>
+          <span
+            class="text-sm text-gray-600 w-14 text-left ml-4 font-medium"
+          >
+            {{ adjustedPortions === 1 ? 'portie' : 'porties' }}
+          </span>
         </div>
       </div>
 

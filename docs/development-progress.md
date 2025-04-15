@@ -306,6 +306,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
 - **`AddRecipeModal.vue`**: Corrected Zod parsing logic to handle the direct recipe object returned by the `/api/recipe/url` endpoint, resolving validation errors.
 - **`RecipeDetailView.vue`**: Refactored timer logic to correctly handle duration provided in milliseconds, fixing display issues (e.g., 20000ms now shows as 00:20 instead of 20000:00).
+- **`RecipeDetailView.vue`**: Fixed ingredient list overflow within the portion adjustment slideover by adding max-height and scroll.
 
 #### Added
 
@@ -319,7 +320,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 #### Changed
 
-- \*\*`RecipeList.vue`
+- **`RecipeList.vue`**
+- **`RecipeDetailView.vue`**: Simplified the portion adjustment slideover by removing the ingredient preview and adjusting the control layout (label after plus button).
 
 * Refactored recipe list page to use `useRecipes` composable.
 * Refactored shopping list page header to use `useHeaderState` composable.
