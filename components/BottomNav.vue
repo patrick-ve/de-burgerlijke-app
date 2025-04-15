@@ -13,6 +13,11 @@ const navigation = [
     icon: 'i-heroicons-book-open',
   },
   {
+    name: 'Planner',
+    to: '/planner',
+    icon: 'i-heroicons-calendar-days',
+  },
+  {
     name: 'Boodschappen',
     to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
@@ -43,7 +48,7 @@ const showNav = computed(() => {
       class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800"
     >
       <UContainer class="h-16">
-        <div class="grid h-full grid-cols-3">
+        <div class="grid h-full grid-cols-4">
           <NuxtLink
             v-for="item in navigation"
             :key="item.to"
