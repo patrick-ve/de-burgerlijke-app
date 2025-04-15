@@ -34,22 +34,25 @@
       />
     </Teleport>
 
-    <!-- Context Menu -->
-    <UContextMenu
-      v-model="isContextMenuOpen"
-      :virtual-element="virtualElement"
-      :popper="{ placement: 'bottom-end' }"
-    >
-      <div class="p-1 z-[9999]">
-        <UButton
-          label="Verwijder recept"
-          color="red"
-          variant="ghost"
-          icon="i-heroicons-trash"
-          @click="openConfirmationModal"
-        />
-      </div>
-    </UContextMenu>
+    <!-- Teleport Context Menu to the body to avoid stacking context issues -->
+    <Teleport to="body">
+      <UContextMenu
+        v-model="isContextMenuOpen"
+        :virtual-element="virtualElement"
+        :popper="{ placement: 'bottom-end' }"
+        :ui="{ container: 'z-50 group' }"
+      >
+        <div class="p-1">
+          <UButton
+            label="Verwijder recept"
+            color="red"
+            variant="ghost"
+            icon="i-heroicons-trash"
+            @click="openConfirmationModal"
+          />
+        </div>
+      </UContextMenu>
+    </Teleport>
 
     <!-- Confirmation Modal -->
     <UModal v-model="isModalOpen">

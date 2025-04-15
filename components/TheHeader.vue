@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 h-16 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4"
+    class="sticky top-0 h-16 z-40 bg-white border-b border-gray-200 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4"
   >
     <div>
       <!-- Target for the left action teleport -->
