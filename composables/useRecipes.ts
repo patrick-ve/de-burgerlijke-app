@@ -5,6 +5,7 @@ import { useStorage } from '@vueuse/core';
 import { v4 as uuidv4 } from 'uuid';
 import type { Recipe } from '~/types/recipe';
 import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import the DTO type
+import { computed } from 'vue';
 
 // Helper function to parse duration strings/numbers (e.g., "15 min", "1 hour", 15) into minutes
 function parseDuration(
@@ -112,7 +113,10 @@ export const useRecipes = () => {
 
   const findRecipeById = (id: string): Recipe | undefined => {
     // Search in the stored recipes
-    return storedRecipes.value.find((recipe) => recipe.id === id);
+    // Filter out recipes with null/undefined IDs before finding
+    return storedRecipes.value.find(
+      (recipe) => recipe.id === id && recipe.id != null
+    );
   };
 
   /**
@@ -120,8 +124,9 @@ export const useRecipes = () => {
    */
   const addRecipe = (aiRecipe: AIRecipeDTO): Recipe => {
     const newRecipe: Recipe = {
-      id: uuidv4(), // Generate unique ID
-      title: aiRecipe.title,
+      id: uuidv4(), // uuidv4 always returns a string
+      // Ensure title conforms to Recipe type (string)
+      title: aiRecipe.title ?? 'Untitled Recipe',
       description: aiRecipe.description ?? null,
       imageUrl: aiRecipe.imageUrl ?? null,
       youtubeUrl: aiRecipe.youtubeUrl ?? null,
@@ -141,13 +146,19 @@ export const useRecipes = () => {
           id: uuidv4(), // Generate unique step ID
           order: index + 1,
           description: step.description,
-          timer: step.timer,
+          timer: step.timer, // Keep timer value as is from DTO for now
         }))
         // Ensure steps are sorted by order, just in case
         .sort((a, b) => a.order - b.order),
       // Remove utensils mapping as it's not present in AIRecipeDTO
       utensils: [], // Default to empty array for the Recipe type
       isFavorite: false, // Default new recipes are not favorite
+      // Explicitly set potentially undefined optional fields to null if needed by backend/storage
+      userId: null, // Assuming not available from DTO
+      householdId: null, // Assuming not available from DTO
+      sourceUrl: aiRecipe.sourceUrl ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     storedRecipes.value.push(newRecipe);
@@ -160,8 +171,9 @@ export const useRecipes = () => {
    */
   const deleteRecipe = (id: string): void => {
     const initialLength = storedRecipes.value.length;
+    // Ensure we only compare with valid string IDs
     storedRecipes.value = storedRecipes.value.filter(
-      (recipe) => recipe.id !== id
+      (recipe) => recipe.id !== id && recipe.id != null
     );
     if (storedRecipes.value.length < initialLength) {
       console.log(`Deleted recipe with ID: ${id}`);
@@ -170,9 +182,16 @@ export const useRecipes = () => {
     }
   };
 
+  // Filter recipes on return to ensure they have valid IDs before exposing
+  const recipesWithValidIds = computed(() =>
+    storedRecipes.value.filter(
+      (recipe) => typeof recipe.id === 'string'
+    )
+  );
+
   return {
-    // Expose the reactive ref directly
-    recipes: storedRecipes,
+    // Expose the filtered reactive ref
+    recipes: recipesWithValidIds,
     findRecipeById,
     addRecipe, // Expose the new function
     deleteRecipe, // Expose the delete function
