@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Recipe, Ingredient, Step } from '~/types/recipe';
 import { useShoppingList } from '~/composables/useShoppingList';
+import { useYoutubeEmbed } from '~/composables/useYoutubeEmbed';
 
 // --- Interface for Local Step (Simpler) ---
 interface LocalStep extends Step {
@@ -10,6 +11,11 @@ interface LocalStep extends Step {
 const props = defineProps<{
   recipe: Recipe;
 }>();
+
+// --- YouTube Embed ---
+const { embedUrl, isValidYoutubeUrl } = useYoutubeEmbed(
+  computed(() => props.recipe.youtubeUrl)
+);
 
 // Initialize localSteps without timer state
 const localSteps = ref<LocalStep[]>(
@@ -152,14 +158,34 @@ const handleAddPortionsToShoppingList = () => {
 <template>
   <section class="pb-24">
     <!-- Added padding-bottom to prevent overlap with fixed bar -->
+
+    <!-- Top Section: Show YouTube Embed OR Image -->
     <div
-      v-if="recipe.imageUrl"
-      class="w-full h-56 sm:h-72 overflow-hidden shadow-md"
+      v-if="isValidYoutubeUrl && embedUrl"
+      class="w-full video-aspect-ratio overflow-hidden shadow-md"
+      data-testid="youtube-embed-container"
+    >
+      <iframe
+        :src="embedUrl"
+        title="YouTube video player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen
+        class="w-full h-full"
+        data-testid="youtube-iframe"
+      ></iframe>
+    </div>
+
+    <div
+      v-else-if="recipe.imageUrl"
+      class="w-full h-56 sm:h-72 overflow-hidden shadow-md video-aspect-ratio"
+      data-testid="recipe-image-container"
     >
       <NuxtImg
         :src="recipe.imageUrl"
         :alt="recipe.title"
-        class="w-full h-auto object-cover aspect-video mock-nuxt-img"
+        class="w-full h-auto object-cover mock-nuxt-img"
         width="400"
         height="300"
         fit="cover"
@@ -493,3 +519,9 @@ const handleAddPortionsToShoppingList = () => {
     </UCard>
   </USlideover>
 </template>
+
+<style scoped>
+.video-aspect-ratio {
+  aspect-ratio: 16 / 9;
+}
+</style>
