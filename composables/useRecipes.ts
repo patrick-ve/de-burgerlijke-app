@@ -155,10 +155,26 @@ export const useRecipes = () => {
     return newRecipe; // Return the added recipe
   };
 
+  /**
+   * Deletes a recipe by its ID from the persistent list.
+   */
+  const deleteRecipe = (id: string): void => {
+    const initialLength = storedRecipes.value.length;
+    storedRecipes.value = storedRecipes.value.filter(
+      (recipe) => recipe.id !== id
+    );
+    if (storedRecipes.value.length < initialLength) {
+      console.log(`Deleted recipe with ID: ${id}`);
+    } else {
+      console.warn(`Recipe with ID: ${id} not found for deletion.`);
+    }
+  };
+
   return {
     // Expose the reactive ref directly
     recipes: storedRecipes,
     findRecipeById,
     addRecipe, // Expose the new function
+    deleteRecipe, // Expose the delete function
   };
 };

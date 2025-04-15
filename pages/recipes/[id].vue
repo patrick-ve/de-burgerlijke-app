@@ -20,6 +20,86 @@
         @click="triggerLeftAction"
       />
     </Teleport>
+
+    <!-- Teleport Context Menu Trigger to the header -->
+    <Teleport to="#header-right-action" v-if="isMounted">
+      <UButton
+        v-if="headerState.showRightAction"
+        ref="contextMenuTriggerRef"
+        icon="i-heroicons-ellipsis-vertical"
+        variant="ghost"
+        color="gray"
+        aria-label="Options"
+        @click="triggerRightAction"
+      />
+    </Teleport>
+
+    <!-- Context Menu -->
+    <UContextMenu
+      v-model="isContextMenuOpen"
+      :virtual-element="virtualElement"
+      :popper="{ placement: 'bottom-end' }"
+    >
+      <div class="p-1 z-[9999]">
+        <UButton
+          label="Verwijder recept"
+          color="red"
+          variant="ghost"
+          icon="i-heroicons-trash"
+          @click="openConfirmationModal"
+        />
+      </div>
+    </UContextMenu>
+
+    <!-- Confirmation Modal -->
+    <UModal v-model="isModalOpen">
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+            >
+              Recept Verwijderen
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isModalOpen = false"
+            />
+          </div>
+        </template>
+
+        <p>
+          Weet je zeker dat je het recept "{{ recipe?.title }}"
+          permanent wilt verwijderen? Deze actie kan niet ongedaan
+          worden gemaakt.
+        </p>
+
+        <template #footer>
+          <div class="flex justify-end space-x-2">
+            <UButton
+              color="gray"
+              variant="ghost"
+              label="Annuleren"
+              @click="isModalOpen = false"
+            />
+            <UButton
+              color="red"
+              label="Verwijderen"
+              icon="i-heroicons-trash"
+              @click="confirmDelete"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
@@ -31,17 +111,45 @@ import {
   onUnmounted,
   nextTick,
   watch,
+  unref, // Import unref
 } from 'vue';
+import { useMouse, useWindowScroll } from '@vueuse/core'; // Import mouse/scroll utils
 import type { Recipe } from '~/types/recipe'; // Assuming Recipe type exists
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useRecipes } from '~/composables/useRecipes'; // Import the composable
+import type { VirtualElement } from '@popperjs/core'; // Import type for virtualElement
 
 const route = useRoute();
+const router = useRouter(); // Import router
 const { headerState, setHeader, resetHeader, defaultLeftAction } =
   useHeaderState();
 const isMounted = ref(false);
 const recipeId = computed(() => route.params.id as string);
-const { findRecipeById } = useRecipes(); // Get the finder function
+const { findRecipeById, deleteRecipe } = useRecipes(); // Get functions
+
+// Mouse and Scroll position for Context Menu
+const { x, y } = useMouse();
+const { y: windowY } = useWindowScroll();
+
+// Context Menu State
+const isContextMenuOpen = ref(false);
+const contextMenuTriggerRef = ref<HTMLButtonElement | null>(null); // Ref for the trigger button
+const virtualElement = ref<VirtualElement>({
+  getBoundingClientRect: () => ({
+    width: 0,
+    height: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}), // Add dummy toJSON
+  }),
+});
+
+// Modal State
+const isModalOpen = ref(false);
 
 // Handler to trigger the action stored in state
 const triggerLeftAction = () => {
@@ -50,24 +158,66 @@ const triggerLeftAction = () => {
   }
 };
 
+// Handler to trigger the right action (open context menu)
+const triggerRightAction = () => {
+  if (headerState.value.rightActionHandler) {
+    headerState.value.rightActionHandler();
+  }
+};
+
+// Function to open the context menu using mouse coordinates
+const openContextMenu = () => {
+  // Use mouse coordinates instead of button ref
+  const top = unref(y) - unref(windowY);
+  const left = unref(x);
+
+  virtualElement.value.getBoundingClientRect = () => ({
+    width: 0,
+    height: 0,
+    top,
+    left,
+    // Keep other properties for type correctness
+    right: left,
+    bottom: top,
+    x: left,
+    y: top,
+    toJSON: () => JSON.stringify(this),
+  });
+
+  isContextMenuOpen.value = true;
+};
+
+// Function to open the confirmation modal
+const openConfirmationModal = () => {
+  isContextMenuOpen.value = false; // Close context menu first
+  isModalOpen.value = true;
+};
+
+// Function to handle the confirmed deletion
+const confirmDelete = async () => {
+  if (recipe.value) {
+    deleteRecipe(recipe.value.id!);
+    isModalOpen.value = false;
+    // Optional: Add a toast notification for success
+    // await navigateTo('/recipes'); // Navigate back to the list or another appropriate page
+    router.back(); // Or simply go back
+  }
+};
+
 // Fetching the specific recipe data
 const {
   data: recipe,
   pending,
   error,
-} = await useAsyncData<Recipe | undefined>( // Keep type as Recipe | undefined
+} = await useAsyncData<Recipe | undefined>(
   `recipe-${recipeId.value}`,
   async () => {
-    // Re-add async, remove delay
     console.log(`Fetching recipe with ID: ${recipeId.value}`);
-    // Removed artificial delay
-    // Use the composable to find the recipe
     const foundRecipe = findRecipeById(recipeId.value);
-    // console.log('Found Recipe:', foundRecipe);
-    return foundRecipe; // Return the found recipe or undefined
+    return foundRecipe;
   },
   {
-    watch: [recipeId], // Refetch when ID changes
+    watch: [recipeId],
   }
 );
 
@@ -79,9 +229,9 @@ onMounted(async () => {
   setHeader({
     title: recipe.value?.title || 'Loading Recipe...',
     showLeftAction: true,
-    showRightAction: false, // No right action for now
+    showRightAction: true, // Show the right action button
     leftActionHandler: defaultLeftAction,
-    rightActionHandler: null,
+    rightActionHandler: openContextMenu, // Set handler to open context menu
   });
 });
 
@@ -89,18 +239,16 @@ onMounted(async () => {
 watch(
   recipe,
   (newRecipe) => {
-    // console.log('Recipe Watch Triggered:', newRecipe, pending.value);
     if (newRecipe) {
-      // console.log('Setting header title to:', newRecipe.title);
-      setHeader({ title: newRecipe.title }); // Use setHeader for partial update
+      setHeader({ title: newRecipe.title, showRightAction: true }); // Ensure right action is shown
     } else if (!pending.value) {
-      // console.log('Setting header title to: Recipe Not Found');
-      // Handle cases where recipe is not found or error occurred after initial load
-      setHeader({ title: 'Recipe Not Found' });
+      setHeader({
+        title: 'Recipe Not Found',
+        showRightAction: false,
+      }); // Hide if no recipe
     }
-    // If pending is true, the initial 'Loading Recipe...' title remains
   },
-  { immediate: true } // Run on mount too, after initial setHeader
+  { immediate: true }
 );
 
 onUnmounted(() => {
@@ -109,7 +257,6 @@ onUnmounted(() => {
 });
 
 useHead({
-  // Update title dynamically based on recipe name if available
   title: computed(() =>
     recipe.value ? recipe.value.title : 'Recipe Details'
   ),
