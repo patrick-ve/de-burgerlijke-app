@@ -4,15 +4,41 @@ import {
   useWeather,
   type WeatherInfo,
 } from '~/composables/useWeather'; // Import the weather composable and type
+import {
+  useMealPlanner,
+  type NextAvailableMealsResult,
+} from '~/composables/useMealPlanner';
 
 useHead({
   title: 'Home - De Burgerlijke App',
 });
 
 // Meal Planner Logic
-const { getMealsForDate } = useMealPlanner();
+const { getMealsForDate, getNextAvailableMeals } = useMealPlanner();
 const today = new Date();
-const todaysMeals = getMealsForDate(today); // This is a computed ref
+
+// Get today's meals (reactive)
+const todaysMeals = getMealsForDate(today);
+
+// Get the next available meals (non-reactive, fetched once)
+const nextAvailable = getNextAvailableMeals(today);
+
+// Determine which meals and date to display
+const displayData = computed(() => {
+  if (todaysMeals.value.length > 0) {
+    return {
+      date: today,
+      meals: todaysMeals.value,
+      isToday: true,
+    };
+  } else {
+    return {
+      date: nextAvailable.date, // This might be null
+      meals: nextAvailable.meals,
+      isToday: false,
+    };
+  }
+});
 
 // Weather Logic
 // TODO: Make location dynamic (e.g., based on user settings or geolocation)
@@ -23,13 +49,20 @@ const {
 } = useWeather();
 
 // Helper to format date for display
-const formattedDate = computed(() => {
-  return today.toLocaleDateString('nl-NL', {
-    weekday: 'long',
+const formattedDisplayDate = computed(() => {
+  if (!displayData.value.date) {
+    return 'Geen maaltijden gepland'; // Fallback message if no meals are planned at all
+  }
+  const dateToFormat = displayData.value.date;
+  const prefix = displayData.value.isToday
+    ? 'vandaag'
+    : `op ${dateToFormat.toLocaleDateString('nl-NL', { weekday: 'long' })}`;
+
+  return `${prefix} (${dateToFormat.toLocaleDateString('nl-NL', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+  })})`;
 });
 
 // Computed property for dynamic weather card classes
@@ -97,13 +130,13 @@ const weatherCardClasses = computed(() => {
     <UCard>
       <template #header>
         <h2 class="text-xl font-semibold">
-          Maaltijdplanning voor vandaag ({{ formattedDate }})
+          Maaltijdplanning {{ formattedDisplayDate }}
         </h2>
       </template>
 
-      <div v-if="todaysMeals.length > 0" class="space-y-4">
+      <div v-if="displayData.meals.length > 0" class="space-y-4">
         <div
-          v-for="meal in todaysMeals"
+          v-for="meal in displayData.meals"
           :key="meal.id"
           class="flex items-center space-x-4"
         >
@@ -131,7 +164,6 @@ const weatherCardClasses = computed(() => {
             <p class="text-sm text-gray-500 dark:text-gray-400">
               Porties: {{ meal.portions }}
             </p>
-            <!-- Add link to recipe details later -->
             <NuxtLink
               :to="`/recipes/${meal.recipeId}`"
               class="text-sm text-primary-500 hover:underline"
@@ -143,9 +175,8 @@ const weatherCardClasses = computed(() => {
       </div>
       <div v-else>
         <p class="text-gray-500 dark:text-gray-400">
-          Er is nog geen maaltijd gepland voor vandaag.
+          Er zijn momenteel geen maaltijden gepland.
         </p>
-        <!-- Optional: Add a link/button to the meal planner page -->
         <UButton
           to="/meal-planner"
           variant="link"

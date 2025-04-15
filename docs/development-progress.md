@@ -369,3 +369,11 @@ Translated UI elements to Dutch.
 - Updated state management in `pages/planner.vue` to handle the modal's data and visibility.
 - Aligned the "Plan maaltijd" button vertically with the date/day text using `sm:items-center`.
 - Removed the placeholder text ("Klik op 'plan maaltijd'...") from empty day cards.
+
+## Development Progress Changelog
+
+- Added functionality to show the next available scheduled meal on the homepage if no meal is planned for the current day.
+- Added a fixed bottom button to the Meal Planner page (`pages/planner.vue`).
+- This button allows users to add all ingredients from the currently displayed week's planned meals directly to the shopping list.
+- Ingredients are automatically scaled based on the planned portions for each meal.
+- User feedback is provided via toast notifications.

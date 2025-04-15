@@ -18,13 +18,30 @@ export interface ScheduledMeal {
 // Define the shape of the persisted state: Record mapping date string to array of meals
 type MealPlanState = Record<string, ScheduledMeal[]>;
 
+// Interface for the return type of getNextAvailableMeals
+export interface NextAvailableMealsResult {
+  date: Date | null;
+  meals: ScheduledMeal[];
+}
+
 export const useMealPlanner = () => {
   // Use useStorage to make the meal plan persistent
   const mealPlan = useStorage<MealPlanState>('mealPlan', {});
 
   // Helper to get date string in YYYY-MM-DD format
   const getDateString = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    // Ensure the date is treated as local time for date string generation
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper to parse YYYY-MM-DD string back to a Date object (local time)
+  const parseDateString = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Create date using local time components
+    return new Date(year, month - 1, day);
   };
 
   /**
@@ -46,6 +63,38 @@ export const useMealPlanner = () => {
       }
       return mealPlan.value[dateString];
     });
+  };
+
+  /**
+   * Finds the earliest date on or after a given start date that has meals scheduled.
+   */
+  const getNextAvailableMeals = (
+    startDate: Date = new Date()
+  ): NextAvailableMealsResult => {
+    const todayString = getDateString(startDate);
+
+    // Get all dates from the meal plan keys, filter out empty ones, and sort them
+    const availableDates = Object.keys(mealPlan.value)
+      .filter((dateStr) => mealPlan.value[dateStr]?.length > 0) // Ensure there are meals
+      .sort(); // Sort dates chronologically (YYYY-MM-DD format sorts correctly)
+
+    // Find the first date string that is on or after today
+    const nextDateString = availableDates.find(
+      (dateStr) => dateStr >= todayString
+    );
+
+    if (nextDateString && mealPlan.value[nextDateString]) {
+      return {
+        date: parseDateString(nextDateString), // Convert string back to Date
+        meals: mealPlan.value[nextDateString],
+      };
+    }
+
+    // If no future date found, return null date and empty meals
+    return {
+      date: null,
+      meals: [],
+    };
   };
 
   /**
@@ -117,6 +166,7 @@ export const useMealPlanner = () => {
   return {
     mealPlan, // Expose the raw state if needed, otherwise rely on getters
     getMealsForDate,
+    getNextAvailableMeals, // Export the new function
     addMeal,
     removeMeal,
     getDateString, // Expose helper if needed elsewhere
