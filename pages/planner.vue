@@ -11,8 +11,14 @@ const { getMealsForDate, addMeal, removeMeal, getDateString } =
   useMealPlanner();
 
 // Set header title
-onMounted(() => {
-  setHeader({ title: 'Maaltijdplanner' });
+onMounted(async () => {
+  await nextTick();
+
+  setHeader({
+    title: 'Maaltijdplanner',
+    showLeftAction: false,
+    showRightAction: false,
+  });
 });
 
 // Prepare recipes for select menu (value: id, label: title)
