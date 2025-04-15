@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.2.1",
+    "@google/generative-ai": "^0.24.0",
     "@mendable/firecrawl-js": "^1.23.9",
     "@nuxt/icon": "1.10.3",
     "@nuxt/image": "^1.10.0",
