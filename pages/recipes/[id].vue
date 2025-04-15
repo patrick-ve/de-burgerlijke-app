@@ -55,7 +55,14 @@
     </Teleport>
 
     <!-- Confirmation Modal -->
-    <UModal v-model="isModalOpen">
+    <UModal
+      v-model="isModalOpen"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
       <UCard
         :ui="{
           ring: '',
@@ -67,7 +74,7 @@
             <h3
               class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
             >
-              Recept Verwijderen
+              Recept verwijderen
             </h3>
             <UButton
               color="gray"
