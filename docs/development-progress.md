@@ -56,6 +56,14 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [ ] Update stored recipe data. (Needed for shopping list)
 - [x] `components/RecipeCookingTimer.vue`: Refactored timer logic for accurate display countdown using reactive state and endTime.
 - [ ] Added `/planner` route to `BottomNav.vue` component.
+- [-] **Home Page (`pages/index.vue`):**
+  - [x] Display today's scheduled meal(s) using `useMealPlanner`.
+  - [-] Display current weather.
+    - [x] Created `composables/useWeather.ts` for weather data fetching.
+    - [x] Implemented weather display card with loading/error states.
+    - [x] Integrated Met Norway Locationforecast API for real weather data.
+    - [-] Changed weather display to use background colors instead of icons.
+      - [x] Updated styling to match image example (icon, large temp, description, colored background).
 
 ## Recipes (`recipes-prd.md`)
 
@@ -141,10 +149,12 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] UI Component for calendar/list view (`pages/planner.vue`).
   - [x] Display days of the week, starting from the upcoming Monday.
   - [x] Updated date format to show full month name (`pages/planner.vue`).
+  - [x] Refactored recipe adding UI in `pages/planner.vue` for better alignment and button placement.
+  - [x] Refactored `UCard` to use standard `div` elements for simplicity in `pages/planner.vue`.
 - [ ] **Scheduling:**
   - [ ] UI for assigning recipes to days (e.g., drag-and-drop, selection).
   - [ ] Define database schema for `ScheduledMeal` model.
-- [ ] **Display Scheduled Meals:** Show assigned recipes in the planner view.
+- [x] **Display Scheduled Meals:** Show assigned recipes in the planner view and on the Home page (`pages/index.vue`).
 
 #### 4.5 Grocery List Generation & Pricing
 
@@ -307,6 +317,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 - **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
 - **`AddRecipeModal.vue`**: Corrected Zod parsing logic to handle the direct recipe object returned by the `/api/recipe/url`
+- **`USelectMenu`**: Fixed dropdown being clipped in the meal planner by removing `overflow-hidden` from the parent card container.
 
 ## Feature: Meal Planning
 
@@ -321,3 +332,40 @@ Translated UI elements to Dutch.
 
 - Refactored Meal Planner UI: Moved recipe selection and portions input to the card header for a cleaner layout.
 - Created reusable `PortionSelector.vue` component and integrated it into `pages/planner.vue`. The planner now defaults portion selection to the recipe's original portion count.
+- Refactored the meal planner page (`pages/planner.vue`):
+  - Moved recipe selection controls to the bottom section, visible only when no meal is planned.
+  - Replaced individual meal removal buttons with a single 'X' button in the top-right corner of the day card when a meal is planned.
+  - Hid the entire bottom section of the day card when a meal is planned.
+
+### Planner Page
+
+- Updated the UI for scheduled meal days: displays recipe image as background with overlay, changes text to white, and hides add controls.
+- Removed the 'Nog geen maaltijden gepland.' message when no meals are scheduled for a day.
+
+## Meal Planner (`planner-prd.md`)
+
+- [x] **Weekly Planner View:**
+  - [x] UI Component for calendar/list view (`pages/planner.vue`).
+  - [x] Display days of the week, starting from the upcoming Monday.
+  - [x] Updated date format to show full month name (`pages/planner.vue`).
+  - [x] Refactored recipe adding UI in `pages/planner.vue` for better alignment and button placement.
+  - [x] Refactored `UCard` to use standard `div` elements for simplicity in `pages/planner.vue`.
+  - [x] Reordered elements in the planner day card header: moved Add Recipe controls before Day/Date info.
+
+### Changed
+
+- Adjusted the layout of meal cards in the planner page (`pages/planner.vue`):
+  - Moved the planned meal title to the bottom-right corner.
+  - Increased the font size of the planned meal title.
+  - Ensured the remove button position remains consistent when visible.
+
+* Fixed `USelectMenu` dropdown clipping issue in the meal planner by setting popper strategy to `fixed`.
+* Conditionally applied `relative` positioning to planner day cards only when a meal is present, aiming to fix `USelectMenu` overlap.
+
+### Meal Planner UI Refactor
+
+- Replaced inline recipe selection with a modal (`UModal`) triggered by a 'Plan maaltijd' button on each day card in `pages/planner.vue`.
+- Removed the separate `MealPlannerModal.vue` component and integrated its functionality directly into `pages/planner.vue`.
+- Updated state management in `pages/planner.vue` to handle the modal's data and visibility.
+- Aligned the "Plan maaltijd" button vertically with the date/day text using `sm:items-center`.
+- Removed the placeholder text ("Klik op 'plan maaltijd'...") from empty day cards.
