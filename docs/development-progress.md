@@ -80,6 +80,10 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] UI for pasting URL (`components/AddRecipeModal.vue`, integrated into `pages/recipes/index.vue`).
   - [x] Server API endpoint (`server/api/recipe/url.post.ts`) to fetch URL content.
   - [x] LLM integration for parsing fetched HTML content.
+- [x] **YouTube URL Input:**
+  - [x] UI for pasting YouTube URL.
+  - [x] Server API endpoint to fetch transcript.
+  - [x] LLM integration for parsing transcript.
 - [ ] **Image Input:**
   - [ ] UI for uploading image.
 - [x] **LLM Parsing & Structuring:**
@@ -353,3 +357,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - Added `RecipeCookingTimer` component with basic functionality (start, pause, reset).
 - Restyled `RecipeCookingTimer` component for better visual prominence.
 - Rearranged layout of `RecipeCookingTimer` for better control separation (Play/Pause | Time | Reset).
+
+## Features Added
+
+- Implemented recipe fetching and parsing from standard URLs using Firecrawl and OpenAI.
+- Implemented recipe extraction from YouTube video transcripts using RapidAPI (for audio download), Google Gemini (for transcription), and OpenAI (for recipe structuring).
