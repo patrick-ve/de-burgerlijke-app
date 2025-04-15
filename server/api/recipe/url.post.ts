@@ -28,7 +28,8 @@ You must:
 4. Ensure all numeric values are actual numbers.
 5. Translate all values of the schema to Dutch.
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
-7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), make sure to include the timer in the response. This is the timer property in the schema.`;
+7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), 
+  make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.`;
 
   if (ogTitle) {
     prompt += `\n8. The metadata suggests the title might be "${ogTitle}". Consider using this as the primary source for the recipe's 'title'.`;
