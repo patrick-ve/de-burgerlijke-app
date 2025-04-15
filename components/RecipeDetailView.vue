@@ -2,6 +2,7 @@
 import type { Recipe, Ingredient, Step } from '~/types/recipe';
 import { useShoppingList } from '~/composables/useShoppingList';
 import { useYoutubeEmbed } from '~/composables/useYoutubeEmbed';
+import PortionSelector from '~/components/PortionSelector.vue';
 import { ref, computed } from 'vue';
 
 // --- Interface for Local Step (Simpler) ---
@@ -56,27 +57,6 @@ const originalPortions = computed(() => props.recipe.portions);
 const openPortionSlideover = () => {
   adjustedPortions.value = props.recipe.portions; // Reset to original portions on open
   isPortionSlideoverOpen.value = true;
-};
-
-const incrementPortions = () => {
-  adjustedPortions.value++;
-};
-
-const decrementPortions = () => {
-  if (adjustedPortions.value > 1) {
-    adjustedPortions.value--;
-  }
-};
-
-const onPortionInput = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const value = parseInt(input.value, 10);
-  if (!isNaN(value) && value > 0) {
-    adjustedPortions.value = value;
-  } else {
-    // Reset to current value if input is invalid
-    input.value = adjustedPortions.value.toString();
-  }
 };
 
 // Helper to format quantity, handling potential fractions
@@ -440,44 +420,11 @@ const handleAddPortionsToShoppingList = () => {
 
       <!-- Body: Portion Adjustment Controls ONLY -->
       <div class="space-y-4">
-        <!-- Portion Controls -->
-        <div class="flex items-center justify-center gap-0 pt-1 pb-2">
-          <UButton
-            icon="i-heroicons-minus-small"
-            size="sm"
-            color="primary"
-            square
-            variant="outline"
-            @click="decrementPortions"
-            :disabled="adjustedPortions <= 1"
-            aria-label="Verlaag porties"
-            data-testid="decrement-portions-button"
-          />
-          <input
-            type="number"
-            :value="adjustedPortions"
-            @input="onPortionInput"
-            min="1"
-            class="w-8 text-center text-base text-gray-900 font-bold border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 p-1"
-            aria-label="Aantal porties"
-            data-testid="portions-input"
-          />
-          <UButton
-            icon="i-heroicons-plus-small"
-            size="sm"
-            color="primary"
-            square
-            variant="outline"
-            @click="incrementPortions"
-            aria-label="Verhoog porties"
-            data-testid="increment-portions-button"
-          />
-          <span
-            class="text-sm text-gray-600 w-14 text-left ml-4 font-medium"
-          >
-            {{ adjustedPortions === 1 ? 'portie' : 'porties' }}
-          </span>
-        </div>
+        <!-- Use the new PortionSelector component -->
+        <PortionSelector
+          v-model="adjustedPortions"
+          data-testid="portion-selector-control"
+        />
       </div>
 
       <template #footer>

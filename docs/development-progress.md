@@ -55,6 +55,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] Logic to scale ingredient quantities proportionally. (Needed for shopping list)
   - [ ] Update stored recipe data. (Needed for shopping list)
 - [x] `components/RecipeCookingTimer.vue`: Refactored timer logic for accurate display countdown using reactive state and endTime.
+- [ ] Added `/planner` route to `BottomNav.vue` component.
 
 ## Recipes (`recipes-prd.md`)
 
@@ -136,13 +137,13 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 #### 4.4 Meal Planning & Scheduling
 
-- [ ] **Weekly Planner View:**
-  - [ ] UI Component for calendar/list view (`components/MealPlanner.vue`).
-  - [ ] Display days of the week.
+- [x] **Weekly Planner View:**
+  - [x] UI Component for calendar/list view (`pages/planner.vue`).
+  - [x] Display days of the week, starting from the upcoming Monday.
+  - [x] Updated date format to show full month name (`pages/planner.vue`).
 - [ ] **Scheduling:**
   - [ ] UI for assigning recipes to days (e.g., drag-and-drop, selection).
   - [ ] Define database schema for `ScheduledMeal` model.
-  - [ ] Server API endpoints for scheduling meals.
 - [ ] **Display Scheduled Meals:** Show assigned recipes in the planner view.
 
 #### 4.5 Grocery List Generation & Pricing
@@ -306,3 +307,17 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 
 - **`RecipeDetailView.vue`**: Removed redundant icon element from the default slot of the `UTabs` component to fix duplicate tab icons.
 - **`AddRecipeModal.vue`**: Corrected Zod parsing logic to handle the direct recipe object returned by the `/api/recipe/url`
+
+## Feature: Meal Planning
+
+Created `pages/planner.vue` with a 7-day weekly view using `UCard`.
+Created `composables/useMealPlanner.ts` with `useStorage` for persistent state.
+Integrated `useRecipes` to provide recipes for selection.
+Implemented `USelectMenu` for choosing recipes and buttons for adding/removing meals per day.
+Used `useHeaderState` to set the page title ("Maaltijdplanner").
+Translated UI elements to Dutch.
+
+## Changelog
+
+- Refactored Meal Planner UI: Moved recipe selection and portions input to the card header for a cleaner layout.
+- Created reusable `PortionSelector.vue` component and integrated it into `pages/planner.vue`. The planner now defaults portion selection to the recipe's original portion count.
