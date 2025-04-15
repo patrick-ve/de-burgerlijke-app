@@ -116,88 +116,123 @@ function handleRemoveMeal(mealId: string, date: Date) {
   <UContainer>
     <!-- Header is handled by TheHeader component using useHeaderState -->
     <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mt-4">
-      <UCard v-for="day in daysOfWeek" :key="day.dateString">
-        <template #header>
-          <div
-            class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2"
-          >
-            <!-- Day and Date -->
-            <div>
-              <div class="font-semibold capitalize">
-                {{ day.name }}
-              </div>
-              <div class="text-sm text-gray-500">
-                {{ day.shortDate }}
-              </div>
-            </div>
+      <div
+        v-for="day in daysOfWeek"
+        :key="day.dateString"
+        class="relative overflow-hidden transition-all duration-300 ease-in-out border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm dark:bg-gray-900"
+        :class="{
+          'bg-black/50': day.meals.value.length > 0, // From UCard background
+          'bg-white': day.meals.value.length === 0, // Default background
+        }"
+        :style="
+          day.meals.value.length > 0 && day.meals.value[0].imageUrl
+            ? {
+                backgroundImage: `url(${day.meals.value[0].imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundBlendMode: 'overlay',
+              }
+            : {}
+        "
+      >
+        <!-- Add Remove Button -->
+        <UButton
+          v-if="day.meals.value.length > 0"
+          icon="i-heroicons-x-mark"
+          size="xs"
+          color="gray"
+          variant="solid"
+          aria-label="Verwijder maaltijd"
+          class="absolute top-2 right-2 z-20"
+          @click="handleRemoveMeal(day.meals.value[0].id, day.date)"
+        />
 
-            <!-- Add Recipe Controls -->
-            <div class="flex-grow sm:max-w-[200px]">
-              <template v-if="recipeOptions.length > 0">
-                <USelectMenu
-                  v-model="selectedRecipeId[day.dateString]"
-                  :options="recipeOptions"
-                  placeholder="Kies recept..."
-                  value-attribute="value"
-                  option-attribute="label"
-                  size="sm"
-                  class="mb-1"
-                />
-                <div
-                  v-if="selectedRecipeId[day.dateString]"
-                  class="flex flex-col items-center gap-2 mt-2"
-                >
-                  <!-- Use PortionSelector -->
-                  <PortionSelector
-                    v-model="selectedPortions[day.dateString]"
-                    class=""
-                  />
-                  <UButton
-                    size="sm"
-                    aria-label="Voeg toe"
-                    class="w-full mt-1 font-bold"
-                    @click="handleAddRecipe(day.date)"
-                  >
-                    Plan deze maaltijd in
-                  </UButton>
-                </div>
-              </template>
-              <p
-                v-else
-                class="text-xs text-gray-400 text-center mt-1"
+        <div
+          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 border-b border-gray-200 dark:border-gray-800"
+          :class="{
+            'text-white border-b-0': day.meals.value.length > 0,
+          }"
+        >
+          <!-- Top Section: Only contains Day/Date Info now -->
+          <div class="flex-grow sm:max-w-[200px]">
+            <!-- Empty div or placeholder if needed for layout -->
+            <div
+              v-if="day.meals.value.length > 0"
+              class="min-h-[30px]"
+            >
+              <!-- Placeholder to maintain some height consistency -->
+              <span class="font-semibold"
+                >{{ day.meals.value[0].recipeTitle }} ({{
+                  day.meals.value[0].portions
+                }}p)</span
               >
-                Voeg recepten toe.
-              </p>
             </div>
           </div>
-        </template>
 
-        <div class="space-y-2 min-h-[100px]">
-          <!-- Display scheduled meals -->
-          <div
-            v-for="meal in day.meals.value"
-            :key="meal.id"
-            class="text-sm p-2 bg-primary-100 rounded flex justify-between items-center"
-          >
-            <span>{{ meal.recipeTitle }} ({{ meal.portions }}p)</span>
-            <UButton
-              icon="i-heroicons-x-mark"
-              size="xs"
-              color="red"
-              variant="ghost"
-              aria-label="Verwijder maaltijd"
-              @click="handleRemoveMeal(meal.id, day.date)"
-            />
+          <div :class="{ 'text-white': day.meals.value.length > 0 }">
+            <div class="font-semibold capitalize">
+              {{ day.name }}
+            </div>
+            <div
+              class="text-sm"
+              :class="{
+                'text-gray-200': day.meals.value.length > 0,
+                'text-gray-500': day.meals.value.length === 0,
+              }"
+            >
+              {{ day.shortDate }}
+            </div>
           </div>
-          <!-- Message if no meals -->
-          <p
-            v-if="day.meals.value.length === 0"
-            class="text-xs text-gray-400 text-center pt-4"
-          >
-            Nog geen maaltijden gepland.
+        </div>
+
+        <!-- Conditionally render the lower section -->
+        <div
+          v-if="day.meals.value.length === 0"
+          class="p-4 space-y-2 min-h-[100px] relative z-10 flex flex-col justify-center items-center"
+          :class="{
+            'bg-black/30 p-2 rounded': day.meals.value.length > 0, // This class might be redundant now due to v-if
+          }"
+        >
+          <!-- Bottom Section: Contains Recipe Selector when empty -->
+          <template v-if="recipeOptions.length > 0">
+            <USelectMenu
+              v-model="selectedRecipeId[day.dateString]"
+              :options="recipeOptions"
+              placeholder="Kies recept..."
+              value-attribute="value"
+              option-attribute="label"
+              size="sm"
+              class="mb-1 w-full"
+            />
+            <div
+              v-if="selectedRecipeId[day.dateString]"
+              class="flex flex-col items-center gap-2 mt-2 w-full"
+            >
+              <PortionSelector
+                v-model="selectedPortions[day.dateString]"
+              />
+              <UButton
+                size="sm"
+                aria-label="Voeg toe"
+                class="w-full mt-1 font-bold"
+                @click="handleAddRecipe(day.date)"
+              >
+                Plan deze maaltijd in
+              </UButton>
+            </div>
+            <!-- Show placeholder text centered if no recipe is selected yet -->
+            <p
+              v-else
+              class="text-xs text-gray-400 text-center flex-grow flex items-center justify-center"
+            >
+              Kies een recept om in te plannen.
+            </p>
+          </template>
+          <p v-else class="text-xs text-gray-400 text-center">
+            Voeg recepten toe.
           </p>
         </div>
-      </UCard>
+      </div>
     </div>
   </UContainer>
 </template>

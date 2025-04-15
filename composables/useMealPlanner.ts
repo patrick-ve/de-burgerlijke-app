@@ -12,6 +12,7 @@ export interface ScheduledMeal {
   recipeTitle: string; // Denormalized for easy display
   date: string; // YYYY-MM-DD format
   portions: number;
+  imageUrl?: string | null; // Added image URL
 }
 
 // Define the shape of the persisted state: Record mapping date string to array of meals
@@ -68,6 +69,7 @@ export const useMealPlanner = () => {
       recipeTitle: recipe.title, // Title is guaranteed string by useRecipes
       date: dateString,
       portions: portions ?? recipe.portions ?? 1, // Use provided portions, then recipe default, then 1
+      imageUrl: recipe.imageUrl, // Add image URL here
     };
 
     if (!mealPlan.value[dateString]) {
