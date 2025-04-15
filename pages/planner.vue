@@ -227,14 +227,24 @@ const formattedModalDate = computed(() => {
             class="text-xl font-semibold"
             >{{ day.meals.value[0].recipeTitle }} ({{
               day.meals.value[0].portions
-            }}x)</span
+            }}
+            {{
+              day.meals.value[0].portions > 1 ? 'porties' : 'portie'
+            }})</span
           >
         </div>
       </div>
     </div>
 
     <!-- Meal Planner Modal -->
-    <UModal v-model="isModalOpen">
+    <UModal
+      v-model="isModalOpen"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
       <UCard
         :ui="{
           ring: '',
