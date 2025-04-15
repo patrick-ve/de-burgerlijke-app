@@ -29,11 +29,17 @@ const recipeOptions = computed(
 // Keep selected recipe ID for each day's select menu, using empty string for no selection
 const selectedRecipeId = ref<Record<string, string>>({});
 
-// Generate days of the week
+// Generate days of the week starting from the next Monday
 const today = new Date();
+const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+const daysUntilNextMonday =
+  currentDay === 1 ? 0 : (8 - currentDay) % 7;
+const startOfWeek = new Date(today);
+startOfWeek.setDate(today.getDate() + daysUntilNextMonday);
+
 const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
-  const date = new Date(today);
-  date.setDate(today.getDate() + i);
+  const date = new Date(startOfWeek);
+  date.setDate(startOfWeek.getDate() + i);
   const dateString = getDateString(date); // Use helper from composable
   selectedRecipeId.value[dateString] = ''; // Initialize selection state with empty string
   return {
