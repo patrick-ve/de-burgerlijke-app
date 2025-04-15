@@ -145,21 +145,21 @@ function handleRemoveMeal(mealId: string, date: Date) {
                 />
                 <div
                   v-if="selectedRecipeId[day.dateString]"
-                  class="flex items-center gap-1 mt-2"
+                  class="flex flex-col items-center gap-2 mt-2"
                 >
                   <!-- Use PortionSelector -->
                   <PortionSelector
                     v-model="selectedPortions[day.dateString]"
-                    class="flex-grow"
+                    class=""
                   />
                   <UButton
-                    icon="i-heroicons-plus"
                     size="sm"
-                    variant="outline"
                     aria-label="Voeg toe"
-                    class="flex-shrink-0 ml-1"
+                    class="w-full mt-1 font-bold"
                     @click="handleAddRecipe(day.date)"
-                  />
+                  >
+                    Plan deze maaltijd in
+                  </UButton>
                 </div>
               </template>
               <p
