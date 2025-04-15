@@ -49,10 +49,26 @@ async function downloadYouTubeAudio(
     throw new Error('RapidAPI key is missing.');
   }
 
-  const videoId = youtubeUrl.split('v=')[1]?.split('&')[0]; // Basic extraction
+  let videoId: string | undefined;
+  try {
+    const url = new URL(youtubeUrl);
+    if (url.hostname === 'youtu.be') {
+      videoId = url.pathname.slice(1).split('?')[0]; // Get path after '/' and remove query params
+    } else if (
+      url.hostname === 'www.youtube.com' ||
+      url.hostname === 'youtube.com' ||
+      url.hostname === 'm.youtube.com'
+    ) {
+      videoId = url.searchParams.get('v') ?? undefined;
+    }
+  } catch (e) {
+    // Handle invalid URL format if needed, but Zod validation should catch most
+    consola.error('Error parsing YouTube URL:', e);
+  }
+
   if (!videoId) {
     throw new Error(
-      'Invalid YouTube URL: Could not extract video ID.'
+      'Invalid YouTube URL: Could not extract video ID from the provided URL.'
     );
   }
 
@@ -467,9 +483,6 @@ interface Recipe {
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const { googleAiApiKey, openaiApiKey, rapidApiKeyYoutube } = config; // Ensure these are defined in your nuxt.config
-  consola.info(config);
-
-  consola.info(googleAiApiKey, openaiApiKey, rapidApiKeyYoutube);
 
   if (!googleAiApiKey || !openaiApiKey || !rapidApiKeyYoutube) {
     consola.error('Missing API keys in runtime config.');

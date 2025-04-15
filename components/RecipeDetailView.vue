@@ -408,15 +408,15 @@ const handleAddPortionsToShoppingList = () => {
       overlay: {
         background: 'bg-black/40 backdrop-blur-sm',
       },
-      width: 'w-screen sm:max-w-md', // Adjust width as needed
+      width: 'w-screen sm:max-w-md',
     }"
     prevent-close
   >
     <UCard
-      class="flex flex-col flex-1"
+      class="flex flex-col"
       :ui="{
         header: { padding: 'py-3 px-4' },
-        body: { padding: 'p-4', base: 'flex-1' },
+        body: { padding: 'p-4 h-32' },
         footer: { padding: 'p-4' },
         ring: '',
         divide: 'divide-y divide-gray-100',
