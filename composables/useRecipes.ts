@@ -124,6 +124,7 @@ export const useRecipes = () => {
       title: aiRecipe.title,
       description: aiRecipe.description ?? null,
       imageUrl: aiRecipe.imageUrl ?? null,
+      youtubeUrl: aiRecipe.youtubeUrl ?? null,
       prepTime: parseDuration(aiRecipe.prepTime),
       cookTime: parseDuration(aiRecipe.cookTime),
       cuisine: aiRecipe.cuisine ?? null,
