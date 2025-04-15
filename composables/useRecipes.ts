@@ -141,7 +141,7 @@ export const useRecipes = () => {
           id: uuidv4(), // Generate unique step ID
           order: index + 1,
           description: step.description,
-          timer: parseStepTimer(step.timer), // Use the specific step timer parser
+          timer: step.timer,
         }))
         // Ensure steps are sorted by order, just in case
         .sort((a, b) => a.order - b.order),
