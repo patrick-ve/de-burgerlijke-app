@@ -50,7 +50,7 @@ Keep the response concise and clear.
 Respond with a valid JSON object that matches this TypeScript interface:
 
 interface Recipe {
-  // Title of the recipe
+  // Title of the recipe, omit the word "Recept" or "Recipe" in this field.
   title: string
 
   // Optional description of the recipe (can be null)
