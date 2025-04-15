@@ -3,7 +3,8 @@ import {
   recipeSchema,
   type AIRecipeDTO,
 } from '~/server/utils/recipeSchema';
-import { z } from 'zod';
+import { computed } from 'vue';
+import { ref } from 'vue';
 
 const isOpen = defineModel<boolean>('isOpen', { required: true });
 
@@ -12,28 +13,85 @@ const emit = defineEmits<{
   (e: 'recipeParsed', recipe: AIRecipeDTO): void;
 }>();
 
+// Input type selection
+const inputTypes = [
+  {
+    value: 'url',
+    label: 'Website',
+    icon: 'i-heroicons-globe-alt',
+  },
+  {
+    value: 'youtube',
+    label: 'YouTube',
+    icon: 'i-simple-icons-youtube',
+  },
+];
+const selectedInputType = ref('url'); // Default to 'url'
+
 const url = ref('');
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
-async function submitRecipeUrl() {
-  if (!url.value || !url.value.startsWith('http')) {
+// Computed property for dynamic placeholder
+const placeholderText = computed(() => {
+  return selectedInputType.value === 'youtube'
+    ? 'https://www.youtube.com/watch?v=...'
+    : 'www.ah.nl/recepten/...';
+});
+
+// Computed property for the API endpoint
+const apiEndpoint = computed(() => {
+  return selectedInputType.value === 'youtube'
+    ? '/api/recipe/youtube'
+    : '/api/recipe/url';
+});
+
+// Validation logic based on input type
+function validateInput() {
+  if (!url.value) {
+    error.value = 'Voer een geldige URL in.';
+    return false;
+  }
+  if (
+    selectedInputType.value === 'url' &&
+    !url.value.startsWith('http')
+  ) {
     error.value =
-      'Voer een geldige URL in (beginnend met http of https).';
+      'Voer een geldige website URL in (beginnend met http of https).';
+    return false;
+  }
+  if (
+    selectedInputType.value === 'youtube' &&
+    !url.value.includes('youtube.com') &&
+    !url.value.includes('youtu.be')
+  ) {
+    error.value = 'Voer een geldige YouTube URL in.';
+    return false;
+  }
+  return true;
+}
+
+async function submitRecipeUrl() {
+  error.value = null;
+  if (!validateInput()) {
     return;
   }
-  isLoading.value = true;
-  error.value = null;
-  try {
-    console.log('Submitting URL:', url.value);
 
-    // Make POST request to /api/recipe
-    const response = await $fetch<{
-      recipe: AIRecipeDTO; // Changed type to unknown for safe parsing
-    }>('/api/recipe/url', {
-      method: 'POST',
-      body: { url: url.value },
-    });
+  isLoading.value = true;
+  try {
+    console.log(
+      `Submitting ${selectedInputType.value} URL:`,
+      url.value
+    );
+
+    // Make POST request to the dynamically selected endpoint
+    const response = await $fetch<{ recipe: AIRecipeDTO }>(
+      apiEndpoint.value,
+      {
+        method: 'POST',
+        body: { url: url.value },
+      }
+    );
 
     console.log('API Response:', response);
 
@@ -41,12 +99,11 @@ async function submitRecipeUrl() {
     const parsed = recipeSchema.safeParse(response.recipe);
 
     if (parsed.success) {
-      // Emit the parsed recipe data
-      emit('recipeParsed', parsed.data); // Use parsed.data
-      isOpen.value = false; // Close the modal
-      url.value = ''; // Reset URL input
+      emit('recipeParsed', parsed.data);
+      isOpen.value = false;
+      url.value = '';
+      selectedInputType.value = 'url'; // Reset selection
     } else {
-      // Handle Zod validation errors
       console.error('Zod validation failed:', parsed.error.errors);
       throw new Error(
         'Receptgegevens van API zijn ongeldig. Probeer een andere URL.'
@@ -54,10 +111,9 @@ async function submitRecipeUrl() {
     }
   } catch (err: any) {
     console.error('Error submitting URL:', err);
-    // Use error message from the API or Zod validation if available, otherwise generic message
     error.value =
-      err.message || // Use the specific error message if available
-      err.data?.message || // Use API error message if available
+      err.data?.message || // Use API error message first
+      err.message || // Then Zod/fetch error message
       'URL versturen mislukt. Controleer de URL en probeer het opnieuw.';
   } finally {
     isLoading.value = false;
@@ -85,7 +141,7 @@ async function submitRecipeUrl() {
           <h3
             class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
           >
-            Recept toevoegen via website
+            Recept toevoegen
           </h3>
           <UButton
             color="gray"
@@ -97,10 +153,45 @@ async function submitRecipeUrl() {
         </div>
       </template>
 
-      <UFormGroup label="Recept URL" name="url" class="mb-4">
+      <UFormGroup label="Bron" name="inputType" class="mb-6">
+        <div class="flex space-x-4">
+          <UCard
+            v-for="option in inputTypes"
+            :key="option.value"
+            as="button"
+            type="button"
+            :ui="{
+              body: { padding: 'px-4 py-3 sm:p-4' },
+              ring:
+                selectedInputType === option.value
+                  ? 'ring-2 ring-primary-500'
+                  : 'ring-1 ring-gray-300',
+            }"
+            class="flex-1 text-left relative disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isLoading"
+            @click="selectedInputType = option.value"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <UIcon :name="option.icon" class="w-5 h-5 mr-2" />
+                <span class="text-sm font-medium">{{
+                  option.label
+                }}</span>
+              </div>
+              <UIcon
+                v-if="selectedInputType === option.value"
+                name="i-heroicons-check-circle-solid"
+                class="w-5 h-5 text-primary-500"
+              />
+            </div>
+          </UCard>
+        </div>
+      </UFormGroup>
+
+      <UFormGroup label="URL" name="url" class="mb-4">
         <UInput
           v-model="url"
-          placeholder="www.ah.nl/recepten/spaghetti-bolognese"
+          :placeholder="placeholderText"
           icon="i-heroicons-link"
           :disabled="isLoading"
         />
