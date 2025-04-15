@@ -119,7 +119,7 @@ function handleRemoveMeal(mealId: string, date: Date) {
       <div
         v-for="day in daysOfWeek"
         :key="day.dateString"
-        class="relative overflow-hidden transition-all duration-300 ease-in-out border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm dark:bg-gray-900"
+        class="relative overflow-hidden transition-all duration-300 ease-in-out border border-gray-200 rounded-lg shadow-sm"
         :class="{
           'bg-black/50': day.meals.value.length > 0, // From UCard background
           'bg-white': day.meals.value.length === 0, // Default background
@@ -148,24 +148,19 @@ function handleRemoveMeal(mealId: string, date: Date) {
         />
 
         <div
-          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 border-b border-gray-200 dark:border-gray-800"
+          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 border-b border-gray-200"
           :class="{
             'text-white border-b-0': day.meals.value.length > 0,
           }"
         >
           <!-- Top Section: Only contains Day/Date Info now -->
           <div class="flex-grow sm:max-w-[200px]">
-            <!-- Empty div or placeholder if needed for layout -->
+            <!-- Empty div to maintain layout, meal title moved -->
             <div
               v-if="day.meals.value.length > 0"
               class="min-h-[30px]"
             >
               <!-- Placeholder to maintain some height consistency -->
-              <span class="font-semibold"
-                >{{ day.meals.value[0].recipeTitle }} ({{
-                  day.meals.value[0].portions
-                }}p)</span
-              >
             </div>
           </div>
 
@@ -185,12 +180,12 @@ function handleRemoveMeal(mealId: string, date: Date) {
           </div>
         </div>
 
-        <!-- Conditionally render the lower section -->
+        <!-- Conditionally render the lower section (add recipe controls) -->
         <div
           v-if="day.meals.value.length === 0"
           class="p-4 space-y-2 min-h-[100px] relative z-10 flex flex-col justify-center items-center"
           :class="{
-            'bg-black/30 p-2 rounded': day.meals.value.length > 0, // This class might be redundant now due to v-if
+            'bg-black/30 p-2 rounded': day.meals.value.length > 0, // Kept for potential future use, though v-if makes it inactive now
           }"
         >
           <!-- Bottom Section: Contains Recipe Selector when empty -->
@@ -231,6 +226,18 @@ function handleRemoveMeal(mealId: string, date: Date) {
           <p v-else class="text-xs text-gray-400 text-center">
             Voeg recepten toe.
           </p>
+        </div>
+
+        <!-- Planned Meal Title: Positioned bottom-right when meal exists -->
+        <div
+          v-if="day.meals.value.length > 0"
+          class="absolute bottom-2 right-2 z-10 p-2 text-white text-right"
+        >
+          <span class="text-xl font-semibold"
+            >{{ day.meals.value[0].recipeTitle }} ({{
+              day.meals.value[0].portions
+            }}x)</span
+          >
         </div>
       </div>
     </div>
