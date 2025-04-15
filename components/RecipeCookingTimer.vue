@@ -137,13 +137,11 @@ const canStart = computed(
 const canPause = computed(
   () => isRunning.value && props.durationMs !== null
 );
-// Allow reset if timer is running, or if it's paused/stopped but not at the initial full duration
+// Allow reset if timer has a duration and is not currently showing the initial full duration
 const canReset = computed(
   () =>
     props.durationMs !== null &&
-    (isRunning.value ||
-      (displaySeconds.value > 0 &&
-        displaySeconds.value < initialSeconds.value))
+    displaySeconds.value !== initialSeconds.value
 );
 
 // --- Lifecycle ---
