@@ -4,7 +4,8 @@ import { useMealPlanner } from '~/composables/useMealPlanner';
 import { useHeaderState } from '~/composables/useHeaderState';
 import PortionSelector from '~/components/PortionSelector.vue';
 import type { Recipe } from '~/types/recipe';
-import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import from composable
+// --- Remove type import that's no longer needed directly here ---
+// import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import from composable
 
 const { setHeader } = useHeaderState();
 const { recipes } = useRecipes();
@@ -27,25 +28,51 @@ const recipeOptions = computed(
   () => recipes.value.map((r) => ({ label: r.title, value: r.id! })) // id guaranteed string by useRecipes
 );
 
-// Keep selected recipe ID for each day's select menu, using empty string for no selection
-const selectedRecipeId = ref<Record<string, string>>({});
-// Keep selected portions for each day, defaulting to 1
-const selectedPortions = ref<Record<string, number>>({});
+// --- Remove old state related to inline select ---
+// const selectedRecipeId = ref<Record<string, string>>({});
+// const selectedPortions = ref<Record<string, number>>({});
+
+// --- Add state for modal ---
+const isModalOpen = ref(false);
+const modalTargetDate = ref<Date | null>(null);
+const modalSelectedRecipeId = ref<string>(''); // State for modal's recipe selection
+const modalSelectedPortions = ref<number>(1); // State for modal's portion selection
+
+// Function to open the modal for a specific date
+function openPlannerModal(date: Date) {
+  modalTargetDate.value = date;
+  modalSelectedRecipeId.value = ''; // Reset selection
+  modalSelectedPortions.value = 1; // Reset portions
+  isModalOpen.value = true;
+}
 
 // Generate days of the week starting from the next Monday
 const today = new Date();
 const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-const daysUntilNextMonday =
-  currentDay === 1 ? 0 : (8 - currentDay) % 7;
-const startOfWeek = new Date(today);
-startOfWeek.setDate(today.getDate() + daysUntilNextMonday);
+// --- Correct day calculation to start from *today* if it's Monday ---
+// const daysUntilNextMonday =
+//   currentDay === 1 ? 0 : (8 - currentDay) % 7;
+const daysFromToday = Array.from({ length: 7 }).map((_, i) => {
+  const date = new Date(today);
+  date.setDate(today.getDate() + i); // Start from today
+  return date;
+});
+
+// Start from the *next* Monday for the display week if needed
+const startDisplayDate = new Date(today);
+if (currentDay !== 1) {
+  // If today is not Monday
+  const daysUntilNextMonday = (8 - currentDay) % 7;
+  startDisplayDate.setDate(today.getDate() + daysUntilNextMonday);
+}
 
 const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
-  const date = new Date(startOfWeek);
-  date.setDate(startOfWeek.getDate() + i);
-  const dateString = getDateString(date); // Use helper from composable
-  selectedRecipeId.value[dateString] = ''; // Initialize selection state with empty string
-  selectedPortions.value[dateString] = 1; // Initialize portions state to 1
+  const date = new Date(startDisplayDate); // Use the calculated start date
+  date.setDate(startDisplayDate.getDate() + i);
+  const dateString = getDateString(date);
+  // --- Remove initialization of old state ---
+  // selectedRecipeId.value[dateString] = '';
+  // selectedPortions.value[dateString] = 1;
   return {
     date,
     dateString,
@@ -58,58 +85,51 @@ const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
   };
 });
 
-// Watch for changes in selectedRecipeId to update default portions
-watch(
-  selectedRecipeId,
-  (newSelectedIds, oldSelectedIds) => {
-    for (const dateString in newSelectedIds) {
-      const newRecipeId = newSelectedIds[dateString];
-      const oldRecipeId = oldSelectedIds?.[dateString];
+// --- Remove watcher for old selectedRecipeId ---
+// watch(selectedRecipeId, ..., { deep: true });
 
-      // Only update if the recipe ID actually changed
-      if (newRecipeId !== oldRecipeId) {
-        if (newRecipeId) {
-          const selectedRecipe = recipes.value.find(
-            (r) => r.id === newRecipeId
-          );
-          selectedPortions.value[dateString] =
-            selectedRecipe?.portions ?? 1;
-        } else {
-          // Reset to 1 if no recipe is selected
-          selectedPortions.value[dateString] = 1;
-        }
-      }
-    }
-  },
-  { deep: true }
-); // Use deep watcher as selectedRecipeId is an object
+// --- Remove old handleAddRecipe function ---
+// function handleAddRecipe(date: Date) { ... }
 
-// Function to add the selected recipe to a day
-function handleAddRecipe(date: Date) {
-  const dateString = getDateString(date);
-  const recipeIdToAdd = selectedRecipeId.value[dateString];
-  const portionsToAdd = selectedPortions.value[dateString] || 1; // Default to 1 if somehow undefined
-
-  if (recipeIdToAdd) {
+// --- Add new handler for planning from the modal ---
+function planMealFromModal() {
+  if (modalTargetDate.value && modalSelectedRecipeId.value) {
     const recipeToAdd = recipes.value.find(
-      (r) => r.id === recipeIdToAdd
+      (r) => r.id === modalSelectedRecipeId.value
     );
     if (recipeToAdd) {
-      addMeal(recipeToAdd, date, portionsToAdd); // Pass portions to addMeal
-      selectedRecipeId.value[dateString] = ''; // Reset selection to empty string
-      selectedPortions.value[dateString] = 1; // Reset portions to 1
+      addMeal(
+        recipeToAdd,
+        modalTargetDate.value,
+        modalSelectedPortions.value
+      );
+      isModalOpen.value = false; // Close modal on success
     } else {
-      console.error('Selected recipe not found');
+      console.error('Selected recipe not found in modal');
+      // Maybe show a toast notification here
     }
   } else {
-    console.warn('No recipe selected to add');
+    console.error(
+      'Target date or recipe ID missing for modal planning.'
+    );
+    // Maybe show a toast notification here
   }
 }
 
-// Function to remove a meal
+// Function to remove a meal (Keep as is)
 function handleRemoveMeal(mealId: string, date: Date) {
   removeMeal(mealId, date);
 }
+
+// Helper to format date for modal title
+const formattedModalDate = computed(() => {
+  if (!modalTargetDate.value) return '';
+  return modalTargetDate.value.toLocaleDateString('nl-NL', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+});
 </script>
 
 <template>
@@ -119,10 +139,11 @@ function handleRemoveMeal(mealId: string, date: Date) {
       <div
         v-for="day in daysOfWeek"
         :key="day.dateString"
-        class="relative overflow-hidden transition-all duration-300 ease-in-out border border-gray-200 rounded-lg shadow-sm"
+        class="border border-gray-200 shadow-sm rounded-xl"
         :class="{
           'bg-black/50': day.meals.value.length > 0, // From UCard background
           'bg-white': day.meals.value.length === 0, // Default background
+          relative: day.meals.value.length > 0, // Added conditional 'relative'
         }"
         :style="
           day.meals.value.length > 0 && day.meals.value[0].imageUrl
@@ -147,23 +168,14 @@ function handleRemoveMeal(mealId: string, date: Date) {
           @click="handleRemoveMeal(day.meals.value[0].id, day.date)"
         />
 
+        <!-- Day/Date Info and Add Button Section -->
         <div
-          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 border-b border-gray-200"
+          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
           :class="{
             'text-white border-b-0': day.meals.value.length > 0,
           }"
         >
-          <!-- Top Section: Only contains Day/Date Info now -->
-          <div class="flex-grow sm:max-w-[200px]">
-            <!-- Empty div to maintain layout, meal title moved -->
-            <div
-              v-if="day.meals.value.length > 0"
-              class="min-h-[30px]"
-            >
-              <!-- Placeholder to maintain some height consistency -->
-            </div>
-          </div>
-
+          <!-- Left side: Day/Date -->
           <div :class="{ 'text-white': day.meals.value.length > 0 }">
             <div class="font-semibold capitalize">
               {{ day.name }}
@@ -178,62 +190,41 @@ function handleRemoveMeal(mealId: string, date: Date) {
               {{ day.shortDate }}
             </div>
           </div>
+
+          <!-- Right side: Plan Meal Button (only if no meal planned) -->
+          <div
+            v-if="day.meals.value.length === 0"
+            class="mt-1 sm:mt-0"
+          >
+            <UButton
+              v-if="recipeOptions.length > 0"
+              size="xs"
+              @click="openPlannerModal(day.date)"
+            >
+              Plan maaltijd
+            </UButton>
+            <!-- Optional: Message if no recipes exist -->
+            <span v-else class="text-xs text-gray-400 italic"
+              >Voeg recepten toe</span
+            >
+          </div>
         </div>
 
-        <!-- Conditionally render the lower section (add recipe controls) -->
-        <div
-          v-if="day.meals.value.length === 0"
-          class="p-4 space-y-2 min-h-[100px] relative z-10 flex flex-col justify-center items-center"
-          :class="{
-            'bg-black/30 p-2 rounded': day.meals.value.length > 0, // Kept for potential future use, though v-if makes it inactive now
-          }"
-        >
-          <!-- Bottom Section: Contains Recipe Selector when empty -->
-          <template v-if="recipeOptions.length > 0">
-            <USelectMenu
-              v-model="selectedRecipeId[day.dateString]"
-              :options="recipeOptions"
-              placeholder="Kies recept..."
-              value-attribute="value"
-              option-attribute="label"
-              size="sm"
-              class="mb-1 w-full"
-            />
-            <div
-              v-if="selectedRecipeId[day.dateString]"
-              class="flex flex-col items-center gap-2 mt-2 w-full"
-            >
-              <PortionSelector
-                v-model="selectedPortions[day.dateString]"
-              />
-              <UButton
-                size="sm"
-                aria-label="Voeg toe"
-                class="w-full mt-1 font-bold"
-                @click="handleAddRecipe(day.date)"
-              >
-                Plan deze maaltijd in
-              </UButton>
-            </div>
-            <!-- Show placeholder text centered if no recipe is selected yet -->
-            <p
-              v-else
-              class="text-xs text-gray-400 text-center flex-grow flex items-center justify-center"
-            >
-              Kies een recept om in te plannen.
-            </p>
-          </template>
-          <p v-else class="text-xs text-gray-400 text-center">
-            Voeg recepten toe.
-          </p>
-        </div>
-
-        <!-- Planned Meal Title: Positioned bottom-right when meal exists -->
+        <!-- Conditionally render the lower section (placeholder or planned meal title) -->
         <div
           v-if="day.meals.value.length > 0"
-          class="absolute bottom-2 right-2 z-10 p-2 text-white text-right"
+          class="relative z-10"
+          :class="{
+            'min-h-[100px] flex items-center justify-center p-4':
+              day.meals.value.length === 0, // Keep placeholder space when empty
+            'absolute bottom-2 right-2 p-2 text-white text-right':
+              day.meals.value.length > 0, // Position title when meal exists
+          }"
         >
-          <span class="text-xl font-semibold"
+          <!-- Planned Meal Title: Positioned bottom-right when meal exists -->
+          <span
+            v-if="day.meals.value.length > 0"
+            class="text-xl font-semibold"
             >{{ day.meals.value[0].recipeTitle }} ({{
               day.meals.value[0].portions
             }}x)</span
@@ -241,5 +232,65 @@ function handleRemoveMeal(mealId: string, date: Date) {
         </div>
       </div>
     </div>
+
+    <!-- Meal Planner Modal -->
+    <UModal v-model="isModalOpen">
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900"
+            >
+              Plan maaltijd voor {{ formattedModalDate }}
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isModalOpen = false"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <UFormGroup label="Recept" name="recipe">
+            <USelectMenu
+              v-model="modalSelectedRecipeId"
+              :options="recipeOptions"
+              placeholder="Kies een recept"
+              value-attribute="value"
+              option-attribute="label"
+              searchable
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Aantal porties" name="portions">
+            <PortionSelector v-model="modalSelectedPortions" />
+          </UFormGroup>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end space-x-2">
+            <UButton
+              color="gray"
+              variant="ghost"
+              @click="isModalOpen = false"
+              >Annuleren</UButton
+            >
+            <UButton
+              label="Plan"
+              :disabled="!modalSelectedRecipeId"
+              @click="planMealFromModal"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
   </UContainer>
 </template>
