@@ -1,9 +1,43 @@
+// Define the categories as a constant tuple (simplified list)
+export const ingredientCategories = [
+  'Fruit',
+  'Vegetables',
+  'Pasta & Rice',
+  'Meals & Salads',
+  'Deli & Cheese',
+  'Meat & Fish',
+  'Plant-Based',
+  'Dairy & Eggs',
+  'Bakery',
+  'Breakfast & Spreads',
+  'Sweets & Confectionery',
+  'Snacks & Nuts',
+  'Beverages',
+  'Pantry',
+  'Spices & Seasonings',
+  'Nutrition',
+  'Frozen',
+  'Alcohol',
+  'Pharmacy',
+  'Personal Care',
+  'Baby & Child',
+  'Household',
+  'Pet',
+  'Leisure',
+  'Other',
+] as const;
+
+// Define the type based on the tuple values
+export type IngredientCategory =
+  (typeof ingredientCategories)[number];
+
 export interface Ingredient {
   id: string; // Or number, depending on DB schema
   quantity: number | null; // Allow null for ingredients without specific quantity
   unit: string | null;
   name: string;
   notes?: string | null;
+  category?: IngredientCategory | null; // Use the single, simplified category type
 }
 
 export interface Step {
@@ -27,7 +61,7 @@ export interface Recipe {
   cookTime?: number | null;
   cuisine?: string | null;
   portions: number;
-  ingredients: Ingredient[];
+  ingredients: Ingredient[]; // This now uses the Ingredient interface with SimplifiedCategory
   steps: Step[];
   utensils?: Utensil[]; // Made optional and kept as Utensil[]
   isFavorite?: boolean;

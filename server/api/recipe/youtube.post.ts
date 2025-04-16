@@ -18,6 +18,7 @@ import {
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { recipeSchema } from '~/server/utils/recipeSchema';
+import { ingredientCategories } from '~/types/recipe'; // Import the RENAMED (simplified) categories
 
 // --- Input Schema ---
 const inputSchema = z
@@ -402,7 +403,8 @@ async function deleteLocalFile(filePath: string): Promise<void> {
  * Creates the system prompt for OpenAI recipe extraction from transcript.
  */
 function createSystemPromptForTranscript(): string {
-  // Reusing structure from url.post.ts but adapted for transcript input
+  const categoryList = ingredientCategories.join(', '); // Use RENAMED (simplified) list
+
   return `
 You are an expert in analyzing recipe transcripts. You are given a raw text transcript potentially containing a recipe spoken aloud.
 You must:
@@ -414,10 +416,11 @@ You must:
 5. Translate all values of the schema to Dutch.
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Identify any steps mentioning timers (e.g., "cook for 10 minutes") and include the duration in milliseconds in the 'timer' property of the step. 1 minute = 60000 milliseconds.
-8. Extract the recipe's 'title' from the transcript. Omit words like "Recept" or "Recipe".
-9. Extract the number of 'portions' if mentioned. Default to 1 if not specified.
-10. Infer 'prepTime' and 'cookTime' in minutes if mentioned or implied.
-11. Try to identify the 'cuisine' type if mentioned.
+8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.
+9. Extract the recipe's 'title' from the transcript. Omit words like "Recept" or "Recipe".
+10. Extract the number of 'portions' if mentioned. Default to 1 if not specified.
+11. Infer 'prepTime' and 'cookTime' in minutes if mentioned or implied.
+12. Try to identify the 'cuisine' type if mentioned.
 
 Focus solely on the recipe information within the transcript. Ignore conversational filler, introductions, or unrelated content unless it directly describes the recipe.
 
@@ -443,6 +446,8 @@ interface Recipe {
     name: string
     // Optional notes for the ingredient (can be null)
     notes?: string | null
+    // Category of the ingredient (must be one of: ${categoryList}, or null)
+    category?: string | null
   }>
 
   // List of preparation steps.

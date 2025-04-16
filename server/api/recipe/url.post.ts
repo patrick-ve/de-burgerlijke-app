@@ -6,6 +6,7 @@ import FirecrawlApp, {
   type FirecrawlDocumentMetadata,
 } from '@mendable/firecrawl-js';
 import { recipeSchema } from '~/server/utils/recipeSchema';
+import { ingredientCategories } from '~/types/recipe'; // Import the RENAMED (simplified) categories
 
 const inputSchema = z
   .object({
@@ -18,6 +19,8 @@ function createSystemPrompt(
   ogTitle?: string | null,
   ogVideo?: string | null
 ): string {
+  const categoryList = ingredientCategories.join(', '); // Use RENAMED (simplified) list
+
   let prompt = `
 You are an expert in analyzing recipes. You are given a markdown representation of a cooking website containing a recipe, including its metadata.
 You must: 
@@ -29,18 +32,19 @@ You must:
 5. Translate all values of the schema to Dutch.
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), 
-  make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.`;
+  make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.
+8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.`;
 
   if (ogTitle) {
-    prompt += `\n8. The metadata suggests the title might be "${ogTitle}". Consider using this as the primary source for the recipe's 'title'.`;
+    prompt += `\n9. The metadata suggests the title might be "${ogTitle}". Consider using this as the primary source for the recipe's 'title'.`;
   } else {
-    prompt += `\n8. Extract the recipe's 'title' from the main content.`;
+    prompt += `\n9. Extract the recipe's 'title' from the main content.`;
   }
 
   if (ogVideo) {
-    prompt += `\n9. The metadata includes a video URL: "${ogVideo}". Use this for the 'youtubeUrl' field if it's a valid video related to the recipe.`;
+    prompt += `\n10. The metadata includes a video URL: "${ogVideo}". Use this for the 'youtubeUrl' field if it's a valid video related to the recipe.`;
   } else {
-    prompt += `\n9. Check the content for any YouTube video links to use for the 'youtubeUrl' field.`;
+    prompt += `\n10. Check the content for any YouTube video links to use for the 'youtubeUrl' field.`;
   }
 
   prompt += `
@@ -72,6 +76,8 @@ interface Recipe {
     name: string
     // Optional notes for the ingredient (can be null)
     notes?: string | null
+    // Category of the ingredient (must be one of: ${categoryList}, or null)
+    category?: string | null 
   }>
 
   // List of preparation steps.

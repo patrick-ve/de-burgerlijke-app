@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  ingredientCategories,
+  type IngredientCategory,
+} from '~/types/recipe'; // Import the renamed (simplified) categories and the type
 
 // Define the enum part
 const specificUnits = z.enum([
@@ -44,6 +48,12 @@ export const ingredientSchema = z
       .nullable()
       .optional()
       .describe('Optional notes for the ingredient'),
+    // Validate directly against the simplified categories
+    category: z
+      .enum(ingredientCategories) // Use the RENAMED (simplified) list from types/recipe.ts
+      .nullable()
+      .optional() // Keep optional as AI might still not provide it
+      .describe('Category of the ingredient'), // Simple description
   })
   .describe('Schema for an ingredient in the recipe');
 

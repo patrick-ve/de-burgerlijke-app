@@ -140,6 +140,7 @@ export const useRecipes = () => {
         quantity: ing.quantity ?? null,
         unit: ing.unit ?? null,
         notes: ing.notes ?? null,
+        category: ing.category ?? null,
       })),
       steps: (aiRecipe.steps ?? [])
         .map((step, index) => ({
