@@ -62,10 +62,11 @@ const totalTime = computed(() => {
       class="favorite-button absolute top-2 right-2 z-10"
       aria-label="Toggle Favorite"
       @click.stop.prevent="handleToggleFavorite"
+      v-if="false"
     />
 
     <div
-      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-3 hover:shadow-lg transition-shadow duration-200 ease-in-out"
+      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-3 hover:shadow-lg transition-shadow duration-200 ease-in-out w-full"
     >
       <!-- Image Section -->
       <div class="flex-shrink-0">
@@ -91,7 +92,7 @@ const totalTime = computed(() => {
       <!-- Text Content Section -->
       <div class="flex-grow min-w-0 pr-4">
         <h3
-          class="text-lg font-semibold text-gray-900 dark:text-white truncate recipe-title mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors mt-0"
+          class="text-lg font-semibold text-gray-900 dark:text-white recipe-title mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors mt-0 max-w-[22ch] overflow-hidden text-ellipsis whitespace-nowrap"
         >
           {{ recipe.title }}
         </h3>
