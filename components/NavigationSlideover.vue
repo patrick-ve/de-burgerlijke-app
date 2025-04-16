@@ -48,19 +48,18 @@ watch(
     }"
   >
     <div
-      class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800"
+      class="bg-primary flex items-center h-16 justify-between p-4 border-b border-gray-200 dark:border-gray-800"
     >
-      <h3
-        class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
-      >
+      <h3 class="text-base font-bold leading-6 text-white">
         De Burgerlijke App
       </h3>
 
       <UButton
-        color="gray"
+        color="white"
         variant="ghost"
         icon="i-heroicons-x-mark-20-solid"
-        class="-my-1"
+        size="xl"
+        class="text-white font-bold translate-y-1"
         @click="closeNav"
       />
     </div>

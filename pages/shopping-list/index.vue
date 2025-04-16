@@ -57,7 +57,7 @@ const router = useRouter();
 
 <template>
   <div>
-    <UContainer class="py-4">
+    <UContainer>
       <!-- Pass items to the ShoppingList component and listen for updates -->
       <ShoppingList
         :items="shoppingListItems"

@@ -23,7 +23,7 @@ onMounted(async () => {
 
   setHeader({
     title: 'Maaltijdplanner',
-    showLeftAction: false,
+    showLeftAction: true,
     showRightAction: false,
   });
 
@@ -252,6 +252,8 @@ const formattedModalDate = computed(() => {
     day: 'numeric',
   });
 });
+
+const router = useRouter();
 </script>
 
 <template>
@@ -358,6 +360,16 @@ const formattedModalDate = computed(() => {
       </div>
     </div>
 
+    <Teleport to="#header-left-action">
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/')"
+      />
+    </Teleport>
+
     <!-- Meal Planner Modal -->
     <UModal
       v-model="isModalOpen"
@@ -436,7 +448,7 @@ const formattedModalDate = computed(() => {
     >
       <div
         v-if="showActionBar"
-        class="fixed bottom-16 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
       >
         <UButton
           block

@@ -150,7 +150,7 @@ onUnmounted(() => {
 
 <template>
   <!-- Teleport Add button to the header -->
-  <Teleport to="#header-left-action" v-if="isMounted">
+  <Teleport to="#header-left-action">
     <UButton
       v-if="headerState.showLeftAction"
       color="black"

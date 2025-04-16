@@ -1,7 +1,8 @@
 <template>
   <div class="p-4">
     <RecipeList :recipes="recipes" />
-    <Teleport to="#header-left-action" v-if="isMounted">
+
+    <Teleport to="#header-left-action">
       <UButton
         color="gray"
         variant="ghost"
@@ -11,7 +12,7 @@
       />
     </Teleport>
 
-    <Teleport to="#header-right-action" v-if="isMounted">
+    <Teleport to="#header-right-action">
       <UButton
         v-if="headerState.showRightAction"
         color="primary"
