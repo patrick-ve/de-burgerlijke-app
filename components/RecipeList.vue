@@ -269,34 +269,41 @@ const activeFilters = computed(() => {
 <template>
   <div>
     <!-- Search and Filter Action Bar Container -->
-    <div
-      v-if="props.recipes && props.recipes.length > 0"
-      class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-background border-t border-gray-200"
-      data-testid="action-bar"
+    <Transition
+      appear
+      enter-active-class="transition-all duration-500 ease-out"
+      enter-from-class="opacity-0 translate-y-full"
+      enter-to-class="opacity-100 translate-y-0"
     >
-      <div class="flex items-center space-x-2 max-w-md mx-auto">
-        <!-- Search Input -->
-        <UInput
-          v-model="searchQuery"
-          name="search"
-          placeholder="Zoek naar recepten..."
-          icon="i-heroicons-magnifying-glass-20-solid"
-          autocomplete="off"
-          size="lg"
-          class="flex-grow"
-          data-testid="search-input"
-        />
+      <div
+        v-if="props.recipes && props.recipes.length > 0"
+        class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200"
+        data-testid="action-bar"
+      >
+        <div class="flex items-center space-x-2 max-w-md mx-auto">
+          <!-- Search Input -->
+          <UInput
+            v-model="searchQuery"
+            name="search"
+            placeholder="Zoek naar recepten..."
+            icon="i-heroicons-magnifying-glass-20-solid"
+            autocomplete="off"
+            size="lg"
+            class="flex-grow"
+            data-testid="search-input"
+          />
 
-        <!-- Filter Button (Opens Slideover) -->
-        <UButton
-          icon="i-heroicons-adjustments-horizontal"
-          size="lg"
-          @click="isFilterSlideoverOpen = true"
-          data-testid="filter-button"
-          class="px-4"
-        />
+          <!-- Filter Button (Opens Slideover) -->
+          <UButton
+            icon="i-heroicons-adjustments-horizontal"
+            size="lg"
+            @click="isFilterSlideoverOpen = true"
+            data-testid="filter-button"
+            class="px-4"
+          />
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Active Filters Display -->
     <div
@@ -327,7 +334,7 @@ const activeFilters = computed(() => {
     <!-- Recipe Grid -->
     <div
       v-if="filteredRecipes.length > 0"
-      class="flex flex-wrap gap-2"
+      class="flex flex-wrap gap-2 pb-20"
     >
       <RecipeCard
         v-for="recipe in paginatedRecipes"

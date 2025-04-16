@@ -122,24 +122,33 @@ async function submitRecipeUrl() {
 </script>
 
 <template>
-  <UModal
+  <USlideover
     v-model="isOpen"
+    side="bottom"
     :ui="{
       overlay: {
         background: 'bg-black/40 backdrop-blur-sm',
       },
+      width: 'max-w-md', // Limit width on larger screens
     }"
   >
     <UCard
+      class="flex flex-col flex-1"
       :ui="{
+        header: { padding: 'py-4 px-4 sm:px-6' },
+        body: {
+          padding: 'p-4 sm:p-6',
+          base: 'flex-1',
+        },
+        footer: { padding: 'p-4 sm:p-6' },
         ring: '',
-        divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+        divide: 'divide-y divide-gray-200 dark:divide-gray-800',
       }"
     >
       <template #header>
         <div class="flex items-center justify-between">
           <h3
-            class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+            class="text-lg font-semibold leading-6 text-gray-900 dark:text-white"
           >
             Recept toevoegen
           </h3>
@@ -153,6 +162,7 @@ async function submitRecipeUrl() {
         </div>
       </template>
 
+      <!-- Body Section -->
       <UFormGroup label="Bron" name="inputType" class="mb-6">
         <div class="flex space-x-4">
           <UCard
@@ -164,8 +174,8 @@ async function submitRecipeUrl() {
               body: { padding: 'px-4 py-3 sm:p-4' },
               ring:
                 selectedInputType === option.value
-                  ? 'ring-2 ring-primary-500'
-                  : 'ring-1 ring-gray-300',
+                  ? 'ring-2 ring-primary-500 dark:ring-primary-400'
+                  : 'ring-1 ring-gray-300 dark:ring-gray-700',
             }"
             class="flex-1 text-left relative disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isLoading"
@@ -181,7 +191,7 @@ async function submitRecipeUrl() {
               <UIcon
                 v-if="selectedInputType === option.value"
                 name="i-heroicons-check-circle-solid"
-                class="w-5 h-5 text-primary-500"
+                class="w-5 h-5 text-primary-500 dark:text-primary-400"
               />
             </div>
           </UCard>
@@ -194,6 +204,7 @@ async function submitRecipeUrl() {
           :placeholder="placeholderText"
           icon="i-heroicons-link"
           :disabled="isLoading"
+          size="lg"
         />
       </UFormGroup>
 
@@ -205,27 +216,30 @@ async function submitRecipeUrl() {
         :title="error"
         class="mb-4"
       />
+      <!-- End Body Section -->
 
       <template #footer>
-        <div class="flex justify-end space-x-2">
+        <div class="flex justify-end space-x-3">
           <UButton
             color="gray"
             variant="ghost"
             @click="isOpen = false"
             :disabled="isLoading"
+            size="lg"
           >
             Annuleren
           </UButton>
           <UButton
             @click="submitRecipeUrl"
             :loading="isLoading"
-            :disabled="isLoading"
+            :disabled="isLoading || !url"
             class="font-bold"
+            size="lg"
           >
             Versturen
           </UButton>
         </div>
       </template>
     </UCard>
-  </UModal>
+  </USlideover>
 </template>

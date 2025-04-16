@@ -65,7 +65,7 @@ const totalTime = computed(() => {
     />
 
     <div
-      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 shadow-md overflow-hidden flex items-start space-x-4 p-3 hover:shadow-lg transition-shadow duration-200 ease-in-out"
+      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-3 hover:shadow-lg transition-shadow duration-200 ease-in-out"
     >
       <!-- Image Section -->
       <div class="flex-shrink-0">
