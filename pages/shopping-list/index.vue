@@ -46,10 +46,13 @@ onMounted(async () => {
 
   setHeader({
     title: 'Boodschappenlijst',
+    showLeftAction: true,
     showRightAction: true,
     rightActionHandler: clearList,
   });
 });
+
+const router = useRouter();
 </script>
 
 <template>
@@ -72,9 +75,17 @@ onMounted(async () => {
       </div>
     </UContainer>
 
-    <BottomNav />
-
     <!-- Teleport Clear button to the header -->
+    <Teleport to="#header-left-action" v-if="isMounted">
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/')"
+      />
+    </Teleport>
+
     <Teleport to="#header-right-action" v-if="isMounted">
       <UButton
         v-if="

@@ -28,9 +28,12 @@ const navigation = [
 ];
 
 // Close slideover on navigation
-watch(route, () => {
-  closeNav();
-});
+watch(
+  () => route.fullPath,
+  () => {
+    closeNav();
+  }
+);
 </script>
 
 <template>
@@ -50,8 +53,9 @@ watch(route, () => {
       <h3
         class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
       >
-        Navigatie
+        De Burgerlijke App
       </h3>
+
       <UButton
         color="gray"
         variant="ghost"
