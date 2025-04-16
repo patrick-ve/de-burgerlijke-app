@@ -3,9 +3,11 @@
     <TheHeader :title="headerState.title">
       <template #left-action>
         <!-- Content for this slot will be provided by the page -->
+        <div id="header-left-action"></div>
       </template>
       <template #right-action>
         <!-- Content for this slot will be provided by the page -->
+        <div id="header-right-action"></div>
       </template>
     </TheHeader>
 
@@ -13,9 +15,8 @@
       <NuxtPage />
     </ion-content>
 
-    <BottomNav />
+    <NavigationSlideover />
 
-    <!-- Add USlideovers for programmatic control -->
     <USlideovers />
   </ion-app>
 </template>
@@ -24,15 +25,12 @@
 import { useHeaderState } from '~/composables/useHeaderState'; // Ensure correct path
 
 const { headerState } = useHeaderState();
-
-// Handlers are no longer needed here as the buttons are defined in the page
-// const handleLeftAction = () => { ... };
-// const handleRightAction = () => { ... };
 </script>
 
 <style>
 .ion-padding {
-  --padding-bottom: 4rem;
+  /* Keep padding for content, but adjust if needed for slideover */
+  /* --padding-bottom: 4rem; */ /* Removed as BottomNav is gone */
 }
 
 ion-content {

@@ -4,10 +4,12 @@ import {
   useWeather,
   type WeatherInfo,
 } from '~/composables/useWeather'; // Import the weather composable and type
+import { useHeaderState } from '~/composables/useHeaderState';
 import {
   useMealPlanner,
   type NextAvailableMealsResult,
 } from '~/composables/useMealPlanner';
+import { useNavigationState } from '~/composables/useNavigationState';
 
 useHead({
   title: 'Home - De Burgerlijke App',
@@ -123,9 +125,43 @@ const weatherCardClasses = computed(() => {
 
   return [...baseClasses, background, text];
 });
+
+const { headerState, setHeader, resetHeader } = useHeaderState();
+const { openNav } = useNavigationState();
+const isMounted = ref(false);
+
+const toggleHamburgerMenu = () => {
+  openNav();
+};
+
+onMounted(() => {
+  isMounted.value = true;
+  setHeader({
+    title: 'Home',
+    showLeftAction: true,
+  });
+});
+
+onUnmounted(() => {
+  resetHeader();
+  isMounted.value = false;
+});
 </script>
 
 <template>
+  <!-- Teleport Add button to the header -->
+  <Teleport to="#header-left-action" v-if="isMounted">
+    <UButton
+      v-if="headerState.showLeftAction"
+      color="black"
+      variant="ghost"
+      aria-label="Open navigatie menu"
+      icon="i-heroicons-bars-3"
+      size="md"
+      @click="toggleHamburgerMenu"
+    />
+  </Teleport>
+
   <div class="space-y-6 p-4">
     <UCard>
       <template #header>

@@ -1,8 +1,16 @@
 <template>
   <div class="p-4">
     <RecipeList :recipes="recipes" />
+    <Teleport to="#header-left-action" v-if="isMounted">
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/')"
+      />
+    </Teleport>
 
-    <!-- Teleport Add button to the header -->
     <Teleport to="#header-right-action" v-if="isMounted">
       <UButton
         v-if="headerState.showRightAction"
@@ -14,7 +22,6 @@
       />
     </Teleport>
 
-    <!-- Add Recipe Modal -->
     <AddRecipeModal
       v-model:isOpen="isAddModalOpen"
       @recipeParsed="handleRecipeParsed"
@@ -24,7 +31,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-// import type { Recipe } from '~/types/recipe'; // No longer needed here
 import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import DTO type
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useRecipes } from '~/composables/useRecipes'; // Import the new composable
@@ -68,9 +74,8 @@ onMounted(async () => {
 
   setHeader({
     title: 'Mijn recepten',
-    showLeftAction: false, // No back button needed here usually
+    showLeftAction: true,
     showRightAction: true,
-    // rightActionHandler: navigateToAddRecipe, // Removed old handler
   });
 });
 
@@ -80,6 +85,6 @@ onUnmounted(() => {
 });
 
 useHead({
-  title: 'Recipes', // Browser tab title
+  title: 'Recepten', // Browser tab title
 });
 </script>
