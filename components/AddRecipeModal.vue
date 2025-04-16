@@ -238,7 +238,7 @@ async function submitRecipeRequest() {
       <!-- Conditional Input: URL or AI Prompt -->
       <UFormGroup
         v-if="selectedInputType === 'ai'"
-        label="Beschrijving AI Recept"
+        label="Beschrijving recept"
         name="recipePrompt"
         class="translate-y-3"
       >
