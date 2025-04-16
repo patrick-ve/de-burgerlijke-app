@@ -48,9 +48,9 @@ watch(
     }"
   >
     <div
-      class="bg-primary flex items-center h-16 justify-between p-4 border-b border-gray-200 dark:border-gray-800"
+      class="bg-primary flex items-center h-16 justify-between p-2 border-b border-gray-200 dark:border-gray-800"
     >
-      <h3 class="text-base font-bold leading-6 text-white">
+      <h3 class="pl-2 text-base font-bold leading-6 text-white">
         De Burgerlijke App
       </h3>
 
@@ -64,12 +64,17 @@ watch(
       />
     </div>
 
-    <UVerticalNavigation
-      :links="navigation"
-      :ui="{
-        padding: 'p-4',
-        // Customize other UI aspects if needed
-      }"
-    />
+    <div class="p-4 space-y-1">
+      <NuxtLink
+        v-for="link in navigation"
+        :key="link.to"
+        :to="link.to"
+        class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+        active-class="border-l-2 border-primary text-primary-500 font-bold bg-primary-50"
+      >
+        <UIcon :name="link.icon" class="w-5 h-5" />
+        <span>{{ link.label }}</span>
+      </NuxtLink>
+    </div>
   </USlideover>
 </template>
