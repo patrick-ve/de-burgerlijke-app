@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'; // Add onMounted
 import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import the type
 import {
   useWeather,
@@ -133,10 +134,14 @@ const toggleHamburgerMenu = () => {
   openNav();
 };
 
-resetHeader();
-setHeader({
-  title: 'Home',
-  showLeftAction: true,
+onMounted(() => {
+  setHeader({
+    title: 'Home',
+    showLeftAction: true,
+    leftActionHandler: toggleHamburgerMenu,
+    showRightAction: false,
+    rightActionHandler: null,
+  });
 });
 </script>
 

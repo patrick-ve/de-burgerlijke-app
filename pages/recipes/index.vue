@@ -81,7 +81,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  resetHeader();
   isMounted.value = false;
 });
 
