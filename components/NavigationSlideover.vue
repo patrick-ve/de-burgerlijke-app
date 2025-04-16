@@ -25,6 +25,11 @@ const navigation = [
     to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
   },
+  {
+    label: 'Baby',
+    to: '/baby',
+    icon: 'i-heroicons-user',
+  },
 ];
 
 // Close slideover on navigation
@@ -68,6 +73,7 @@ watch(
       <NuxtLink
         v-for="link in navigation"
         :key="link.to"
+        :disabled="link.to === '/baby'"
         :to="link.to"
         class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         active-class="border-l-2 border-primary text-primary-500 font-bold bg-primary-50"
@@ -76,5 +82,10 @@ watch(
         <span>{{ link.label }}</span>
       </NuxtLink>
     </div>
+
+    <img
+      src="/illustration.png"
+      class="w-[50%] h-auto object-cover absolute bottom-2 left-2"
+    />
   </USlideover>
 </template>

@@ -6,6 +6,16 @@ export interface WeatherInfo {
   temperature: number; // Celsius
   description: string;
   icon: string; // Nuxt UI icon name
+  symbolCode?: string; // Add symbolCode to the interface
+  chanceOfRain?: number; // Added: Probability of precipitation (%)
+}
+
+// Interface for Hourly Forecast items
+export interface HourlyForecastItem {
+  time: string; // Formatted time (e.g., "14:00")
+  temperature: number;
+  icon: string;
+  description: string;
 }
 
 // Interfaces based on Met Norway Locationforecast 2.0 Compact response
@@ -21,6 +31,10 @@ interface MetNorwayTimeSeriesData {
       symbol_code?: string;
     };
     // Add other forecast details if needed
+    details?: {
+      // Added details object
+      probability_of_precipitation?: number; // Added precipitation probability
+    };
   };
   // Add next_6_hours, next_12_hours if needed
 }
@@ -148,6 +162,38 @@ const getMappedWeather = (
   return weatherSymbolMap[symbolCode] || defaultWeather;
 };
 
+// --- Weather Character Image Logic ---
+const getWeatherCharacterImage = (
+  weather: WeatherInfo | null
+): string => {
+  if (!weather) return '/man_summer_long.png'; // Default or loading image
+
+  const temp = weather.temperature;
+  const symbol = weather.symbolCode?.toLowerCase() || '';
+
+  // Prioritize rain
+  if (
+    symbol.includes('rain') ||
+    symbol.includes('shower') ||
+    symbol.includes('sleet')
+  ) {
+    return '/man_raining.png';
+  }
+
+  // Check for winter conditions
+  if (temp < 5 || symbol.includes('snow')) {
+    return '/man_winter.png';
+  }
+
+  // Check for warm summer
+  if (temp >= 20) {
+    return '/man_summer_short.png';
+  }
+
+  // Default to mild/long sleeve summer
+  return '/man_summer_long.png';
+};
+
 export const useWeather = (
   latitude: number = 52.37,
   longitude: number = 4.89,
@@ -156,11 +202,18 @@ export const useWeather = (
   const weatherData = ref<WeatherInfo | null>(null);
   const isLoading = ref<boolean>(false);
   const error = ref<Error | null>(null);
+  const hourlyForecast = ref<HourlyForecastItem[]>([]); // Add ref for hourly forecast
+
+  // Computed property for the character image
+  const characterImage = computed(() =>
+    getWeatherCharacterImage(weatherData.value)
+  );
 
   const fetchWeather = async () => {
     isLoading.value = true;
     error.value = null;
     weatherData.value = null;
+    hourlyForecast.value = []; // Reset hourly forecast on new fetch
 
     // Define a unique User-Agent (replace with your app details)
     const userAgent =
@@ -176,6 +229,8 @@ export const useWeather = (
 
       // Find the most recent timeseries data (usually the first entry)
       const currentTimeseries = response.properties?.timeseries?.[0];
+      const futureTimeseries =
+        response.properties?.timeseries?.slice(1, 7) || []; // Get next 6 hours
 
       if (currentTimeseries?.data) {
         const temp =
@@ -183,6 +238,9 @@ export const useWeather = (
         const symbolCode =
           currentTimeseries.data.next_1_hours?.summary.symbol_code;
         const mappedWeather = getMappedWeather(symbolCode);
+        const chanceOfRain =
+          currentTimeseries.data.next_1_hours?.details
+            ?.probability_of_precipitation;
 
         if (temp !== undefined) {
           weatherData.value = {
@@ -190,6 +248,11 @@ export const useWeather = (
             temperature: Math.round(temp), // Round temperature
             description: mappedWeather.description,
             icon: mappedWeather.icon,
+            symbolCode: symbolCode, // Store the symbol code
+            chanceOfRain:
+              chanceOfRain !== undefined
+                ? Math.round(chanceOfRain)
+                : undefined, // Add rounded chance of rain
           };
         } else {
           throw new Error(
@@ -201,6 +264,41 @@ export const useWeather = (
           'Ongeldige of ontbrekende timeseries data in API-respons.'
         );
       }
+
+      // Process hourly forecast data
+      const forecastItems: HourlyForecastItem[] = [];
+      for (const series of futureTimeseries) {
+        const hourTemp =
+          series.data?.instant?.details?.air_temperature;
+        const hourSymbolCode =
+          series.data?.next_1_hours?.summary?.symbol_code;
+        const hourTime = series.time; // UTC time string
+
+        if (
+          hourTemp !== undefined &&
+          hourSymbolCode !== undefined &&
+          hourTime
+        ) {
+          const mappedWeather = getMappedWeather(hourSymbolCode);
+          // Format time to HH:MM (adjust for local timezone if needed, here assuming local display)
+          const localTime = new Date(hourTime).toLocaleTimeString(
+            'nl-NL',
+            {
+              hour: '2-digit',
+              minute: '2-digit',
+              // timeZone: 'Europe/Amsterdam' // Explicitly set timezone if server is not NL
+            }
+          );
+
+          forecastItems.push({
+            time: localTime,
+            temperature: Math.round(hourTemp),
+            icon: mappedWeather.icon,
+            description: mappedWeather.description,
+          });
+        }
+      }
+      hourlyForecast.value = forecastItems;
     } catch (err) {
       console.error('Failed to fetch weather data:', err);
       error.value =
@@ -225,5 +323,7 @@ export const useWeather = (
     isLoading,
     error,
     fetchWeather, // Expose refetch function
+    characterImage, // Expose the computed image path
+    hourlyForecast, // Expose hourly forecast data
   };
 };

@@ -49,6 +49,8 @@ const {
   weatherData,
   isLoading: isLoadingWeather,
   error: weatherError,
+  characterImage,
+  hourlyForecast,
 } = useWeather();
 
 // Helper to format date for display
@@ -66,65 +68,6 @@ const formattedDisplayDate = computed(() => {
     month: 'long',
     day: 'numeric',
   })})`;
-});
-
-// Computed property for dynamic weather card classes
-const weatherCardClasses = computed(() => {
-  const baseClasses = [
-    'p-4', // Adjusted padding
-    'rounded-lg', // Keep rounded corners
-    'text-center',
-    'transition-colors',
-    'duration-300',
-    'ease-in-out',
-    'flex',
-    'flex-col',
-    'items-center',
-    'justify-between', // Space elements vertically
-    'min-h-[150px]', // Give card a minimum height like the example
-  ];
-
-  if (!weatherData.value) {
-    // Style for when data isn't loaded yet (but not loading/error state)
-    return [...baseClasses, 'bg-gray-100', 'text-gray-800'];
-  }
-
-  const icon = weatherData.value.icon.toLowerCase();
-  let background = 'bg-gray-400'; // Default background
-  let text = 'text-white'; // Default text
-
-  // Map icons to background colors based on image examples
-  if (icon.includes('sun') && !icon.includes('cloud')) {
-    // Sunny
-    background = 'bg-sky-400';
-  } else if (icon.includes('cloud-sun')) {
-    // Partly Cloudy Day
-    background = 'bg-sky-500';
-  } else if (icon.includes('moon') && !icon.includes('cloud')) {
-    // Clear Night
-    background = 'bg-indigo-800';
-  } else if (icon.includes('cloud-moon')) {
-    // Partly Cloudy Night
-    background = 'bg-indigo-700';
-  } else if (icon.includes('cloud-arrow-down')) {
-    // Rainy
-    background = 'bg-blue-500';
-  } else if (icon.includes('bolt')) {
-    // Storm - Assuming a bolt icon exists/is mapped
-    background = 'bg-purple-600';
-  } else if (icon.includes('cloud-snow')) {
-    // Snow/Sleet
-    background = 'bg-cyan-400';
-    text = 'text-gray-800'; // Lighter background might need darker text
-  } else if (icon.includes('bars-3-bottom-left')) {
-    // Fog - Using the example image color
-    background = 'bg-cyan-600';
-  } else if (icon.includes('cloud')) {
-    // Generic Cloudy
-    background = 'bg-gray-500';
-  }
-
-  return [...baseClasses, background, text];
 });
 
 const { headerState, setHeader, resetHeader } = useHeaderState();
@@ -173,16 +116,12 @@ onMounted(() => {
           :key="meal.id"
           class="flex items-center space-x-4"
         >
-          <NuxtImg
+          <img
             v-if="meal.imageUrl"
             :src="meal.imageUrl"
             :alt="`Afbeelding van ${meal.recipeTitle}`"
             class="h-16 w-16 rounded object-cover"
-            width="64"
-            height="64"
-            fit="cover"
             loading="lazy"
-            :modifiers="{ round: 'true' }"
           />
           <UAvatar
             v-else
@@ -224,26 +163,22 @@ onMounted(() => {
     </UCard>
 
     <!-- Weather Section -->
-    <UCard :ui="{ body: { padding: 'p-0' } }">
-      <!-- Remove default body padding -->
-      <template #header>
-        <h2 class="text-xl font-semibold px-4 pt-4 sm:px-6 sm:pt-5">
-          Weerbericht in {{ weatherData?.location || '...' }}
-        </h2>
-      </template>
-
+    <section class="overflow-hidden rounded-lg shadow bg-gray-50/50">
       <!-- Loading State -->
       <div
         v-if="isLoadingWeather"
-        class="space-y-2 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[150px]"
+        class="space-y-2 p-6 flex flex-col items-center justify-center min-h-[250px]"
       >
-        <USkeleton class="h-12 w-12 rounded-full" />
-        <USkeleton class="h-8 w-16 mt-2" />
-        <USkeleton class="h-4 w-24 mt-1" />
+        <USkeleton class="h-32 w-32 mb-2 bg-gray-700" />
+        <USkeleton class="h-8 w-24 mt-2 bg-gray-700" />
+        <USkeleton class="h-4 w-32 mt-1 bg-gray-700" />
       </div>
 
       <!-- Error State -->
-      <div v-else-if="weatherError" class="p-4 sm:p-6">
+      <div
+        v-else-if="weatherError"
+        class="p-6 min-h-[250px] flex items-center justify-center"
+      >
         <UAlert
           icon="i-heroicons-exclamation-triangle"
           color="red"
@@ -252,31 +187,88 @@ onMounted(() => {
           :description="
             weatherError.message || 'Kon het weer niet ophalen.'
           "
+          class="bg-red-900/50 text-red-100"
         />
       </div>
 
       <!-- Success State -->
-      <div v-else-if="weatherData" :class="weatherCardClasses">
-        <!-- Re-add icon with styling -->
-        <UIcon :name="weatherData.icon" class="text-5xl mb-1" />
+      <div v-else-if="weatherData">
+        <!-- Top Section: Temp/Location + Image -->
+        <div class="flex items-center justify-between p-6">
+          <!-- Left Side: Location, Rain, Temp -->
+          <div class="flex flex-col">
+            <h2 class="text-2xl font-bold">
+              {{ weatherData.location || 'Locatie' }}
+            </h2>
+            <p
+              v-if="weatherData.chanceOfRain !== undefined"
+              class="text-sm text-gray-300 mt-1"
+            >
+              Kans op regen: {{ weatherData.chanceOfRain }}%
+            </p>
+            <p class="text-6xl font-bold mt-2">
+              {{ weatherData.temperature }}°
+            </p>
+            <p
+              class="text-sm uppercase tracking-wider text-gray-700 mt-1"
+            >
+              {{ weatherData.description }}
+            </p>
+          </div>
 
-        <!-- Temperature styling -->
-        <p class="text-4xl font-bold leading-tight">
-          {{ weatherData.temperature }}°
-        </p>
+          <!-- Right Side: Character Image -->
+          <div class="flex-shrink-0">
+            <img
+              :src="characterImage"
+              alt="Weer karakter"
+              class="h-36 w-auto"
+              loading="lazy"
+            />
+          </div>
+        </div>
 
-        <!-- Description styling -->
-        <p class="text-xs uppercase tracking-wider mt-1">
-          {{ weatherData.description }}
-        </p>
+        <!-- Hourly Forecast Section -->
+        <div
+          v-if="hourlyForecast.length > 0"
+          class="mt-4 pt-4 pb-4 px-6 border-t border-gray-700"
+        >
+          <h3
+            class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-3"
+          >
+            Voorspelling per uur
+          </h3>
+
+          <div class="flex space-x-1.5 pb-2 -mx-1">
+            <div
+              v-for="(hour, index) in hourlyForecast"
+              :key="index"
+              class="flex flex-col items-center text-center flex-shrink-0 w-16 space-y-1"
+            >
+              <p class="text-sm font-medium text-gray-300">
+                {{ hour.time }}
+              </p>
+              <UIcon
+                :name="hour.icon"
+                class="text-3xl"
+                :title="hour.description"
+              />
+              <p class="text-lg font-semibold">
+                {{ hour.temperature }}°
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Fallback if no data and no error -->
-      <div v-else class="p-4 sm:p-6">
-        <p class="text-gray-500 dark:text-gray-400 text-center">
+      <!-- Fallback -->
+      <div
+        v-else
+        class="p-6 min-h-[250px] flex items-center justify-center"
+      >
+        <p class="text-gray-400 text-center">
           Weergegevens niet beschikbaar.
         </p>
       </div>
-    </UCard>
+    </section>
   </div>
 </template>
