@@ -128,23 +128,15 @@ const weatherCardClasses = computed(() => {
 
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const { openNav } = useNavigationState();
-const isMounted = ref(false);
 
 const toggleHamburgerMenu = () => {
   openNav();
 };
 
-onMounted(() => {
-  isMounted.value = true;
-  setHeader({
-    title: 'Home',
-    showLeftAction: true,
-  });
-});
-
-onUnmounted(() => {
-  resetHeader();
-  isMounted.value = false;
+resetHeader();
+setHeader({
+  title: 'Home',
+  showLeftAction: true,
 });
 </script>
 

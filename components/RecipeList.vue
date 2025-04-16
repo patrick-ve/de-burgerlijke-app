@@ -15,7 +15,7 @@ const itemsPerPage = props.itemsPerPage || 8;
 
 // --- Reactive State ---
 const searchQuery = ref('');
-const selectedCuisine = ref<string | null>(null);
+const selectedCuisine = ref<string | undefined>();
 const showFavoritesOnly = ref(false);
 const currentPage = ref(1);
 // Sort state - only title sort is needed now
@@ -24,13 +24,13 @@ const isFilterSlideoverOpen = ref(false); // State to control slideover visibili
 
 // Time filter options and state - UPDATED for specific ranges
 const timeFilterOptions = [
-  { label: 'Elke kooktijd', value: null }, // Default/reset option
+  { label: 'Elke kooktijd', value: undefined }, // Default/reset option
   { label: 'Sneller dan 20 min', value: 'under_20' },
   { label: '20 - 45 min', value: '20_to_45' },
   { label: 'Langer dan 45 min', value: 'over_45' },
 ];
-// UPDATED type to string | null
-const selectedTimeFilter = ref<string | null>(null); // Holds the selected time range identifier
+// UPDATED type to string | undefined
+const selectedTimeFilter = ref<string | undefined>(); // Holds the selected time range identifier
 
 // Calculate max total time for the range slider
 const maxTotalTime = computed(() => {
@@ -62,7 +62,7 @@ const cuisineFilterOptions = computed(() => {
   const sortedCuisines = Array.from(cuisines).sort();
   // Add "Any Cuisine" option
   return [
-    { label: 'Elke keuken', value: null },
+    { label: 'Elke keuken', value: undefined },
     ...sortedCuisines.map((cuisine) => ({
       label: cuisine,
       value: cuisine,
@@ -108,7 +108,7 @@ const filteredRecipes = computed(() => {
   }
 
   // Apply cuisine filter
-  if (selectedCuisine.value) {
+  if (selectedCuisine.value !== undefined) {
     results = results.filter(
       (recipe) => recipe.cuisine === selectedCuisine.value
     );
@@ -120,7 +120,7 @@ const filteredRecipes = computed(() => {
   }
 
   // Apply time range filter (from USelectMenu) - UPDATED logic for ranges
-  if (selectedTimeFilter.value !== null) {
+  if (selectedTimeFilter.value !== undefined) {
     results = results.filter((recipe) => {
       const totalTime =
         (recipe.prepTime || 0) + (recipe.cookTime || 0);
@@ -176,11 +176,11 @@ const prevPage = () => {
 // Reset filters
 const resetFilters = () => {
   searchQuery.value = '';
-  selectedCuisine.value = null;
+  selectedCuisine.value = undefined;
   showFavoritesOnly.value = false;
   currentPage.value = 1;
   sortDirection.value = 'asc';
-  selectedTimeFilter.value = null; // Reset time filter select
+  selectedTimeFilter.value = undefined; // Reset time filter select
 };
 
 // Check if we need to show no results message (primarily for tests)
@@ -194,7 +194,7 @@ const showNoResultsMessage = computed(() => {
     searchQuery.value ||
     selectedCuisine.value ||
     showFavoritesOnly.value ||
-    selectedTimeFilter.value !== null; // Check if time filter is selected
+    selectedTimeFilter.value !== undefined; // Check if time filter is selected
 
   // Show message only if filters are active AND no results are found
   return isAnyFilterActive && filteredRecipes.value.length === 0;
@@ -207,7 +207,7 @@ const showNoRecipesMessage = computed(() => {
     searchQuery.value ||
     selectedCuisine.value ||
     showFavoritesOnly.value ||
-    selectedTimeFilter.value !== null; // Check if time filter is selected
+    selectedTimeFilter.value !== undefined; // Check if time filter is selected
 
   return (
     !isAnyFilterActive &&
@@ -219,7 +219,7 @@ const showNoRecipesMessage = computed(() => {
 const activeFilters = computed(() => {
   const filters: { key: string; label: string }[] = [];
 
-  if (selectedCuisine.value) {
+  if (selectedCuisine.value !== undefined) {
     const cuisineLabel = cuisineFilterOptions.value.find(
       (o) => o.value === selectedCuisine.value
     )?.label;
@@ -231,7 +231,7 @@ const activeFilters = computed(() => {
     }
   }
 
-  if (selectedTimeFilter.value !== null) {
+  if (selectedTimeFilter.value !== undefined) {
     const timeLabel = timeFilterOptions.find(
       (o) => o.value === selectedTimeFilter.value
     )?.label;
@@ -267,10 +267,14 @@ const activeFilters = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <!-- Search and Filter Button Container -->
-    <div v-if="props.recipes && props.recipes.length > 0">
-      <div class="flex items-center space-x-2">
+  <div>
+    <!-- Search and Filter Action Bar Container -->
+    <div
+      v-if="props.recipes && props.recipes.length > 0"
+      class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-background border-t border-gray-200"
+      data-testid="action-bar"
+    >
+      <div class="flex items-center space-x-2 max-w-md mx-auto">
         <!-- Search Input -->
         <UInput
           v-model="searchQuery"
@@ -279,7 +283,7 @@ const activeFilters = computed(() => {
           icon="i-heroicons-magnifying-glass-20-solid"
           autocomplete="off"
           size="lg"
-          class="w-[87.5%]"
+          class="flex-grow"
           data-testid="search-input"
         />
 
@@ -289,7 +293,7 @@ const activeFilters = computed(() => {
           size="lg"
           @click="isFilterSlideoverOpen = true"
           data-testid="filter-button"
-          class="w-[12.5%] justify-center"
+          class="px-4"
         />
       </div>
     </div>
@@ -297,7 +301,7 @@ const activeFilters = computed(() => {
     <!-- Active Filters Display -->
     <div
       v-if="activeFilters.length > 0"
-      class="flex flex-wrap items-center gap-2 mt-2"
+      class="flex flex-wrap items-center gap-2 mb-4"
       data-testid="active-filters-display"
     >
       <UBadge
@@ -323,12 +327,13 @@ const activeFilters = computed(() => {
     <!-- Recipe Grid -->
     <div
       v-if="filteredRecipes.length > 0"
-      class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      class="flex flex-wrap gap-2"
     >
       <RecipeCard
         v-for="recipe in paginatedRecipes"
         :key="recipe.id ?? recipe.title"
         :recipe="recipe"
+        class="flex-grow basis-[calc(100%-0.5rem)] sm:basis-[calc(50%-0.5rem)] lg:basis-[calc(33.333%-0.5rem)] xl:basis-[calc(25%-0.5rem)]"
       />
     </div>
 
