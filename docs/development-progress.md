@@ -64,6 +64,7 @@ Development of the app follows a Test-Driven Development (TDD) approach:
     - [x] Integrated Met Norway Locationforecast API for real weather data.
     - [-] Changed weather display to use background colors instead of icons.
       - [x] Updated styling to match image example (icon, large temp, description, colored background).
+      - [x] Replaced weather icon and background with dynamic character image based on temperature and conditions.
 
 ## Recipes (`recipes-prd.md`)
 
@@ -94,8 +95,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] Server API endpoint to fetch transcript.
   - [x] Improved server API endpoint (`server/api/recipe/youtube.post.ts`) to handle shortened `youtu.be/` URLs.
   - [x] LLM integration for parsing transcript.
-- [ ] **Image Input:**
-  - [ ] UI for uploading image.
+- [x] **Image Input:**
+  - [x] UI for uploading image.
 - [x] **LLM Parsing & Structuring:**
   - [x] Identify/extract Title.
   - [x] Identify/extract Description/Metadata (prep time, cook time, cuisine, etc.).
@@ -151,8 +152,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] Updated date format to show full month name (`pages/planner.vue`).
   - [x] Refactored recipe adding UI in `pages/planner.vue` for better alignment and button placement.
   - [x] Refactored `UCard` to use standard `div` elements for simplicity in `pages/planner.vue`.
-- [ ] **Scheduling:**
-  - [ ] UI for assigning recipes to days (e.g., drag-and-drop, selection).
+- [x] **Scheduling:**
+  - [x] UI for assigning recipes to days (e.g., drag-and-drop, selection).
   - [ ] Define database schema for `ScheduledMeal` model.
 - [x] **Display Scheduled Meals:** Show assigned recipes in the planner view and on the Home page (`pages/index.vue`).
 
