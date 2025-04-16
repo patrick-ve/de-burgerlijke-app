@@ -1,7 +1,7 @@
+import { consola } from 'consola';
 import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { recipeSchema } from '~/server/utils/recipeSchema';
-import { z } from 'zod';
 
 // Get OpenAI API key from runtime config
 const runtimeConfig = useRuntimeConfig();
@@ -18,7 +18,12 @@ const systemPrompt = `You are a helpful assistant specialized in extracting reci
 
 ${JSON.stringify(recipeSchema.shape, null, 2)}
 
-If the image does not contain a recognizable recipe, respond with a JSON object containing an error message: { "error": "No recipe found in the image." }. Ensure the output is ONLY the JSON object.`;
+If the image does not contain a recognizable recipe, try to figure out what the food depicted is and generate a recipe for that. Also ensure the recipe adheres to the schema.
+
+Ensure that all fields are filled out in Dutch at all times.
+Ensure the output is ONLY the JSON object.
+
+`;
 
 export default defineEventHandler(async (event) => {
   try {
