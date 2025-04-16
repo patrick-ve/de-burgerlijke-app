@@ -34,6 +34,39 @@ const categoryEmojis: Record<IngredientCategory | 'Other', string> = {
 };
 // --- End Emoji Mapping ---
 
+// --- Dutch Category Translations ---
+const categoryTranslations: Record<
+  IngredientCategory | 'Other',
+  string
+> = {
+  Fruit: 'Fruit',
+  Vegetables: 'Groenten',
+  'Pasta & Rice': 'Pasta & rijst',
+  'Meals & Salads': 'Maaltijden & salades',
+  'Deli & Cheese': 'Vleeswaren & kaas',
+  'Meat & Fish': 'Vlees & vis',
+  'Plant-Based': 'Plantaardig',
+  'Dairy & Eggs': 'Zuivel & eieren',
+  Bakery: 'Bakkerij',
+  'Breakfast & Spreads': 'Ontbijt & broodbeleg',
+  'Sweets & Confectionery': 'Snoep & zoetwaren',
+  'Snacks & Nuts': 'Snacks & noten',
+  Beverages: 'Dranken',
+  Pantry: 'Voorraadkast',
+  'Spices & Seasonings': 'Kruiden & specerijen',
+  Nutrition: 'Voeding',
+  Frozen: 'Diepvries',
+  Alcohol: 'Alcohol',
+  Pharmacy: 'Drogisterij',
+  'Personal Care': 'Persoonlijke verzorging',
+  'Baby & Child': 'Baby & kind',
+  Household: 'Huishouden',
+  Pet: 'Huisdier',
+  Leisure: 'Vrije tijd',
+  Other: 'Overig', // Default/Other category
+};
+// --- End Dutch Translations ---
+
 const props = defineProps<{
   items: ShoppingListItem[];
 }>();
@@ -113,13 +146,18 @@ const formatItemDetails = (item: ShoppingListItem): string => {
     >
       <h2
         v-if="categoryItems.length > 0"
-        class="text-lg font-semibold mb-2 px-2 text-gray-700 flex items-center gap-2"
+        class="text-lg font-bold mb-2 px-2 text-gray-700 flex items-center gap-2"
       >
         <span class="text-xl">{{
           categoryEmojis[category as IngredientCategory | 'Other']
         }}</span>
-        <span>{{ category }}</span>
+        <span>{{
+          categoryTranslations[
+            category as IngredientCategory | 'Other'
+          ]
+        }}</span>
       </h2>
+
       <TransitionGroup
         tag="ul"
         name="list"
