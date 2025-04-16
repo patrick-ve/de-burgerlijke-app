@@ -25,15 +25,24 @@ const inputTypes = [
     label: 'YouTube',
     icon: 'i-simple-icons-youtube',
   },
+  {
+    value: 'ai',
+    label: 'AI',
+    icon: 'i-heroicons-sparkles',
+  },
 ];
 const selectedInputType = ref('url'); // Default to 'url'
 
 const url = ref('');
+const recipePrompt = ref('');
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
 // Computed property for dynamic placeholder
 const placeholderText = computed(() => {
+  if (selectedInputType.value === 'ai') {
+    return 'Bijv: Kip pasta ovenschotel voor 4 personen';
+  }
   return selectedInputType.value === 'youtube'
     ? 'https://www.youtube.com/watch?v=...'
     : 'www.ah.nl/recepten/...';
@@ -41,37 +50,50 @@ const placeholderText = computed(() => {
 
 // Computed property for the API endpoint
 const apiEndpoint = computed(() => {
-  return selectedInputType.value === 'youtube'
-    ? '/api/recipe/youtube'
-    : '/api/recipe/url';
+  switch (selectedInputType.value) {
+    case 'youtube':
+      return '/api/recipe/youtube';
+    case 'ai':
+      return '/api/recipe/generate';
+    case 'url':
+    default:
+      return '/api/recipe/url';
+  }
 });
 
 // Validation logic based on input type
 function validateInput() {
-  if (!url.value) {
-    error.value = 'Voer een geldige URL in.';
-    return false;
-  }
-  if (
-    selectedInputType.value === 'url' &&
-    !url.value.startsWith('http')
-  ) {
-    error.value =
-      'Voer een geldige website URL in (beginnend met http of https).';
-    return false;
-  }
-  if (
-    selectedInputType.value === 'youtube' &&
-    !url.value.includes('youtube.com') &&
-    !url.value.includes('youtu.be')
-  ) {
-    error.value = 'Voer een geldige YouTube URL in.';
-    return false;
+  if (selectedInputType.value === 'ai') {
+    if (!recipePrompt.value.trim()) {
+      error.value = 'Voer een beschrijving in voor het AI-recept.';
+      return false;
+    }
+  } else {
+    if (!url.value) {
+      error.value = 'Voer een geldige URL in.';
+      return false;
+    }
+    if (
+      selectedInputType.value === 'url' &&
+      !url.value.startsWith('http')
+    ) {
+      error.value =
+        'Voer een geldige website URL in (beginnend met http of https).';
+      return false;
+    }
+    if (
+      selectedInputType.value === 'youtube' &&
+      !url.value.includes('youtube.com') &&
+      !url.value.includes('youtu.be')
+    ) {
+      error.value = 'Voer een geldige YouTube URL in.';
+      return false;
+    }
   }
   return true;
 }
 
-async function submitRecipeUrl() {
+async function submitRecipeRequest() {
   error.value = null;
   if (!validateInput()) {
     return;
@@ -79,9 +101,14 @@ async function submitRecipeUrl() {
 
   isLoading.value = true;
   try {
+    const requestBody =
+      selectedInputType.value === 'ai'
+        ? { prompt: recipePrompt.value }
+        : { url: url.value };
+
     console.log(
-      `Submitting ${selectedInputType.value} URL:`,
-      url.value
+      `Submitting ${selectedInputType.value} request:`,
+      requestBody
     );
 
     // Make POST request to the dynamically selected endpoint
@@ -89,7 +116,7 @@ async function submitRecipeUrl() {
       apiEndpoint.value,
       {
         method: 'POST',
-        body: { url: url.value },
+        body: requestBody,
       }
     );
 
@@ -102,19 +129,24 @@ async function submitRecipeUrl() {
       emit('recipeParsed', parsed.data);
       isOpen.value = false;
       url.value = '';
-      selectedInputType.value = 'url'; // Reset selection
+      recipePrompt.value = '';
+      selectedInputType.value = 'url';
     } else {
       console.error('Zod validation failed:', parsed.error.errors);
       throw new Error(
-        'Receptgegevens van API zijn ongeldig. Probeer een andere URL.'
+        'Receptgegevens van API zijn ongeldig. Probeer het opnieuw.'
       );
     }
   } catch (err: any) {
-    console.error('Error submitting URL:', err);
+    console.error('Error submitting request:', err);
     error.value =
-      err.data?.message || // Use API error message first
-      err.message || // Then Zod/fetch error message
-      'URL versturen mislukt. Controleer de URL en probeer het opnieuw.';
+      err.data?.message ||
+      err.message ||
+      `${
+        selectedInputType.value === 'ai'
+          ? 'Genereren'
+          : 'URL versturen'
+      } mislukt. Controleer de invoer en probeer het opnieuw.`;
   } finally {
     isLoading.value = false;
   }
@@ -129,7 +161,7 @@ async function submitRecipeUrl() {
       overlay: {
         background: 'bg-black/40 backdrop-blur-sm',
       },
-      width: 'max-w-md', // Limit width on larger screens
+      width: 'max-w-md',
     }"
   >
     <UCard
@@ -163,8 +195,8 @@ async function submitRecipeUrl() {
       </template>
 
       <!-- Body Section -->
-      <UFormGroup label="Bron" name="inputType" class="mb-6">
-        <div class="flex space-x-4">
+      <UFormGroup label="Bron" name="inputType">
+        <div class="grid grid-cols-2 gap-4">
           <UCard
             v-for="option in inputTypes"
             :key="option.value"
@@ -179,7 +211,12 @@ async function submitRecipeUrl() {
             }"
             class="flex-1 text-left relative disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isLoading"
-            @click="selectedInputType = option.value"
+            @click="
+              selectedInputType = option.value;
+              url = '';
+              recipePrompt = '';
+              error = null;
+            "
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center">
@@ -198,7 +235,24 @@ async function submitRecipeUrl() {
         </div>
       </UFormGroup>
 
-      <UFormGroup label="URL" name="url" class="mb-4">
+      <!-- Conditional Input: URL or AI Prompt -->
+      <UFormGroup
+        v-if="selectedInputType === 'ai'"
+        label="Beschrijving AI Recept"
+        name="recipePrompt"
+        class="translate-y-3"
+      >
+        <UTextarea
+          v-model="recipePrompt"
+          :placeholder="placeholderText"
+          :disabled="isLoading"
+          size="lg"
+          autoresize
+          :rows="1"
+        />
+      </UFormGroup>
+
+      <UFormGroup v-else label="URL" name="url" class="translate-y-3">
         <UInput
           v-model="url"
           :placeholder="placeholderText"
@@ -230,13 +284,18 @@ async function submitRecipeUrl() {
             Annuleren
           </UButton>
           <UButton
-            @click="submitRecipeUrl"
+            @click="submitRecipeRequest"
             :loading="isLoading"
-            :disabled="isLoading || !url"
+            :disabled="
+              isLoading ||
+              (selectedInputType === 'ai' ? !recipePrompt : !url)
+            "
             class="font-bold"
             size="lg"
           >
-            Versturen
+            {{
+              selectedInputType === 'ai' ? 'Genereer' : 'Versturen'
+            }}
           </UButton>
         </div>
       </template>
