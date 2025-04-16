@@ -21,7 +21,7 @@ const navigation = [
     icon: 'i-heroicons-calendar-days',
   },
   {
-    label: 'Boodschappen',
+    label: 'Boodschappenlijst',
     to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
   },
