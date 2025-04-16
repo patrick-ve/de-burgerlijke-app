@@ -168,9 +168,15 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [-] Implement ingredient name standardization. (Basic implementation in composable)
   - [x] Improved aggregation logic in `useShoppingList` to handle unit variations (null/empty) and basic pluralization ("cloves" -> "clove").
 - [x] **Portion Scaling Integration (Client-side):** Ensure generated list quantities reflect scheduled meal portions.
+- [x] **Ingredient Categories:**
+  - [x] Updated `types/recipe.ts` with refined ingredient categories (e.g., replaced 'Produce' with 'Fruit'/'Vegetables', added 'Alcohol').
+  - [x] Added `category` field to `types/shopping-list.ts` (`ShoppingListItem` interface).
+  - [x] Updated `composables/useShoppingList.ts` to include category when adding items.
+- [x] **Shopping List UI Enhancements (`components/ShoppingList.vue`):**
+  - [x] Grouped items by category, respecting the defined order.
+  - [x] Added relevant emojis to category headers.
 - [ ] **Price Fetching:**
   - [ ] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus).
-  - [ ] Implement robust ingredient-to-product matching logic.
 - [ ] **Cheapest Option Calculation:**
   - [ ] Server API logic to calculate cheapest overall basket.
   - [ ] UI to select preferred supermarkets for comparison.

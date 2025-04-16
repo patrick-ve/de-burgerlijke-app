@@ -103,6 +103,7 @@ export function useShoppingList() {
           standardizedName: stdName, // Store standardized name for comparison
           aggregatedQuantity: quantity,
           unit: ingredient.unit ?? null, // Store original unit for display (or null)
+          category: ingredient.category ?? null,
           isChecked: false,
           recipeIds: [recipeId],
           createdAt: new Date(),
