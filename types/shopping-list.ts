@@ -1,3 +1,5 @@
+import type { IngredientCategory } from './recipe';
+
 export interface Supermarket {
   id: string; // Unique identifier
   name: 'Albert Heijn' | 'Jumbo' | 'Aldi' | 'Other';
@@ -18,6 +20,7 @@ export interface ShoppingListItem {
   standardizedName?: string; // Standardized name for price matching
   aggregatedQuantity: number | null;
   unit: string | null;
+  category?: IngredientCategory | null;
   isChecked: boolean;
   priceInfo?: PriceInfo[]; // Array of prices from different stores
   recipeIds: string[]; // IDs of recipes contributing to this item
@@ -35,4 +38,4 @@ export interface ShoppingList {
   status: 'active' | 'completed' | 'archived'; // Example statuses
   createdAt: Date;
   updatedAt: Date;
-} 
+}
