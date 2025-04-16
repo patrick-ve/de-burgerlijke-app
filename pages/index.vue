@@ -210,8 +210,9 @@ onMounted(() => {
         <p class="text-gray-500 dark:text-gray-400">
           Er zijn momenteel geen maaltijden gepland.
         </p>
+
         <UButton
-          to="/meal-planner"
+          to="/planner"
           variant="link"
           icon="i-heroicons-calendar-days"
           class="mt-2"
