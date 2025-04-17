@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+# Database files
+server/db/local.sqlite
+server/db/local.sqlite-journal
