@@ -53,6 +53,8 @@ export const products = sqliteTable('products', {
   nameEmbedding: float32Array('name_embedding', {
     dimensions: 1536,
   }).notNull(),
+  standardized_price_per_unit: real('standardized_price_per_unit'), // Nullable by default
+  standardized_unit: text('standardized_unit'), // e.g., 'kg', 'liter', 'piece'
   createdAt: integer('created_at', { mode: 'timestamp' }).default(
     new Date()
   ),
