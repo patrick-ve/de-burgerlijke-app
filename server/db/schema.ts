@@ -1,12 +1,35 @@
+import { sql, relations, SQL } from 'drizzle-orm';
 import {
   sqliteTable,
   text,
   real,
   integer,
   primaryKey,
+  customType,
 } from 'drizzle-orm/sqlite-core';
 import { createId } from '@paralleldrive/cuid2';
-import { relations } from 'drizzle-orm';
+
+// Custom Type for Vector Embeddings (Float32)
+const float32Array = customType<{
+  data: number[];
+  config: { dimensions: number };
+  configRequired: true;
+  driverData: Buffer;
+}>({
+  dataType(config) {
+    // IMPORTANT: Turso expects F32_BLOB(<dimensions>)
+    return `F32_BLOB(${config.dimensions})`;
+  },
+  fromDriver(value: Buffer): number[] {
+    // Convert the Buffer from the database back into an array of numbers
+    return Array.from(new Float32Array(value.buffer));
+  },
+  toDriver(value: number[]): SQL {
+    // Convert the array of numbers into the SQL function call for insertion
+    // Drizzle expects an SQL object here
+    return sql`vector32(${JSON.stringify(value)})`;
+  },
+});
 
 // Supermarkets Table
 export const supermarkets = sqliteTable('supermarkets', {
@@ -27,6 +50,9 @@ export const products = sqliteTable('products', {
   supermarketId: text('supermarket_id')
     .notNull()
     .references(() => supermarkets.id),
+  nameEmbedding: float32Array('name_embedding', {
+    dimensions: 1536,
+  }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(
     new Date()
   ),
