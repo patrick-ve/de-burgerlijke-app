@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6b450a25-f66f-483b-be6d-97ebc18758b7",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "9b48aa7c-b28a-4c03-b1d4-e49bbe684239",
+  "prevId": "2f8866da-8a54-466a-8bec-3f8345e051ab",
   "tables": {
     "products": {
       "name": "products",
@@ -62,7 +62,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'\"2025-04-17T08:19:32.849Z\"'"
+          "default": "'\"2025-04-17T08:22:26.937Z\"'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -70,7 +70,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'\"2025-04-17T08:19:32.849Z\"'"
+          "default": "'\"2025-04-17T08:22:26.937Z\"'"
         }
       },
       "indexes": {
@@ -124,7 +124,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'\"2025-04-17T08:19:32.848Z\"'"
+          "default": "'\"2025-04-17T08:22:26.937Z\"'"
         }
       },
       "indexes": {
