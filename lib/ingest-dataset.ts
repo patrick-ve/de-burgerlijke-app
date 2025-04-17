@@ -7,6 +7,7 @@ import { consola } from 'consola';
 import { createId } from '@paralleldrive/cuid2'; // Import cuid2
 import { embedMany } from 'ai'; // Import embedMany
 import { openai } from '@ai-sdk/openai'; // Import openai
+import { performance } from 'perf_hooks'; // Import performance
 
 // Define interfaces for the JSON data structure
 interface ProductData {
@@ -28,6 +29,7 @@ const dataFilePath = path.join(
 );
 
 async function ingestData() {
+  const startTime = performance.now(); // Record start time
   consola.info('Starting data ingestion...');
 
   try {
@@ -314,7 +316,24 @@ async function ingestData() {
     } else {
       consola.error(error); // Log the full error for other cases
     }
+    const endTime = performance.now(); // Record end time in case of error
+    const duration = ((endTime - startTime) / 1000).toFixed(2); // Calculate duration in seconds
+    consola.info(
+      `Script finished with errors in ${duration} seconds.`
+    );
     process.exit(1); // Exit with error code
+  } finally {
+    // This block executes regardless of whether an error occurred or not (except for process.exit)
+    // However, process.exit() in the catch block will terminate before this runs.
+    // So, we need to log success duration separately.
+    // If the process didn't exit due to an error, log success duration.
+    if (process.exitCode !== 1) {
+      const endTime = performance.now();
+      const duration = ((endTime - startTime) / 1000).toFixed(2); // Calculate duration in seconds
+      consola.info(
+        `Script completed successfully in ${duration} seconds.`
+      );
+    }
   }
 }
 
