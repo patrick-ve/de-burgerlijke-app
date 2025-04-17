@@ -384,3 +384,25 @@ Translated UI elements to Dutch.
 - This button allows users to add all ingredients from the currently displayed week's planned meals directly to the shopping list.
 - Ingredients are automatically scaled based on the planned portions for each meal.
 - User feedback is provided via toast notifications.
+
+## Database & Data Ingestion
+
+- [x] **Database Setup:**
+  - [x] Researched PostgreSQL and SQLite options.
+  - [x] Attempted PostgreSQL setup with Docker/OrbStack (encountered authentication issues).
+  - [x] Switched to SQLite for local development.
+- [x] **Drizzle ORM Integration (SQLite):**
+  - [x] Installed necessary dependencies (`drizzle-orm`, `@libsql/client`, `drizzle-kit`).
+  - [x] Configured `drizzle.config.ts` for SQLite.
+  - [x] Defined database schema (`server/db/schema.ts`) for `supermarkets` and `products` tables, compatible with SQLite.
+  - [x] Updated Drizzle client utility (`server/utils/db.ts`) for SQLite.
+- [x] **Database Migrations:**
+  - [x] Generated initial SQLite migration using `drizzle-kit generate`.
+  - [x] Applied migration using `drizzle-kit migrate` to create the database file and tables.
+- [x] **Data Ingestion:**
+  - [x] Created data ingestion script (`scripts/ingest-data.ts`) to read `data/supermarkets.json`.
+  - [x] Implemented logic to parse JSON and map data to database schema.
+  - [x] Added check for existing supermarkets to avoid duplicates.
+  - [x] Implemented batch insertion for products to handle large datasets and avoid SQLite variable limits.
+  - [x] Added `onConflictDoNothing` for product links to handle potential duplicates gracefully.
+  - [x] Successfully ingested supermarket and product data into the SQLite database.
