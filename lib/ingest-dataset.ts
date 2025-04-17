@@ -3,7 +3,10 @@ import path from 'path';
 import { db } from '../server/utils/db'; // Adjust path if your script location is different
 import { supermarkets, products } from '../server/db/schema';
 import { eq } from 'drizzle-orm';
+import { consola } from 'consola';
 import { createId } from '@paralleldrive/cuid2'; // Import cuid2
+import { embedMany } from 'ai'; // Import embedMany
+import { openai } from '@ai-sdk/openai'; // Import openai
 
 // Define interfaces for the JSON data structure
 interface ProductData {
@@ -25,15 +28,28 @@ const dataFilePath = path.join(
 );
 
 async function ingestData() {
-  console.log('Starting data ingestion...');
+  consola.info('Starting data ingestion...');
 
   try {
+    // --- Empty Tables ---
+    consola.info(
+      'Emptying existing products and supermarkets tables...'
+    );
+    await db.delete(products); // Delete all products first due to foreign key constraint
+    await db.delete(supermarkets);
+    consola.info('Tables emptied successfully.');
+    // --- End Empty Tables ---
+
     // Read and parse the JSON file
     const jsonData = fs.readFileSync(dataFilePath, 'utf-8');
     const supermarketsData: SupermarketData[] = JSON.parse(jsonData);
+    const totalProducts = supermarketsData.reduce(
+      (acc, supermarket) => acc + supermarket.d.length,
+      0
+    );
 
-    console.log(
-      `Found ${supermarketsData.length} supermarkets in the JSON file.`
+    consola.info(
+      `Found ${supermarketsData.length} supermarkets and ${totalProducts} products in the JSON file.`
     );
 
     let totalProductsInserted = 0;
@@ -48,7 +64,7 @@ async function ingestData() {
         !supermarket.n ||
         !Array.isArray(supermarket.d)
       ) {
-        console.warn(
+        consola.warn(
           'Skipping invalid supermarket entry:',
           supermarket
         );
@@ -70,7 +86,7 @@ async function ingestData() {
 
         if (existingSupermarket.length > 0) {
           supermarketId = existingSupermarket[0].id;
-          console.log(
+          consola.info(
             `Supermarket "${supermarketName}" already exists. Skipping insertion.`
           );
           totalSupermarketsSkipped++;
@@ -87,12 +103,12 @@ async function ingestData() {
 
           if (inserted.length > 0) {
             supermarketId = inserted[0].id;
-            console.log(
+            consola.info(
               `Inserted supermarket: ${supermarketName} (ID: ${supermarketId})`
             );
             totalSupermarketsInserted++;
           } else {
-            console.error(
+            consola.error(
               `Failed to insert supermarket: ${supermarketName}`
             );
             // Attempt to fetch again in case of race condition (unlikely here but safe)
@@ -106,7 +122,7 @@ async function ingestData() {
           }
         }
       } catch (error: any) {
-        console.error(
+        consola.error(
           `Error processing supermarket "${supermarketName}": ${error.message}`
         );
         // Decide if you want to continue with the next supermarket or stop
@@ -114,7 +130,7 @@ async function ingestData() {
       }
 
       if (!supermarketId) {
-        console.error(
+        consola.error(
           `Could not obtain ID for supermarket "${supermarketName}". Skipping its products.`
         );
         continue;
@@ -122,13 +138,13 @@ async function ingestData() {
 
       // --- Insert Products for the current supermarket ---
       if (productsData.length === 0) {
-        console.log(
+        consola.info(
           `Supermarket "${supermarketName}" has no products.`
         );
         continue;
       }
 
-      const productsToInsert = productsData
+      let productsToInsert = productsData
         .filter(
           (product) =>
             product &&
@@ -143,79 +159,160 @@ async function ingestData() {
           price: product.p, // Drizzle handles number to REAL conversion
           amount: product.s || null, // Use null if 's' is missing or empty
           supermarketId: supermarketId!, // Non-null assertion as we check above
+          nameEmbedding: [], // Initialize with empty array, will be filled in batch
           // createdAt/updatedAt will use defaults
         }));
 
       if (productsToInsert.length === 0) {
-        console.log(
+        consola.info(
           `No valid products to insert for supermarket "${supermarketName}".`
         );
         continue;
       }
 
-      // --- Batch Insertion Logic ---
+      // --- Batch Insertion & Embedding Logic ---
       const batchSize = 100; // Process 100 products per batch
       let productsInsertedInSupermarket = 0;
       let productsSkippedInSupermarket = 0;
+      let cumulativeEmbeddingCost = 0; // Initialize cumulative cost for the supermarket
 
-      console.log(
-        `Attempting to insert ${productsToInsert.length} products for "${supermarketName}" in batches of ${batchSize}...`
+      const totalBatches = Math.ceil(
+        productsToInsert.length / batchSize
+      );
+
+      consola.info(
+        `Attempting to insert/embed ${productsToInsert.length} products for "${supermarketName}" in ${totalBatches} batches of ${batchSize}...`
       );
 
       for (let i = 0; i < productsToInsert.length; i += batchSize) {
-        const batch = productsToInsert.slice(i, i + batchSize);
-        // console.log(`  Processing batch ${i / batchSize + 1} (${batch.length} products)`); // Optional detailed logging
+        const batchRawData = productsToInsert.slice(i, i + batchSize);
+        const currentBatchNumber = i / batchSize + 1;
+        consola.info(
+          `  Processing batch ${currentBatchNumber} of ${totalBatches} (${batchRawData.length} products)`
+        );
+
+        // --- Generate Embeddings for the current batch ---
+        let batchWithEmbeddings;
+        try {
+          consola.info(`    Generating embeddings for batch...`);
+          const productNamesInBatch = batchRawData.map((p) => p.name);
+
+          const { embeddings, usage } = await embedMany({
+            model: openai.embedding('text-embedding-3-small'),
+            values: productNamesInBatch,
+          });
+
+          // Combine raw data with embeddings
+          batchWithEmbeddings = batchRawData.map(
+            (product, index) => ({
+              ...product,
+              nameEmbedding: embeddings[index],
+            })
+          );
+
+          // Calculate and log embedding cost for the batch
+          const tokensUsed = usage?.tokens;
+          if (tokensUsed !== undefined && tokensUsed !== null) {
+            const pricePerMillionTokens = 0.02;
+            const cost =
+              (tokensUsed / 1000000) * pricePerMillionTokens;
+            consola.info(
+              `      Embedding token usage: ${tokensUsed} tokens`
+            );
+            consola.info(
+              `      Estimated embedding cost for batch: $${cost.toFixed(8)}`
+            );
+            cumulativeEmbeddingCost += cost; // Add batch cost to cumulative total
+            consola.info(
+              `      Cumulative embedding cost for "${supermarketName}": $${cumulativeEmbeddingCost.toFixed(8)}`
+            );
+          } else {
+            consola.info('      Embedding token usage: N/A');
+          }
+          consola.info(
+            `    Embeddings generated successfully for batch.`
+          );
+        } catch (embeddingError: any) {
+          consola.error(
+            `    Error generating embeddings for batch ${i / batchSize + 1}: ${embeddingError.message}`
+          );
+          consola.warn(
+            `    Skipping insertion for this batch due to embedding error.`
+          );
+          continue; // Skip to the next batch if embeddings fail
+        }
+        // --- End Generate Embeddings ---
+
+        // --- Insert the batch with embeddings ---
+        if (!batchWithEmbeddings) {
+          // Should not happen if embedding succeeded, but safety check
+          consola.error(
+            `    Skipping insertion for batch ${i / batchSize + 1} due to missing embedding data.`
+          );
+          continue;
+        }
 
         try {
           const insertedProducts = await db
             .insert(products)
-            .values(batch)
+            .values(batchWithEmbeddings) // Use the batch with embeddings
             .onConflictDoNothing({ target: products.link })
             .returning({ id: products.id });
 
           const insertedCount = insertedProducts.length;
-          const skippedCount = batch.length - insertedCount;
+          const skippedCount = batchRawData.length - insertedCount;
 
           productsInsertedInSupermarket += insertedCount;
           productsSkippedInSupermarket += skippedCount;
           totalProductsInserted += insertedCount; // Update overall total
           totalProductsSkipped += skippedCount; // Update overall total
         } catch (error: any) {
-          console.error(
+          consola.error(
             `  Error inserting batch ${i / batchSize + 1} for supermarket "${supermarketName}": ${error.message}`
           );
           // Decide whether to skip this batch or stop entirely
         }
       }
-      console.log(
+      consola.info(
         `Finished inserting products for "${supermarketName}". Inserted: ${productsInsertedInSupermarket}, Skipped (duplicate link): ${productsSkippedInSupermarket}.`
+      );
+      consola.info(
+        `Total estimated embedding cost for "${supermarketName}": $${cumulativeEmbeddingCost.toFixed(8)}`
       );
       // --- End Batch Insertion Logic ---
     }
 
-    console.log('\n--- Ingestion Summary ---');
-    console.log(
+    // Add total embedding cost accumulation here if needed for overall summary
+    let grandTotalEmbeddingCost = 0; // Initialize outside the supermarket loop
+    // (Need to lift cumulativeEmbeddingCost or recalculate based on logs/data)
+    // For now, we'll just show per-supermarket totals.
+    // A more robust way would be to accumulate grandTotalEmbeddingCost inside the loop:
+    // grandTotalEmbeddingCost += cumulativeEmbeddingCost; // Add supermarket total to grand total
+
+    consola.info('\n--- Ingestion Summary ---');
+    consola.info(
       `Supermarkets Inserted: ${totalSupermarketsInserted}`
     );
-    console.log(
+    consola.info(
       `Supermarkets Skipped (already exist): ${totalSupermarketsSkipped}`
     );
-    console.log(`Products Inserted: ${totalProductsInserted}`);
-    console.log(
+    consola.info(`Products Inserted: ${totalProductsInserted}`);
+    consola.info(
       `Products Skipped (duplicate link): ${totalProductsSkipped}`
     );
-    console.log('-------------------------');
-    console.log('Data ingestion finished.');
+    // consola.info(`Grand Total Estimated Embedding Cost: $${grandTotalEmbeddingCost.toFixed(8)}`); // Log grand total
+    consola.info('-------------------------');
+    consola.info('Data ingestion finished.');
   } catch (error: any) {
-    console.error('Failed to ingest data:', error.message);
+    consola.error('Failed to ingest data:', error.message);
     if (error.code === 'ENOENT') {
-      console.error(`Error: Data file not found at ${dataFilePath}`);
+      consola.error(`Error: Data file not found at ${dataFilePath}`);
     } else if (error instanceof SyntaxError) {
-      console.error(
+      consola.error(
         `Error: Failed to parse JSON data in ${dataFilePath}. Check the file format.`
       );
     } else {
-      console.error(error); // Log the full error for other cases
+      consola.error(error); // Log the full error for other cases
     }
     process.exit(1); // Exit with error code
   }
@@ -223,6 +320,6 @@ async function ingestData() {
 
 // Run the ingestion function
 ingestData().catch((err) => {
-  console.error('Unhandled error during ingestion:', err);
+  consola.error('Unhandled error during ingestion:', err);
   process.exit(1);
 });

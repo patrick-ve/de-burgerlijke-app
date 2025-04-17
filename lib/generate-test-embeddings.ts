@@ -45,7 +45,7 @@ export async function getRandomProductsWithEmbeddings(): Promise<
       .select()
       .from(products)
       .orderBy(sql`RANDOM()`)
-      .limit(9000);
+      .limit(1000);
 
     consola.log(
       `Fetched ${randomProducts?.length ?? 0} products from DB.`
