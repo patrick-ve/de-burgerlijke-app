@@ -228,7 +228,20 @@ export async function findSimilarProducts(
 
 // Self-executing part for testing
 (async () => {
-  const keyword = 'Volle melk';
+  // Get keyword from command line argument (process.argv[2])
+  const keyword = process.argv[2];
+
+  // Check if a keyword was provided
+  if (!keyword) {
+    consola.error(
+      'Error: Please provide a search keyword as a command-line argument.'
+    );
+    consola.info(
+      'Usage: npx jiti ./lib/query-embeddings.ts "Your Search Term"'
+    );
+    process.exit(1); // Exit with an error code
+  }
+
   const initialCandidates = 50; // Fetch more candidates
   const finalResults = 10; // Show the top 10 cheapest
 
