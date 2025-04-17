@@ -243,33 +243,80 @@ export async function findSimilarProducts(
   }
 
   const initialCandidates = 50; // Fetch more candidates
-  const finalResults = 10; // Show the top 10 cheapest
+  const finalResults = 10; // Show the top 10
 
   try {
     console.time('Similarity Search'); // Start timer
-    const similarItems = await findSimilarProducts(
-      keyword,
-      initialCandidates,
-      finalResults
-    );
+
+    // 1. Fetch candidates (already sorted by distance)
+    const keywordEmbedding = await getEmbedding(keyword);
+    const embeddingString = JSON.stringify(keywordEmbedding);
+    const similarCandidates = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        link: products.link,
+        price: products.price,
+        amount: products.amount,
+        supermarketId: products.supermarketId,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        nameEmbedding: products.nameEmbedding,
+        distance:
+          sql<number>`vector_distance_cos(name_embedding, ${embeddingString})`.as(
+            'distance'
+          ),
+      })
+      .from(products)
+      .where(isNotNull(products.nameEmbedding))
+      .orderBy(sql`distance`)
+      .limit(initialCandidates);
+
     console.timeEnd('Similarity Search'); // End timer and log duration
 
-    if (similarItems.length > 0) {
+    if (similarCandidates.length > 0) {
+      // 2. Process and log the CHEAPEST top `finalResults`
+      const cheapestItems = [...similarCandidates] // Create a copy to sort by price
+        .sort((a, b) => a.price - b.price)
+        .slice(0, finalResults);
+
       consola.log(
         `
-Top ${
-          similarItems.length
-        } cheapest products similar to "${keyword}" (from ${initialCandidates} candidates):`
+--- Top ${
+          cheapestItems.length
+        } CHEAPEST products similar to "${keyword}" (from ${initialCandidates} candidates) ---`
       );
-      // Log name, price, and corrected similarity percentage
-      similarItems.forEach((product, index) => {
-        // Corrected Similarity % = (1 - distance / 2) * 100
-        // distance: 0 (identical) => 100%
-        // distance: 1 (orthogonal) => 50%
-        // distance: 2 (opposite) => 0%
+      cheapestItems.forEach((product, index) => {
         const similarityPercent = (1 - product.distance / 2) * 100;
+        const amountString = product.amount
+          ? ` (${product.amount})`
+          : ''; // Add amount if available
         consola.log(
-          `${index + 1}. ${product.name} (€${
+          `${index + 1}. ${product.name}${amountString} (€${
+            product.price
+          }) - Similarity: ${similarityPercent.toFixed(1)}% (dist: ${product.distance.toFixed(3)})`
+        );
+      });
+
+      // 3. Process and log the MOST SIMILAR top `finalResults`
+      const mostSimilarItems = similarCandidates.slice(
+        0,
+        finalResults
+      ); // Already sorted by distance
+
+      consola.log(
+        `
+--- Top ${
+          mostSimilarItems.length
+        } MOST SIMILAR products to "${keyword}" (from ${initialCandidates} candidates) ---`
+      );
+      mostSimilarItems.forEach((product, index) => {
+        const similarityPercent = (1 - product.distance / 2) * 100;
+        const amountString = product.amount
+          ? ` (${product.amount})`
+          : ''; // Add amount if available
+        consola.log(
+          `${index + 1}. ${product.name}${amountString} (€${
             product.price
           }) - Similarity: ${similarityPercent.toFixed(1)}% (dist: ${product.distance.toFixed(3)})`
         );
