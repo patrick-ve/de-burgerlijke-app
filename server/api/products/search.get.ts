@@ -1,6 +1,25 @@
 import { db } from '~/server/utils/db';
 import { products, supermarkets } from '~/server/db/schema';
-import { sql, like, eq } from 'drizzle-orm';
+import { sql, like, eq, asc } from 'drizzle-orm';
+
+// Define the expected structure for a single result row before grouping
+interface ProductQueryResult {
+  id: string;
+  name: string;
+  link: string;
+  price: number;
+  amount: string | null;
+  supermarketId: string; // Keep for potential future use
+  supermarketName: string;
+}
+
+// Define the structure of the final response
+interface GroupedSearchResults {
+  [supermarketName: string]: Omit<
+    ProductQueryResult,
+    'supermarketId' | 'supermarketName'
+  >[];
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -18,30 +37,55 @@ export default defineEventHandler(async (event) => {
   }
 
   const searchPattern = `%${searchTerm.trim()}%`;
-  const limit = 50; // Limit results to avoid overwhelming the browser
+  const initialFetchLimit = 1000; // Increased limit from 200
+  const limitPerSupermarket = 10;
 
   try {
-    const results = await db
+    // Fetch a larger set of results, ordered to potentially help grouping
+    const flatResults = await db
       .select({
         id: products.id,
         name: products.name,
         link: products.link,
         price: products.price,
         amount: products.amount,
-        supermarketName: supermarkets.name, // Select supermarket name from joined table
+        supermarketId: supermarkets.id, // Keep the ID temporarily if needed
+        supermarketName: supermarkets.name,
       })
       .from(products)
       .leftJoin(
         supermarkets,
         eq(products.supermarketId, supermarkets.id)
-      ) // Join products with supermarkets
-      .where(like(products.name, searchPattern)) // Case-insensitive search using LIKE
-      // Note: For true case-insensitivity with LIKE in standard SQLite, often requires `lower()`
-      // .where(sql`lower(${products.name}) like lower(${searchPattern})`)
-      // Consider using a more robust FTS (Full-Text Search) setup for better performance/relevance if needed.
-      .limit(limit);
+      )
+      .where(like(products.name, searchPattern))
+      .orderBy(supermarkets.name, asc(products.name)) // Order results
+      .limit(initialFetchLimit);
 
-    return results;
+    // Group results in code
+    const groupedResults: GroupedSearchResults = {};
+
+    for (const product of flatResults) {
+      // Ensure supermarketName exists (should due to LEFT JOIN and schema)
+      if (!product.supermarketName) continue;
+
+      // Initialize array for supermarket if it doesn't exist
+      if (!groupedResults[product.supermarketName]) {
+        groupedResults[product.supermarketName] = [];
+      }
+
+      // Add product to the group if the limit per supermarket is not reached
+      if (
+        groupedResults[product.supermarketName].length <
+        limitPerSupermarket
+      ) {
+        // Omit supermarketId and supermarketName from the final product object in the array
+        const { supermarketId, supermarketName, ...productData } =
+          product;
+        groupedResults[product.supermarketName].push(productData);
+      }
+    }
+
+    return groupedResults;
   } catch (error: any) {
     console.error('Error searching products:', error);
     throw createError({

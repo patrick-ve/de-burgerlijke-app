@@ -11,15 +11,20 @@ interface ProductSearchResult {
   supermarketName: string;
 }
 
+// Type for the grouped results object fetched from the API
+interface GroupedSearchResults {
+  [supermarketName: string]: ProductSearchResult[];
+}
+
 const searchQuery = ref('');
-const searchResults = ref<ProductSearchResult[]>([]);
+const searchResults = ref<GroupedSearchResults>({});
 const isLoading = ref(false);
 const error = ref<Error | null>(null);
 const searchPerformed = ref(false);
 
 async function performSearch() {
   if (!searchQuery.value.trim()) {
-    searchResults.value = [];
+    searchResults.value = {};
     searchPerformed.value = false;
     return;
   }
@@ -29,8 +34,8 @@ async function performSearch() {
   searchPerformed.value = true;
 
   try {
-    // Use $fetch for client-side request triggered by user action
-    const results = await $fetch<ProductSearchResult[]>(
+    // Update the expected type for $fetch
+    const results = await $fetch<GroupedSearchResults>(
       '/api/products/search',
       {
         query: { term: searchQuery.value },
@@ -40,7 +45,7 @@ async function performSearch() {
   } catch (err: any) {
     console.error('Error fetching search results:', err);
     error.value = err;
-    searchResults.value = [];
+    searchResults.value = {};
   } finally {
     isLoading.value = false;
   }
@@ -54,12 +59,23 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 const resultsColumns = [
-  { key: 'name', label: 'Product Name' },
+  { key: 'name', label: 'Product Name', class: 'w-1/2' },
   { key: 'price', label: 'Price' },
   { key: 'amount', label: 'Amount' },
-  { key: 'supermarketName', label: 'Supermarket' },
   { key: 'link', label: 'Link' },
 ];
+
+// Helper to check if searchResults object is empty
+const noResultsFound = computed(() => {
+  return (
+    searchPerformed.value &&
+    Object.keys(searchResults.value).length === 0
+  );
+});
+
+const hasResults = computed(() => {
+  return Object.keys(searchResults.value).length > 0;
+});
 </script>
 
 <template>
@@ -90,30 +106,35 @@ const resultsColumns = [
     <div v-else-if="error" class="text-red-500 text-center">
       <p>Error loading results: {{ error.message }}</p>
     </div>
-    <div
-      v-else-if="searchPerformed && searchResults.length === 0"
-      class="text-center text-gray-500"
-    >
+    <div v-else-if="noResultsFound" class="text-center text-gray-500">
       <p>No products found matching "{{ searchQuery }}".</p>
     </div>
-    <div v-else-if="searchResults.length > 0">
-      <UTable :rows="searchResults" :columns="resultsColumns">
-        <!-- Optional: Customize link column -->
-        <template #link-data="{ row }">
-          <UButton
-            :to="row.link"
-            target="_blank"
-            variant="link"
-            icon="i-heroicons-arrow-top-right-on-square"
-            padded
-          >
-            View
-          </UButton>
-        </template>
-        <template #price-data="{ row }">
-          <span>€{{ row.price.toFixed(2) }}</span>
-        </template>
-      </UTable>
+    <div v-else-if="hasResults" class="space-y-6">
+      <div
+        v-for="(products, supermarketName) in searchResults"
+        :key="supermarketName"
+      >
+        <h2 class="text-xl font-semibold mb-2 border-b pb-1">
+          {{ supermarketName }} ({{ products.length }} results)
+        </h2>
+        <UTable :rows="products" :columns="resultsColumns">
+          <template #link-data="{ row }">
+            <UButton
+              :to="row.link"
+              target="_blank"
+              variant="link"
+              icon="i-heroicons-arrow-top-right-on-square"
+              size="xs"
+              :padded="false"
+            >
+              View
+            </UButton>
+          </template>
+          <template #price-data="{ row }">
+            <span>€{{ row.price.toFixed(2) }}</span>
+          </template>
+        </UTable>
+      </div>
     </div>
     <div
       v-else-if="!searchPerformed"
