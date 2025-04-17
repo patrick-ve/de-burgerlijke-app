@@ -234,7 +234,7 @@ export async function findSimilarProducts(
         consola.log(
           `${index + 1}. ${product.name} (€${
             product.price
-          }) - Distance: ${product.distance.toFixed(4)}`
+          }) - Match: ${(1 - product.distance * 100).toFixed(1)}%`
         );
       });
     } else {
