@@ -138,6 +138,14 @@ const formatItemDetails = (item: ShoppingListItem): string => {
   }
   return details.trim(); // Return quantity and unit, or empty string if neither exists
 };
+
+// Helper function to format currency
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('nl-NL', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(value);
+};
 </script>
 
 <template>
@@ -201,6 +209,25 @@ const formatItemDetails = (item: ShoppingListItem): string => {
             >
               {{ formatItemDetails(item) }}
             </p>
+            <!-- Display Cheapest Price Info -->
+            <div
+              v-if="item.cheapestPrice"
+              class="text-xs mt-1"
+              :class="{
+                'line-through text-gray-400': item.isChecked,
+                'text-green-700': !item.isChecked,
+              }"
+              data-testid="item-cheapest-price"
+            >
+              {{ formatCurrency(item.cheapestPrice) }} bij
+              <span class="font-medium capitalize">{{
+                item.cheapestSupermarket
+              }}</span>
+              <span v-if="item.cheapestAmount"
+                >({{ item.cheapestAmount }})</span
+              >
+            </div>
+            <!-- End Cheapest Price Info -->
           </div>
           <!-- Placeholder for price info/actions -->
           <UButton

@@ -26,6 +26,10 @@ export interface ShoppingListItem {
   recipeIds: string[]; // IDs of recipes contributing to this item
   createdAt: Date;
   updatedAt: Date;
+  // Add fields for cheapest product display
+  cheapestPrice?: number;
+  cheapestSupermarket?: string;
+  cheapestAmount?: string | null;
 }
 
 export interface ShoppingList {
