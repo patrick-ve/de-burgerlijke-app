@@ -12,6 +12,7 @@ import { embedMany, generateObject, generateText } from 'ai'; // Import embedMan
 import { openai } from '@ai-sdk/openai'; // Import openai
 import { performance } from 'perf_hooks'; // Import performance
 import { z } from 'zod'; // Import zod for schema validation
+import pLimit from 'p-limit'; // Import p-limit for concurrency control
 
 // Define interfaces for the JSON data structure
 interface ProductData {
@@ -47,6 +48,10 @@ const dataFilePath = path.join(
   'data',
   'supermarkets.json'
 );
+
+// --- Helper Function for delays ---
+const wait = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 // --- Helper Function for Standardized Price Calculation ---
 async function calculateStandardizedPrice(
@@ -125,32 +130,7 @@ async function calculateStandardizedPrice(
   }
 }
 
-// --- Test Function for Single Product AI Call ---
-/* // Removing the test function
-async function testSingleProductAI() {
-  consola.info('Starting single product AI test...');
-
-  // Example product data (using the one that failed)
-  const testProduct = {
-    name: 'Nestlé Crunch melkchocolade reep',
-    price: 1.25,
-    amount: '100g', // Example amount, adjust if needed
-  };
-
-  try {
-    const result = await calculateStandardizedPrice(
-      testProduct.name,
-      testProduct.price,
-      testProduct.amount
-    );
-    consola.success('AI Calculation Result:', result);
-  } catch (error: any) {
-    consola.error('Single product AI test failed:', error.message);
-    // Log the full error if needed for more details
-    // consola.error(error);
-  }
-}
-*/
+// --- Test Function for Single Product AI Call
 
 // --- Main Ingestion Function ---
 async function ingestData() {
@@ -159,6 +139,13 @@ async function ingestData() {
   consola.warn(
     'AI-based standardized price calculation is enabled. This may increase processing time and cost.'
   );
+
+  // --- Concurrency and Batch Settings ---
+  const BATCH_SIZE = 50; // Number of products to process in parallel for AI calls and DB inserts
+  const CONCURRENT_AI_LIMIT = 10; // Max concurrent generateObject calls (adjust based on rate limits)
+  const DELAY_BETWEEN_BATCHES_MS = 500; // Delay between processing batches
+  const aiLimiter = pLimit(CONCURRENT_AI_LIMIT);
+  // --- End Settings ---
 
   try {
     // --- Empty Tables ---
@@ -267,7 +254,7 @@ async function ingestData() {
       }
       // --- End Insert Supermarket ---
 
-      // --- Process Products Individually ---
+      // --- Process Products in Batches ---
       if (productsData.length === 0) {
         consola.info(
           `Supermarket "${supermarketName}" has no products.`
@@ -288,124 +275,163 @@ async function ingestData() {
       }
 
       consola.info(
-        `  Processing ${validProductsData.length} products individually for "${supermarketName}"... (This will take a long time)`
+        `  Processing ${validProductsData.length} products in batches of ${BATCH_SIZE} for "${supermarketName}"...`
       );
 
       let productsInsertedInSupermarket = 0;
       let productsSkippedInSupermarket = 0;
-      let cumulativeEmbeddingCost = 0; // Initialize cumulative cost for the supermarket
+      let cumulativeEmbeddingCost = 0;
 
-      // Process products one by one
-      for (const [index, product] of validProductsData.entries()) {
-        const productIdentifier = `"${product.n}" (Product ${index + 1} of ${validProductsData.length})`;
-        consola.info(`\n--- Processing ${productIdentifier} ---`);
+      for (let i = 0; i < validProductsData.length; i += BATCH_SIZE) {
+        const batch = validProductsData.slice(i, i + BATCH_SIZE);
+        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(
+          validProductsData.length / BATCH_SIZE
+        );
 
-        try {
-          // Step 1: Calculate Standardized Price
-          consola.info(
-            `  [1/3] Calculating standardized price for ${productIdentifier}...`
-          );
-          const { standardized_price_per_unit, standardized_unit } =
-            await calculateStandardizedPrice(
+        consola.info(
+          `\n--- Processing Batch ${batchNumber}/${totalBatches} for "${supermarketName}" (Size: ${batch.length}) ---`
+        );
+
+        // Step 1: Calculate Standardized Prices Concurrently (with limit)
+        consola.info(
+          `  [1/3] Calculating standardized prices for batch ${batchNumber}...`
+        );
+        const standardizedPricePromises = batch.map((product) =>
+          aiLimiter(() =>
+            // Use p-limit to control concurrency
+            calculateStandardizedPrice(
               product.n,
               product.p,
               product.s
-            ); // Errors handled within the function, returns nulls on failure
-          consola.success(
-            `  [1/3] Standardized price calculated for ${productIdentifier}.`
-          );
+            ).catch((err) => {
+              // Catch individual errors
+              consola.warn(
+                `Error calculating standardized price for "${product.n}": ${err.message}. Using nulls.`
+              );
+              return {
+                standardized_price_per_unit: null,
+                standardized_unit: null,
+              };
+            })
+          )
+        );
+        const standardizedResults = await Promise.all(
+          standardizedPricePromises
+        );
+        consola.success(
+          `  [1/3] Standardized prices calculated for batch ${batchNumber}.`
+        );
 
-          // Step 2: Generate Embedding
-          let embedding: number[] = [];
-          let cost = 0;
-          consola.info(
-            `  [2/3] Generating embedding for ${productIdentifier}...`
-          );
-          try {
-            const { embeddings, usage } = await embedMany({
-              model: openai.embedding('text-embedding-3-small'),
-              values: [product.n], // Embed only the current product name
-            });
-            embedding = embeddings[0]; // Get the single embedding
+        // Step 2: Generate Embeddings for the Batch
+        consola.info(
+          `  [2/3] Generating embeddings for batch ${batchNumber}...`
+        );
+        const productNames = batch.map((p) => p.n);
+        let batchEmbeddings: number[][] = [];
+        let batchCost = 0;
+        try {
+          const { embeddings, usage } = await embedMany({
+            model: openai.embedding('text-embedding-3-small'),
+            values: productNames,
+          });
+          batchEmbeddings = embeddings;
 
-            const tokensUsed = usage?.tokens;
-            if (tokensUsed !== undefined && tokensUsed !== null) {
-              const pricePerMillionTokens = 0.02;
-              cost = (tokensUsed / 1000000) * pricePerMillionTokens;
-              cumulativeEmbeddingCost += cost;
-              consola.info(
-                `    Embedding token usage: ${tokensUsed} tokens`
-              );
-              consola.info(
-                `    Estimated embedding cost for product: $${cost.toFixed(8)}`
-              );
-              consola.info(
-                `    Cumulative embedding cost for "${supermarketName}": $${cumulativeEmbeddingCost.toFixed(8)}`
-              );
-            } else {
-              consola.info('    Embedding token usage: N/A');
-            }
-            consola.success(
-              `  [2/3] Embedding generated for ${productIdentifier}.`
+          const tokensUsed = usage?.tokens;
+          if (tokensUsed !== undefined && tokensUsed !== null) {
+            const pricePerMillionTokens = 0.02;
+            batchCost =
+              (tokensUsed / 1000000) * pricePerMillionTokens;
+            cumulativeEmbeddingCost += batchCost;
+            consola.info(
+              `    Batch embedding token usage: ${tokensUsed} tokens`
             );
-          } catch (embeddingError: any) {
-            consola.error(
-              `  [2/3] Error generating embedding for ${productIdentifier}: ${embeddingError.message}`
+            consola.info(
+              `    Estimated embedding cost for batch: $${batchCost.toFixed(8)}`
             );
-            consola.warn(
-              `    Proceeding without embedding for ${productIdentifier}.`
+            consola.info(
+              `    Cumulative embedding cost for "${supermarketName}": $${cumulativeEmbeddingCost.toFixed(8)}`
             );
-            // Keep embedding as empty array []
+          } else {
+            consola.info('    Batch embedding token usage: N/A');
           }
+          consola.success(
+            `  [2/3] Embeddings generated for batch ${batchNumber}.`
+          );
+        } catch (embeddingError: any) {
+          consola.error(
+            `  [2/3] Error generating embeddings for batch ${batchNumber}: ${embeddingError.message}`
+          );
+          consola.warn(
+            `    Proceeding without embeddings for batch ${batchNumber}.`
+          );
+          // Create an array of empty arrays if embedding fails
+          batchEmbeddings = batch.map(() => []);
+        }
 
-          // Step 3: Prepare and Insert Product
-          const productToInsert = {
-            id: createId(), // Generate CUID here
+        // Step 3: Prepare and Insert Products Batch
+        consola.info(
+          `  [3/3] Preparing and inserting batch ${batchNumber}...`
+        );
+        const productsToInsert = batch.map((product, index) => {
+          const stdResult = standardizedResults[index] || {
+            standardized_price_per_unit: null,
+            standardized_unit: null,
+          };
+          const embedding = batchEmbeddings[index] || [];
+          return {
+            id: createId(),
             name: product.n,
             link: product.l,
             price: product.p,
             amount: product.s || null,
-            supermarketId: supermarketId!, // Already checked supermarketId exists
-            standardized_price_per_unit,
-            standardized_unit,
-            nameEmbedding: embedding, // Use the generated embedding (or [] if failed)
-          } as typeof products.$inferInsert; // Type assertion
+            supermarketId: supermarketId!,
+            standardized_price_per_unit:
+              stdResult.standardized_price_per_unit,
+            standardized_unit: stdResult.standardized_unit,
+            nameEmbedding: embedding,
+          } as typeof products.$inferInsert;
+        });
 
-          consola.info(
-            `  [3/3] Attempting to insert ${productIdentifier}...`
-          );
-          const insertedProduct = await db
+        try {
+          const insertedResult = await db
             .insert(products)
-            .values(productToInsert)
-            .onConflictDoNothing({ target: products.link })
-            .returning({ id: products.id });
+            .values(productsToInsert)
+            .onConflictDoNothing({ target: products.link }) // Assumes link is unique constraint
+            .returning({ id: products.id }); // Only return id to potentially count success
 
-          if (insertedProduct.length > 0) {
-            productsInsertedInSupermarket++;
-            totalProductsInserted++;
-            consola.success(
-              `  [3/3] Successfully inserted ${productIdentifier}.`
-            );
-          } else {
-            productsSkippedInSupermarket++;
-            totalProductsSkipped++;
-            consola.warn(
-              `  [3/3] Skipped insertion for ${productIdentifier} (likely duplicate link).`
-            );
-          }
-        } catch (error: any) {
-          // Catch errors during the overall processing of a single product (e.g., db connection issues)
-          consola.error(
-            `--- Critical error processing ${productIdentifier}: ${error.message} ---`
+          const insertedCount = insertedResult.length;
+          const skippedCount = batch.length - insertedCount;
+
+          productsInsertedInSupermarket += insertedCount;
+          productsSkippedInSupermarket += skippedCount;
+          totalProductsInserted += insertedCount;
+          totalProductsSkipped += skippedCount;
+
+          consola.success(
+            `  [3/3] Batch ${batchNumber} inserted: ${insertedCount} success, ${skippedCount} skipped (duplicate link).`
           );
-          consola.error(error); // Log full error
-          productsSkippedInSupermarket++;
-          totalProductsSkipped++;
-          // Continue to the next product
+        } catch (dbError: any) {
+          consola.error(
+            `--- Critical error inserting batch ${batchNumber}: ${dbError.message} ---`
+          );
+          consola.error(dbError);
+          // Mark all products in this batch as skipped if the entire batch insert fails
+          const skippedCount = batch.length;
+          productsSkippedInSupermarket += skippedCount;
+          totalProductsSkipped += skippedCount;
         }
-      } // End individual product loop
 
-      // --- Logging for the Supermarket (Adjusted) ---
+        // Optional delay between batches to manage rate limits further
+        if (i + BATCH_SIZE < validProductsData.length) {
+          consola.info(
+            `--- Waiting ${DELAY_BETWEEN_BATCHES_MS}ms before next batch ---`
+          );
+          await wait(DELAY_BETWEEN_BATCHES_MS);
+        }
+      } // End batch loop for supermarket
+
+      // --- Logging for the Supermarket ---
       consola.info(
         `\n--- Finished processing products for "${supermarketName}" ---`
       );
@@ -487,3 +513,9 @@ testSingleProductAI().catch((err) => {
   process.exit(1);
 });
 */
+
+// --- Add p-limit import correction if needed ---
+// If 'p-limit' causes issues with default import, try:
+// import * as pLimitModule from 'p-limit';
+// const pLimit = pLimitModule.default;
+// Or check your tsconfig.json for "esModuleInterop": true
