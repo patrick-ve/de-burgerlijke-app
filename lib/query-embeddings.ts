@@ -4,8 +4,8 @@
  */
 
 import { db } from '../server/utils/db';
-import { products } from '../server/db/schema';
-import { isNotNull, sql } from 'drizzle-orm';
+import { products, supermarkets } from '../server/db/schema';
+import { isNotNull, sql, eq } from 'drizzle-orm';
 import { consola } from 'consola';
 import OpenAI from 'openai';
 
@@ -24,6 +24,9 @@ interface ProductWithEmbedding {
   createdAt: Date;
   updatedAt: Date;
   nameEmbedding: number[] | object; // Allowing object for ArrayBuffer case
+  standardized_price_per_unit: number | null;
+  standardized_unit: string | null;
+  supermarketName: string; // Add supermarket name
 }
 
 // Define a type for the product returned by the similarity search
@@ -183,15 +186,23 @@ export async function findSimilarProducts(
         price: products.price,
         amount: products.amount,
         supermarketId: products.supermarketId,
+        supermarketName: supermarkets.name, // Select supermarket name
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         nameEmbedding: products.nameEmbedding, // Keep embedding if needed later
+        standardized_price_per_unit:
+          products.standardized_price_per_unit,
+        standardized_unit: products.standardized_unit,
         distance:
           sql<number>`vector_distance_cos(name_embedding, ${embeddingString})`.as(
             'distance'
           ), // Calculate and alias distance (removed ::vector cast)
       })
       .from(products)
+      .leftJoin(
+        supermarkets,
+        eq(products.supermarketId, supermarkets.id)
+      ) // Join with supermarkets
       .where(isNotNull(products.nameEmbedding)) // Ensure embedding exists
       .orderBy(sql`distance`) // Order by the calculated distance ASC (lower is better for similarity)
       .limit(candidateLimit); // Fetch more candidates initially
@@ -225,107 +236,3 @@ export async function findSimilarProducts(
     );
   }
 }
-
-// Self-executing part for testing
-(async () => {
-  // Get keyword from command line argument (process.argv[2])
-  const keyword = process.argv[2];
-
-  // Check if a keyword was provided
-  if (!keyword) {
-    consola.error(
-      'Error: Please provide a search keyword as a command-line argument.'
-    );
-    consola.info(
-      'Usage: npx jiti ./lib/query-embeddings.ts "Your Search Term"'
-    );
-    process.exit(1); // Exit with an error code
-  }
-
-  const initialCandidates = 50; // Fetch more candidates
-  const finalResults = 10; // Show the top 10
-
-  try {
-    console.time('Similarity Search'); // Start timer
-
-    // 1. Fetch candidates (already sorted by distance)
-    const keywordEmbedding = await getEmbedding(keyword);
-    const embeddingString = JSON.stringify(keywordEmbedding);
-    const similarCandidates = await db
-      .select({
-        id: products.id,
-        name: products.name,
-        link: products.link,
-        price: products.price,
-        amount: products.amount,
-        supermarketId: products.supermarketId,
-        createdAt: products.createdAt,
-        updatedAt: products.updatedAt,
-        nameEmbedding: products.nameEmbedding,
-        distance:
-          sql<number>`vector_distance_cos(name_embedding, ${embeddingString})`.as(
-            'distance'
-          ),
-      })
-      .from(products)
-      .where(isNotNull(products.nameEmbedding))
-      .orderBy(sql`distance`)
-      .limit(initialCandidates);
-
-    console.timeEnd('Similarity Search'); // End timer and log duration
-
-    if (similarCandidates.length > 0) {
-      // 2. Process and log the CHEAPEST top `finalResults`
-      const cheapestItems = [...similarCandidates] // Create a copy to sort by price
-        .sort((a, b) => a.price - b.price)
-        .slice(0, finalResults);
-
-      consola.log(
-        `
---- Top ${
-          cheapestItems.length
-        } CHEAPEST products similar to "${keyword}" (from ${initialCandidates} candidates) ---`
-      );
-      cheapestItems.forEach((product, index) => {
-        const similarityPercent = (1 - product.distance / 2) * 100;
-        const amountString = product.amount
-          ? ` (${product.amount})`
-          : ''; // Add amount if available
-        consola.log(
-          `${index + 1}. ${product.name}${amountString} (€${
-            product.price
-          }) - Similarity: ${similarityPercent.toFixed(1)}% (dist: ${product.distance.toFixed(3)})`
-        );
-      });
-
-      // 3. Process and log the MOST SIMILAR top `finalResults`
-      const mostSimilarItems = similarCandidates.slice(
-        0,
-        finalResults
-      ); // Already sorted by distance
-
-      consola.log(
-        `
---- Top ${
-          mostSimilarItems.length
-        } MOST SIMILAR products to "${keyword}" (from ${initialCandidates} candidates) ---`
-      );
-      mostSimilarItems.forEach((product, index) => {
-        const similarityPercent = (1 - product.distance / 2) * 100;
-        const amountString = product.amount
-          ? ` (${product.amount})`
-          : ''; // Add amount if available
-        consola.log(
-          `${index + 1}. ${product.name}${amountString} (€${
-            product.price
-          }) - Similarity: ${similarityPercent.toFixed(1)}% (dist: ${product.distance.toFixed(3)})`
-        );
-      });
-    } else {
-      consola.log(`No similar products found for "${keyword}".`);
-    }
-  } catch (err) {
-    consola.error('Error running similarity search script:', err);
-    process.exit(1);
-  }
-})();
