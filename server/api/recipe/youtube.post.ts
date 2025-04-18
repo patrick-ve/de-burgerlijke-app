@@ -546,7 +546,7 @@ export default defineEventHandler(async (event) => {
     consola.info('Extracting recipe from transcript using OpenAI...');
     const systemPrompt = createSystemPromptForTranscript();
     const { object: recipe } = await generateObject({
-      model: openai('gpt-4o-mini'), // Use the same model as url.post.ts
+      model: openai('gpt-4.1-mini-2025-04-14'), // Use the same model as url.post.ts
       schema: recipeSchema,
       prompt: `${systemPrompt}
 
