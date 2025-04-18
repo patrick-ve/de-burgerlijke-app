@@ -8,7 +8,13 @@ import { supermarkets, products } from '../server/db/schema';
 import { eq } from 'drizzle-orm';
 import { consola } from 'consola';
 import { createId } from '@paralleldrive/cuid2'; // Import cuid2
-import { embedMany, generateObject, generateText } from 'ai'; // Import embedMany and generateObject
+import {
+  embedMany,
+  generateObject,
+  generateText,
+  RetryError,
+  NoObjectGeneratedError,
+} from 'ai'; // Import embedMany and generateObject
 import { openai } from '@ai-sdk/openai'; // Import openai
 import { performance } from 'perf_hooks'; // Import performance
 import { z } from 'zod'; // Import zod for schema validation
@@ -64,33 +70,46 @@ async function calculateStandardizedPrice(
 }> {
   try {
     // Construct the prompt for the AI model
-    const prompt = `Analyze the following product information:
-      Name: ${name}
-      Price: €${price}
-      Amount String: ${amount || 'Not provided'}
+    const prompt = `You must analyze product information and determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
 
       Determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
-      1.  **Prioritize the 'Amount String':** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively.
-      2.  **If 'Amount String' is Generic or Missing:** If the 'Amount String' is generic (e.g., "per stuk", "zak", "pak", "ca. 500g") or missing, **analyze the 'Name'** to determine the unit and quantity.
+      1.  **Prioritize the amount:** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively.
+      2.  **If amount is generic or missing:** If the amount is generic (e.g., "per stuk", "zak", "pak", "ca. 500g") or missing, **analyze the 'Name'** to determine the unit and quantity.
           - Look for weight indicators (g, kg) -> use 'kg'.
           - Look for volume indicators (ml, l) -> use 'liter'.
           - Look for explicit piece counts or terms suggesting countability (e.g., "Avocado", "Eieren", "Rollen") -> use 'piece'. Assume 1 piece if no specific count is found in the name.
-      3.  **Ambiguity:** If neither the 'Amount String' nor the 'Name' allows for reliable determination of both unit and quantity, return null for both 'unit' and 'quantity'.
+      3.  **Ambiguity:** If neither the amount nor the name allows for reliable determination of both unit and quantity, return null for both 'unit' and 'quantity'.
 
       Provide the result as a JSON object matching the provided schema.
     `;
 
     const startTime = Date.now(); // Timestamp start
+    /* // Removing individual product call logging
     consola.info(
       `[${startTime}] Calling generateObject for: "${name}" - ${price} - ${amount}`
     );
+    */
     const { object: standardizedInfo } = await generateObject({
       model: openai('gpt-4.1-nano-2025-04-14'),
       schema: StandardizedUnitSchema,
       mode: 'json',
-      prompt: prompt,
+      messages: [
+        {
+          role: 'system',
+          content: prompt,
+        },
+        {
+          role: 'user',
+          content: `
+            Name and/or amount: ${name} ${amount}
+            Price: €${price}
+          `,
+        },
+      ],
+      maxRetries: 10,
     });
     const endTime = Date.now(); // Timestamp end
+    /* // Removing verbose logging for individual product AI calls
     consola.info(
       `[${endTime}] Standardized Info for "${name}":`,
       standardizedInfo
@@ -98,6 +117,7 @@ async function calculateStandardizedPrice(
     consola.success(
       `[${endTime}] Received response for "${name}" (took ${endTime - startTime}ms)`
     );
+    */
 
     // Calculate standardized price
     if (
@@ -120,10 +140,21 @@ async function calculateStandardizedPrice(
         standardized_unit: null,
       };
     }
-  } catch (error: any) {
-    consola.warn(
-      `AI calculation failed for product "${name}": ${error}. Returning nulls.`
-    );
+  } catch (error: unknown) {
+    if (RetryError.isInstance(error)) {
+      consola.warn(
+        `AI calculation failed for product "${name}": ${error.reason}. ${error.cause}`
+      );
+    } else if (NoObjectGeneratedError.isInstance(error)) {
+      consola.warn(
+        `AI calculation failed for product "${name}": ${error.response}. ${error.cause}`
+      );
+    } else {
+      consola.warn(
+        `AI calculation failed for product "${name}": ${error}. Returning nulls.`
+      );
+    }
+
     // Just return nulls on error
     return {
       standardized_price_per_unit: null,
@@ -143,9 +174,10 @@ async function ingestData() {
   );
 
   // --- Concurrency and Batch Settings ---
-  const BATCH_SIZE = 50; // Number of products to process in parallel for AI calls and DB inserts
-  const CONCURRENT_AI_LIMIT = 10; // Max concurrent generateObject calls (adjust based on rate limits)
-  const DELAY_BETWEEN_BATCHES_MS = 500; // Delay between processing batches
+  const BATCH_SIZE = 500; // Number of products to process in parallel for AI calls and DB inserts
+  // Target ~90% of 20,000 RPM = 18,000 RPM = 300 RPS - Reducing to 200 RPS
+  const CONCURRENT_AI_LIMIT = 200; // Max concurrent generateObject calls
+  // const DELAY_BETWEEN_BATCHES_MS = 500; // Delay is removed as we target higher throughput
   const aiLimiter = pLimit(CONCURRENT_AI_LIMIT);
   // --- End Settings ---
 
@@ -162,19 +194,28 @@ async function ingestData() {
     // Read and parse the JSON file
     const jsonData = fs.readFileSync(dataFilePath, 'utf-8');
     const supermarketsData: SupermarketData[] = JSON.parse(jsonData);
-    const totalProducts = supermarketsData.reduce(
-      (acc, supermarket) => acc + supermarket.d.length,
+
+    // Calculate total products upfront for accurate progress reporting
+    const totalProductsToProcess = supermarketsData.reduce(
+      (acc, supermarket) =>
+        acc +
+        (supermarket?.d?.filter(
+          (p) => p && p.n && p.l && p.p !== undefined
+        ).length || 0),
       0
     );
 
     consola.info(
-      `Found ${supermarketsData.length} supermarkets and ${totalProducts} products in the JSON file.`
+      `Found ${supermarketsData.length} supermarkets and ${totalProductsToProcess} valid products to process in the JSON file.`
     );
 
     let totalProductsInserted = 0;
     let totalSupermarketsInserted = 0;
     let totalSupermarketsSkipped = 0;
     let totalProductsSkipped = 0;
+    let totalProductsProcessed = 0; // Counter for overall progress
+    let grandTotalEmbeddingCost = 0; // Initialize grand total cost tracker
+    let totalFailures = 0; // Track total failed standardizations
 
     // Iterate over each supermarket in the JSON data
     for (const supermarket of supermarketsData) {
@@ -290,15 +331,15 @@ async function ingestData() {
         const totalBatches = Math.ceil(
           validProductsData.length / BATCH_SIZE
         );
+        const batchStartTime = performance.now(); // Start timer for batch
 
         consola.info(
-          `\n--- Processing Batch ${batchNumber}/${totalBatches} for "${supermarketName}" (Size: ${batch.length}) ---`
+          `\n--- Starting Batch ${batchNumber}/${totalBatches} for "${supermarketName}" (Size: ${batch.length}) ---`
         );
 
         // Step 1: Calculate Standardized Prices Concurrently (with limit)
-        consola.info(
-          `  [1/3] Calculating standardized prices for batch ${batchNumber}...`
-        );
+        // Removing verbose per-call logging
+        consola.info(`  [1/3] Calculating standardized prices...`);
         const standardizedPricePromises = batch.map((product) =>
           aiLimiter(() =>
             // Use p-limit to control concurrency
@@ -321,14 +362,18 @@ async function ingestData() {
         const standardizedResults = await Promise.all(
           standardizedPricePromises
         );
-        consola.success(
-          `  [1/3] Standardized prices calculated for batch ${batchNumber}.`
-        );
+        // Calculate failures in this batch
+        const batchFailures = standardizedResults.filter(
+          (result) =>
+            result.standardized_price_per_unit === null ||
+            result.standardized_unit === null
+        ).length;
+        totalFailures += batchFailures; // Update total failures
+
+        consola.success(`  [1/3] Standardized prices calculated.`);
 
         // Step 2: Generate Embeddings for the Batch
-        consola.info(
-          `  [2/3] Generating embeddings for batch ${batchNumber}...`
-        );
+        consola.info(`  [2/3] Generating embeddings...`);
         const productNames = batch.map((p) => p.n);
         let batchEmbeddings: number[][] = [];
         let batchCost = 0;
@@ -345,6 +390,8 @@ async function ingestData() {
             batchCost =
               (tokensUsed / 1000000) * pricePerMillionTokens;
             cumulativeEmbeddingCost += batchCost;
+            grandTotalEmbeddingCost += batchCost; // Add to grand total
+            /* // Removing verbose cost logging per batch - will log per supermarket
             consola.info(
               `    Batch embedding token usage: ${tokensUsed} tokens`
             );
@@ -354,12 +401,11 @@ async function ingestData() {
             consola.info(
               `    Cumulative embedding cost for "${supermarketName}": $${cumulativeEmbeddingCost.toFixed(8)}`
             );
+            */
           } else {
             consola.info('    Batch embedding token usage: N/A');
           }
-          consola.success(
-            `  [2/3] Embeddings generated for batch ${batchNumber}.`
-          );
+          consola.success(`  [2/3] Embeddings generated.`);
         } catch (embeddingError: any) {
           consola.error(
             `  [2/3] Error generating embeddings for batch ${batchNumber}: ${embeddingError.message}`
@@ -371,66 +417,149 @@ async function ingestData() {
           batchEmbeddings = batch.map(() => []);
         }
 
-        // Step 3: Prepare and Insert Products Batch
+        // Step 3: Prepare and Insert Products Batch (Simplified: Direct Insert)
         consola.info(
-          `  [3/3] Preparing and inserting batch ${batchNumber}...`
+          `  [3/3] Preparing and inserting all products directly...`
         );
-        const productsToInsert = batch.map((product, index) => {
-          const stdResult = standardizedResults[index] || {
-            standardized_price_per_unit: null,
-            standardized_unit: null,
-          };
-          const embedding = batchEmbeddings[index] || [];
-          return {
-            id: createId(),
-            name: product.n,
-            link: product.l,
-            price: product.p,
-            amount: product.s || null,
-            supermarketId: supermarketId!,
-            standardized_price_per_unit:
-              stdResult.standardized_price_per_unit,
-            standardized_unit: stdResult.standardized_unit,
-            nameEmbedding: embedding,
-          } as typeof products.$inferInsert;
-        });
+
+        let productsToInsert: (typeof products.$inferInsert)[] = [];
+        let batchSkippedCount = 0; // Will remain 0 unless the entire insert fails
+        let actualInsertedCount = 0;
 
         try {
-          const insertedResult = await db
-            .insert(products)
-            .values(productsToInsert)
-            .onConflictDoNothing({ target: products.link }) // Assumes link is unique constraint
-            .returning({ id: products.id }); // Only return id to potentially count success
+          // Prepare data for ALL products in the batch
+          productsToInsert = batch.map((product, index) => {
+            const stdResult = standardizedResults[index] || {
+              standardized_price_per_unit: null,
+              standardized_unit: null,
+            };
+            const embedding = batchEmbeddings[index] || [];
+            return {
+              id: createId(), // Still generate unique ID for each row
+              name: product.n,
+              link: product.l,
+              price: product.p,
+              amount: product.s || null,
+              supermarketId: supermarketId!,
+              standardized_price_per_unit:
+                stdResult.standardized_price_per_unit,
+              standardized_unit: stdResult.standardized_unit,
+              nameEmbedding: embedding,
+            };
+          });
 
-          const insertedCount = insertedResult.length;
-          const skippedCount = batch.length - insertedCount;
+          // Attempt to insert all prepared products directly
+          if (productsToInsert.length > 0) {
+            const insertedResult = await db
+              .insert(products)
+              .values(productsToInsert)
+              // No ON CONFLICT clause
+              .returning({ id: products.id }); // Still return IDs to confirm count
 
-          productsInsertedInSupermarket += insertedCount;
-          productsSkippedInSupermarket += skippedCount;
-          totalProductsInserted += insertedCount;
-          totalProductsSkipped += skippedCount;
+            actualInsertedCount = insertedResult.length;
 
-          consola.success(
-            `  [3/3] Batch ${batchNumber} inserted: ${insertedCount} success, ${skippedCount} skipped (duplicate link).`
+            // Basic check: Did the DB report inserting as many rows as we sent?
+            if (actualInsertedCount < productsToInsert.length) {
+              consola.warn(
+                `  Batch ${batchNumber}: DB reported inserting ${actualInsertedCount} rows, but ${productsToInsert.length} were sent. Potential constraint violation or other issue.`
+              );
+              // We don't know exactly which ones failed, so we update skipped based on the difference
+              batchSkippedCount =
+                productsToInsert.length - actualInsertedCount;
+            } else {
+              // All rows inserted successfully according to the DB
+              batchSkippedCount = 0;
+            }
+          } else {
+            // This case should theoretically not happen if batch has items, but safe to keep
+            consola.info(
+              `  Batch ${batchNumber}: No products prepared for insertion.`
+            );
+            actualInsertedCount = 0;
+            batchSkippedCount = 0;
+          }
+
+          // Update counts
+          productsInsertedInSupermarket += actualInsertedCount;
+          productsSkippedInSupermarket += batchSkippedCount;
+          totalProductsInserted += actualInsertedCount;
+          totalProductsSkipped += batchSkippedCount;
+
+          // --- Update Progress Logic (mostly unchanged) ---
+          totalProductsProcessed += batch.length; // Progress based on total batch items processed
+          const percentage =
+            totalProductsToProcess > 0
+              ? (totalProductsProcessed / totalProductsToProcess) *
+                100
+              : 0;
+          const failurePercentage =
+            totalProductsProcessed > 0
+              ? (totalFailures / totalProductsProcessed) * 100
+              : 0; // Calculate failure percentage
+          const batchEndTime = performance.now();
+          const batchDuration = (
+            (batchEndTime - batchStartTime) /
+            1000
+          ).toFixed(2);
+          const elapsedTime = (
+            (batchEndTime - startTime) /
+            1000
+          ).toFixed(2);
+          const elapsedTimeSec = parseFloat(elapsedTime);
+
+          let etaString = 'ETA: ---';
+          if (
+            totalProductsProcessed > 0 &&
+            totalProductsProcessed < totalProductsToProcess
+          ) {
+            const avgTimePerProduct =
+              elapsedTimeSec / totalProductsProcessed;
+            const remainingProducts =
+              totalProductsToProcess - totalProductsProcessed;
+            const etaSeconds = Math.round(
+              avgTimePerProduct * remainingProducts
+            );
+            const etaMinutes = Math.floor(etaSeconds / 60);
+            const etaRemainingSeconds = etaSeconds % 60;
+            etaString = `ETA: ${etaMinutes}m ${etaRemainingSeconds}s`;
+          }
+
+          consola.start(
+            `Processed: ${totalProductsProcessed}/${totalProductsToProcess} (${percentage.toFixed(1)}%) | Failed Labeling: ${failurePercentage.toFixed(1)}% | Elapsed: ${elapsedTime}s | ${etaString} | Batch ${batchNumber}/${totalBatches} (${supermarketName}) done in ${batchDuration}s | Inserted: ${actualInsertedCount}, Skipped: ${batchSkippedCount}`
           );
         } catch (dbError: any) {
           consola.error(
-            `--- Critical error inserting batch ${batchNumber}: ${dbError.message} ---`
+            `--- Critical error during Step 3 (Direct Insert) for batch ${batchNumber}: ${dbError.message} ---`
           );
           consola.error(dbError);
-          // Mark all products in this batch as skipped if the entire batch insert fails
-          const skippedCount = batch.length;
-          productsSkippedInSupermarket += skippedCount;
-          totalProductsSkipped += skippedCount;
+          // If the entire insert operation fails, assume all products in the batch were skipped
+          actualInsertedCount = 0; // None were inserted in this scenario
+          batchSkippedCount = batch.length; // All products in the batch are considered skipped
+
+          productsSkippedInSupermarket += batchSkippedCount; // Add only newly skipped
+          totalProductsSkipped += batchSkippedCount; // Add only newly skipped
+
+          // Update progress indicator to show failure for this batch
+          totalProductsProcessed += batch.length;
+          const percentage =
+            totalProductsToProcess > 0
+              ? (totalProductsProcessed / totalProductsToProcess) *
+                100
+              : 0;
+          consola.error(
+            `Batch ${batchNumber} failed insertion. Processed: ${totalProductsProcessed}/${totalProductsToProcess} (${percentage.toFixed(1)}%). Skipped ${batchSkippedCount} in this batch.`
+          );
         }
 
         // Optional delay between batches to manage rate limits further
+        /* // Removing delay as we aim for higher throughput
         if (i + BATCH_SIZE < validProductsData.length) {
           consola.info(
             `--- Waiting ${DELAY_BETWEEN_BATCHES_MS}ms before next batch ---`
           );
           await wait(DELAY_BETWEEN_BATCHES_MS);
         }
+        */
       } // End batch loop for supermarket
 
       // --- Logging for the Supermarket ---
@@ -446,13 +575,11 @@ async function ingestData() {
       // --- End Adjusted Logging ---
     } // End supermarket loop
 
-    // --- Overall Summary (Remains Largely the Same) ---
-    // Add total embedding cost accumulation here if needed for overall summary
-    // let grandTotalEmbeddingCost = 0; // Initialize outside the supermarket loop
-    // (Need to lift cumulativeEmbeddingCost or recalculate based on logs/data)
-    // For now, we'll just show per-supermarket totals.
-    // A more robust way would be to accumulate grandTotalEmbeddingCost inside the loop:
-    // grandTotalEmbeddingCost += cumulativeEmbeddingCost; // Add supermarket total to grand total
+    // --- Overall Summary ---
+    // Clear the status line before showing the final summary
+    consola.success(
+      `All ${totalProductsToProcess} products processed.`
+    );
 
     consola.info('\n--- Ingestion Summary ---');
     consola.info(
@@ -465,7 +592,15 @@ async function ingestData() {
     consola.info(
       `Products Skipped (duplicate link or processing error): ${totalProductsSkipped}`
     );
-    // consola.info(`Grand Total Estimated Embedding Cost: $${grandTotalEmbeddingCost.toFixed(8)}`); // Log grand total
+    consola.info(
+      `Products Failed Standardization: ${totalFailures}` // Add total failures to summary
+    );
+    consola.info(
+      `Total Products Processed: ${totalProductsProcessed}`
+    ); // Add total processed count
+    consola.info(
+      `Grand Total Estimated Embedding Cost: $${grandTotalEmbeddingCost.toFixed(8)}`
+    ); // Log grand total cost
     consola.info('-------------------------');
     consola.info('Data ingestion finished.');
   } catch (error: any) {
