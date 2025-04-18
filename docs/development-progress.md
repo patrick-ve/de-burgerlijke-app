@@ -176,10 +176,11 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [x] **Shopping List UI Enhancements (`components/ShoppingList.vue`):**
   - [x] Grouped items by category, respecting the defined order.
   - [x] Added relevant emojis to category headers.
-- [ ] **Price Fetching:**
+- [-] **Price Fetching:**
   - [ ] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus).
-- [ ] **Cheapest Option Calculation:**
-  - [ ] Server API logic to calculate cheapest overall basket.
+- [-] **Cheapest Option Calculation:**
+  - [-] Server API logic to calculate cheapest overall basket. (Initial AI-based implementation added to `find-cheapest.post.ts`)
+  - [x] Server API logic to calculate cheapest overall basket (AI integration with `gpt-4o-mini` in `server/api/shopping-list/find-cheapest.post.ts` using Vercel AI SDK and Zod).
   - [ ] UI to select preferred supermarkets for comparison.
 - [ ] **Price Display:**
   - [ ] UI (`components/ShoppingList.vue`) to display price per item/supermarket.
