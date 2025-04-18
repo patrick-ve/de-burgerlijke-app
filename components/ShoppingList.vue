@@ -115,6 +115,18 @@ const groupedItems = computed(() => {
 });
 // --- End Grouping ---
 
+// --- Calculate Grand Total ---
+const grandTotal = computed(() => {
+  return props.items.reduce((total, item) => {
+    // Add price if item has a cheapest price
+    if (item.cheapestPrice != null) {
+      return total + item.cheapestPrice;
+    }
+    return total;
+  }, 0);
+});
+// --- End Grand Total ---
+
 // Function to handle checkbox changes and emit update
 const handleCheckChange = (
   item: ShoppingListItem,
@@ -252,6 +264,20 @@ const formatCurrency = (value: number): string => {
   >
     Je boodschappenlijst is leeg.
   </div>
+
+  <!-- Grand Total Display -->
+  <div
+    class="mt-6 pt-4 border-t border-gray-200 px-2"
+    data-testid="grand-total-section"
+  >
+    <p class="text-right text-lg font-semibold text-gray-800">
+      Totaal:
+      <span class="ml-2" data-testid="grand-total-amount">{{
+        formatCurrency(grandTotal)
+      }}</span>
+    </p>
+  </div>
+  <!-- End Grand Total -->
 </template>
 
 <style scoped>
