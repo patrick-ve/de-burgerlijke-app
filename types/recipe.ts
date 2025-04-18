@@ -18,6 +18,7 @@ export const ingredientCategories = [
   'Nutrition',
   'Frozen',
   'Alcohol',
+  'Oils',
   'Pharmacy',
   'Personal Care',
   'Baby & Child',
