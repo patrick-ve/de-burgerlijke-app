@@ -67,13 +67,15 @@ async function calculateStandardizedPrice(
     const prompt = `Analyze the following product information:
       Name: ${name}
       Price: €${price}
-      Amount String: ${amount || 'N/A'}
+      Amount String: ${amount || 'Not provided'}
 
-      Determine the standard unit (kg, liter, or piece) and the quantity in that unit based *only* on the provided 'Amount String' and 'Name' if the amount string is unclear or missing.
-      - If the amount and/or name clearly indicates volume (e.g., "750ml", "1.5L", "6x330ml"), use 'liter' and calculate the total liters.
-      - If the amount and/or name clearly indicates weight (e.g., "500g", "1 kg", "2x250g"), use 'kg' and calculate the total kilograms.
-      - If the amount and/or name indicates a number of items (e.g., "6 stuks", "per stuk", "12 rollen", "zakjes"), or if no specific weight/volume is given but the name implies a countable item (e.g., "Avocado"), use 'piece' and determine the number of pieces (default to 1 if unclear).
-      - If the unit or quantity cannot be reliably determined from the amount string or name, return null for both 'unit' and 'quantity'. Prioritize information in the 'Amount String'.
+      Determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
+      1.  **Prioritize the 'Amount String':** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively.
+      2.  **If 'Amount String' is Generic or Missing:** If the 'Amount String' is generic (e.g., "per stuk", "zak", "pak", "ca. 500g") or missing, **analyze the 'Name'** to determine the unit and quantity.
+          - Look for weight indicators (g, kg) -> use 'kg'.
+          - Look for volume indicators (ml, l) -> use 'liter'.
+          - Look for explicit piece counts or terms suggesting countability (e.g., "Avocado", "Eieren", "Rollen") -> use 'piece'. Assume 1 piece if no specific count is found in the name.
+      3.  **Ambiguity:** If neither the 'Amount String' nor the 'Name' allows for reliable determination of both unit and quantity, return null for both 'unit' and 'quantity'.
 
       Provide the result as a JSON object matching the provided schema.
     `;
