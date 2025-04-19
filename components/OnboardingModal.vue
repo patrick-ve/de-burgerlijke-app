@@ -1,0 +1,245 @@
+<script setup lang="ts">
+// import type { Supermarket } from '~/types'; // Assuming a Supermarket type exists or will be created
+
+// interface Props {
+//   modelValue: boolean; // Controls modal visibility (v-model)
+//   supermarkets: Supermarket[]; // Array of supermarket objects
+// }
+
+// defineProps<Props>();
+
+const emit = defineEmits<{
+  (
+    e: 'confirm',
+    payload: {
+      mode: 'overview' | 'cheapest';
+      selectedIds: SupermarketName[];
+    }
+  ): void;
+}>();
+
+type SupermarketName =
+  | 'dirk'
+  | 'plus'
+  | 'coop'
+  | 'jumbo'
+  | 'hoogvliet'
+  | 'ah'
+  | 'dekamarkt'
+  | 'aldi'
+  | 'vomar'
+  | 'lidl'; // Added Lidl
+
+// Define Supermarket interface locally
+interface Supermarket {
+  id: SupermarketName;
+  name: string;
+  ico: string;
+}
+
+// Define supermarkets directly in the component
+const supermarkets: Supermarket[] = [
+  {
+    id: 'ah',
+    name: 'Albert Heijn',
+    ico: 'https://www.ah.nl/favicon.ico',
+  },
+  {
+    id: 'jumbo',
+    name: 'Jumbo',
+    ico: 'https://www.jumbo.com/INTERSHOP/static/WFS/Jumbo-Grocery-Site/-/-/nl_NL/images/favicon.ico',
+  },
+  {
+    id: 'plus',
+    name: 'PLUS',
+    ico: 'https://www.werkenbijplus.nl/WBP/img/plusMarker.png',
+  },
+  {
+    id: 'dirk',
+    name: 'Dirk',
+    ico: 'https://d3r3h30p75xj6a.cloudfront.net/static-images/dirk/web/app_icon.png',
+  },
+  {
+    id: 'aldi',
+    name: 'ALDI',
+    ico: 'https://play-lh.googleusercontent.com/SacQDsmttU6UOYjVLls5a7mvUYCS5yMEZt5XF6m0zUq34mrSf9O5vZBDPazxk4RBPCA=w240-h480',
+  },
+  {
+    id: 'coop',
+    name: 'Coop',
+    ico: 'https://www.coop.nl/assets/themes/custom/img/logo_apple_180x180.png',
+  },
+  {
+    id: 'hoogvliet',
+    name: 'Hoogvliet',
+    ico: 'https://www.hoogvliet.com/INTERSHOP/static/WFS/org-webshop-Site/-/-/nl_NL/img/smart_banner_icon.png',
+  },
+  {
+    id: 'vomar',
+    name: 'Vomar',
+    ico: 'https://www.vomar.nl/apple-touch-icon.png',
+  },
+  {
+    id: 'dekamarkt',
+    name: 'DekaMarkt',
+    ico: 'https://d3r3h30p75xj6a.cloudfront.net/static-images/deka/web/favicon.svg',
+  },
+];
+
+// Control modal visibility locally
+const isModalOpen = ref(true);
+
+// Add state for the selection mode
+type SelectionMode = 'overview' | 'cheapest';
+const selectionMode = ref<SelectionMode>('overview'); // Default to overview
+
+// Define radio options
+const modeOptions = [
+  {
+    value: 'overview',
+    label:
+      'Toon een overzicht van de supermarkt(en) waar ik boodschappen doe (aanbevolen)',
+  },
+  {
+    value: 'cheapest',
+    label:
+      'Toon het goedkoopste product voor elk product. Elke supermarkt wordt meegenomen in de vergelijking.',
+  },
+];
+
+// Basic state (will be expanded)
+const selectedSupermarketIds = ref<SupermarketName[]>([]);
+
+// Function to toggle selection
+const toggleSupermarket = (id: SupermarketName) => {
+  const index = selectedSupermarketIds.value.indexOf(id);
+  if (index === -1) {
+    selectedSupermarketIds.value.push(id);
+  } else {
+    selectedSupermarketIds.value.splice(index, 1);
+  }
+};
+
+// Basic handler (will be expanded)
+const handleConfirm = () => {
+  emit('confirm', {
+    mode: selectionMode.value,
+    selectedIds:
+      selectionMode.value === 'overview'
+        ? selectedSupermarketIds.value
+        : [], // Send empty array if mode is 'cheapest'
+  });
+  isModalOpen.value = false; // Close the modal
+};
+
+// Computed property for confirm button disabled state
+const isConfirmDisabled = computed(() => {
+  if (selectionMode.value === 'overview') {
+    return selectedSupermarketIds.value.length === 0;
+  }
+  // Always enable if 'cheapest' mode is selected
+  return false;
+});
+</script>
+
+<template>
+  <UModal
+    v-model="isModalOpen"
+    prevent-close
+    :ui="{
+      container: '-translate-y-20',
+      overlay: {
+        background: 'bg-black/40 backdrop-blur-sm',
+      },
+      width: 'sm:max-w-lg', // Slightly wider modal
+    }"
+  >
+    <UCard>
+      <template #header>
+        <h3 class="text-lg font-semibold">
+          Welkom bij De Burgerlijke App!
+        </h3>
+      </template>
+
+      <div class="space-y-6">
+        <!-- Mode Selection -->
+        <div>
+          <p class="mb-2 font-medium">
+            Hoe wil jij de goedkoopste boodschappen te zien krijgen?
+          </p>
+          <URadioGroup
+            v-model="selectionMode"
+            :options="modeOptions"
+            legend="Kies een optie"
+            :ui="{ fieldset: 'space-y-2' }"
+          />
+        </div>
+
+        <!-- Conditional Supermarket Selection -->
+        <div v-if="selectionMode === 'overview'" class="space-y-4">
+          <p>
+            Selecteer hieronder de supermarkten waar je boodschappen
+            wilt vergelijken.
+          </p>
+          <!-- Pill selection area with TransitionGroup -->
+          <TransitionGroup
+            tag="div"
+            name="list"
+            class="flex flex-wrap gap-2"
+            appear
+          >
+            <UButton
+              v-for="(supermarket, index) in supermarkets"
+              :key="supermarket.id"
+              :variant="
+                selectedSupermarketIds.includes(
+                  supermarket.id as SupermarketName
+                )
+                  ? 'solid'
+                  : 'outline'
+              "
+              :style="{ transitionDelay: `${index * 50}ms` }"
+              @click="
+                toggleSupermarket(supermarket.id as SupermarketName)
+              "
+            >
+              <img
+                :src="supermarket.ico"
+                :alt="supermarket.name"
+                class="h-4 w-4"
+              />
+              <span class="text-sm">{{ supermarket.name }}</span>
+            </UButton>
+          </TransitionGroup>
+        </div>
+        <div v-else>
+          <p class="text-sm text-gray-500">
+            Je hebt gekozen voor de goedkoopste boodschappenlijst.
+            Alle supermarkten worden meegenomen in de vergelijking.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <UButton
+          label="Bevestigen"
+          @click="handleConfirm"
+          :disabled="isConfirmDisabled"
+        />
+      </template>
+    </UCard>
+  </UModal>
+</template>
+
+<style>
+/* Staggered list transition */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+</style>
