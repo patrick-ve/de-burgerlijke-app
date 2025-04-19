@@ -4,8 +4,8 @@ import {
   type SupermarketName,
 } from '~/composables/useOnboardingSettings'; // Import the composable and the type
 
-// Define emits
-const emit = defineEmits(['close']);
+// No longer needed if modal controls its own open state based on persisted setting
+// const emit = defineEmits(['close']);
 
 // Define Supermarket interface locally (keep for supermarket list definition)
 interface Supermarket {
@@ -65,10 +65,12 @@ const supermarkets: Supermarket[] = [
 
 // Instantiate the composable
 const {
-  settings,
-  showModal,
+  mode, // Use direct computed ref
+  selectedSupermarketIds, // Use direct computed ref
+  hasCompletedOnboarding, // Use direct computed ref to control visibility
   setMode,
   toggleSupermarket,
+  onboardingState,
   completeOnboarding,
 } = useOnboardingSettings();
 
@@ -86,22 +88,20 @@ const modeOptions = [
   },
 ];
 
-// Replace handleConfirm - completeOnboarding now handles closing the modal
+// completeOnboarding now handles setting the persisted state
 const handleConfirm = () => {
   completeOnboarding(
-    settings.value.mode,
-    settings.value.selectedSupermarketIds
+    mode.value, // Use direct computed ref
+    selectedSupermarketIds.value // Use direct computed ref
   );
-
-  showModal.value = false;
-  // No need to manually set isModalOpen = false here if parent handles closing
+  // The watch on hasCompletedOnboarding will set isModalOpen.value to false
 };
 
-// Replace computed property for disabled state to use composable state
+// Computed property for disabled state using composable state
 const isConfirmDisabled = computed(() => {
-  if (settings.value.mode === 'overview') {
+  if (mode.value === 'overview') {
     // Disable if overview mode is selected and no supermarkets are chosen
-    return settings.value.selectedSupermarketIds.length === 0;
+    return selectedSupermarketIds.value.length === 0;
   }
   // Always enable if 'cheapest' mode is selected
   return false;
@@ -109,9 +109,9 @@ const isConfirmDisabled = computed(() => {
 </script>
 
 <template>
-  <!-- Bind v-model directly to the composable's showModal -->
+  <!-- Bind v-model directly to the local isModalOpen ref -->
   <UModal
-    v-model="showModal"
+    v-model="onboardingState.showModal"
     prevent-close
     :ui="{
       container: '-translate-y-20',
@@ -136,7 +136,7 @@ const isConfirmDisabled = computed(() => {
           </p>
           <!-- Use setMode for v-model update -->
           <URadioGroup
-            :model-value="settings.mode"
+            :model-value="mode"
             @update:model-value="
               setMode($event as 'overview' | 'cheapest')
             "
@@ -148,8 +148,8 @@ const isConfirmDisabled = computed(() => {
           />
         </div>
 
-        <!-- Conditional Supermarket Selection - use settings.mode -->
-        <div v-if="settings.mode === 'overview'" class="space-y-4">
+        <!-- Conditional Supermarket Selection - use mode -->
+        <div v-if="mode === 'overview'" class="space-y-4">
           <p>
             Selecteer hieronder de supermarkten waar je boodschappen
             wilt vergelijken.
@@ -165,8 +165,7 @@ const isConfirmDisabled = computed(() => {
               v-for="(supermarket, index) in supermarkets"
               :key="supermarket.id"
               :variant="
-                settings.selectedSupermarketIds.includes(
-                  // Use composable state
+                selectedSupermarketIds.includes(
                   supermarket.id as SupermarketName
                 )
                   ? 'solid'
@@ -174,7 +173,7 @@ const isConfirmDisabled = computed(() => {
               "
               :style="{ transitionDelay: `${index * 50}ms` }"
               @click="
-                toggleSupermarket(supermarket.id as SupermarketName) // Use composable function
+                toggleSupermarket(supermarket.id as SupermarketName)
               "
             >
               <img

@@ -1,4 +1,5 @@
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
+import { useLocalStorage } from '@vueuse/core';
 
 // Keep the exported types
 export type SupermarketName =
@@ -13,34 +14,54 @@ export type SupermarketName =
   | 'vomar';
 type SelectionMode = 'overview' | 'cheapest';
 
+// Key for local storage
+const ONBOARDING_STORAGE_KEY = 'onboardingSettings';
+
+interface OnboardingState {
+  mode: SelectionMode;
+  selectedSupermarketIds: SupermarketName[];
+  hasCompletedOnboarding: boolean;
+  showModal: boolean;
+}
+
 export function useOnboardingSettings() {
-  // --- State defined with simple refs ---
-  const mode = ref<SelectionMode>('overview');
-  const selectedSupermarketIds = ref<SupermarketName[]>([]);
-  const hasCompletedOnboarding = ref(false);
-  // showModal is now a simple ref, initially true
-  const showModal = ref(true);
+  // --- State defined with useLocalStorage ---
+  const onboardingState = useLocalStorage<OnboardingState>(
+    ONBOARDING_STORAGE_KEY,
+    {
+      // Default values
+      mode: 'overview',
+      selectedSupermarketIds: [],
+      hasCompletedOnboarding: false,
+      showModal: true,
+    }
+  );
 
-  // Optional: Computed for read-only combined settings
-  const settings = computed(() => ({
-    mode: mode.value,
-    selectedSupermarketIds: selectedSupermarketIds.value,
-    hasCompletedOnboarding: hasCompletedOnboarding.value,
-  }));
+  // --- Computed properties based on the state ---
+  const mode = computed(() => onboardingState.value.mode);
+  const selectedSupermarketIds = computed(
+    () => onboardingState.value.selectedSupermarketIds
+  );
+  const hasCompletedOnboarding = computed(
+    () => onboardingState.value.hasCompletedOnboarding
+  );
 
-  // --- Functions modifying the refs ---
+  // Optional: Computed for read-only combined settings (if needed elsewhere)
+  // const settings = computed(() => onboardingState.value);
+
+  // --- Functions modifying the state ---
 
   const setMode = (newMode: SelectionMode) => {
-    mode.value = newMode;
+    onboardingState.value.mode = newMode;
     if (newMode === 'cheapest') {
       // Clear supermarket selection when switching to cheapest mode
-      selectedSupermarketIds.value = [];
+      onboardingState.value.selectedSupermarketIds = [];
     }
   };
 
   const setSelectedSupermarketIds = (ids: SupermarketName[]) => {
-    if (mode.value === 'overview') {
-      selectedSupermarketIds.value = ids;
+    if (onboardingState.value.mode === 'overview') {
+      onboardingState.value.selectedSupermarketIds = ids;
     } else {
       console.warn(
         'Attempted to set supermarket IDs while mode is not "overview".'
@@ -49,19 +70,24 @@ export function useOnboardingSettings() {
   };
 
   const toggleSupermarket = (id: SupermarketName) => {
-    if (mode.value !== 'overview') {
+    if (onboardingState.value.mode !== 'overview') {
       console.warn(
         'Cannot toggle supermarket selection when mode is not "overview".'
       );
       return;
     }
-    const index = selectedSupermarketIds.value.indexOf(id);
+    const currentIds = onboardingState.value.selectedSupermarketIds;
+    const index = currentIds.indexOf(id);
     if (index === -1) {
-      // Use .value to modify the ref's array
-      selectedSupermarketIds.value.push(id);
+      onboardingState.value.selectedSupermarketIds = [
+        ...currentIds,
+        id,
+      ];
     } else {
-      // Use .value to modify the ref's array
-      selectedSupermarketIds.value.splice(index, 1);
+      onboardingState.value.selectedSupermarketIds = [
+        ...currentIds.slice(0, index),
+        ...currentIds.slice(index + 1),
+      ];
     }
   };
 
@@ -69,40 +95,43 @@ export function useOnboardingSettings() {
     currentMode: SelectionMode,
     currentSelectedIds: SupermarketName[]
   ) => {
+    console.log('[useOnboardingSettings] completeOnboarding called');
+    onboardingState.value = {
+      mode: currentMode,
+      selectedSupermarketIds:
+        currentMode === 'overview' ? currentSelectedIds : [],
+      hasCompletedOnboarding: true,
+      showModal: false,
+    };
     console.log(
-      '[useOnboardingSettings - simple] completeOnboarding called'
-    );
-    // Directly modify the refs
-    mode.value = currentMode;
-    selectedSupermarketIds.value =
-      currentMode === 'overview' ? currentSelectedIds : [];
-    hasCompletedOnboarding.value = true;
-    showModal.value = false; // Directly set the modal ref to false
-    console.log(
-      '[useOnboardingSettings - simple] showModal set to:',
-      showModal.value
+      '[useOnboardingSettings] State after completion:',
+      onboardingState.value
     );
   };
 
   const resetOnboarding = () => {
-    // Reset refs to initial values
-    mode.value = 'overview';
-    selectedSupermarketIds.value = [];
-    hasCompletedOnboarding.value = false;
-    showModal.value = true;
+    console.log('[useOnboardingSettings] resetOnboarding called');
+    // Reset state to default values
+    onboardingState.value = {
+      mode: 'overview',
+      selectedSupermarketIds: [],
+      hasCompletedOnboarding: false,
+      showModal: true,
+    };
   };
 
   return {
-    settings, // Read-only computed settings
-    showModal, // The simple ref for v-model
-    // Expose individual refs if direct modification is needed elsewhere (optional)
-    // mode,
-    // selectedSupermarketIds,
-    // hasCompletedOnboarding,
+    // Expose computed refs for read access
+    mode,
+    selectedSupermarketIds,
+    hasCompletedOnboarding,
+    // Expose functions to modify state
     setMode,
-    setSelectedSupermarketIds, // Keep if needed
+    setSelectedSupermarketIds,
     toggleSupermarket,
     completeOnboarding,
     resetOnboarding,
+    onboardingState,
+    // Deprecated: settings, showModal
   };
 }
