@@ -23,7 +23,7 @@ async function searchProducts() {
   const response = await productsCollection.query.nearText(
     'Jonge kaas', // Example query for products
     {
-      limit: 10,
+      limit: 20,
       returnMetadata: ['distance'],
       // Specify which properties to return if needed
       returnProperties: [
