@@ -1,36 +1,13 @@
 <script setup lang="ts">
-// import type { Supermarket } from '~/types'; // Assuming a Supermarket type exists or will be created
+import {
+  useOnboardingSettings,
+  type SupermarketName,
+} from '~/composables/useOnboardingSettings'; // Import the composable and the type
 
-// interface Props {
-//   modelValue: boolean; // Controls modal visibility (v-model)
-//   supermarkets: Supermarket[]; // Array of supermarket objects
-// }
+// Define emits
+const emit = defineEmits(['close']);
 
-// defineProps<Props>();
-
-const emit = defineEmits<{
-  (
-    e: 'confirm',
-    payload: {
-      mode: 'overview' | 'cheapest';
-      selectedIds: SupermarketName[];
-    }
-  ): void;
-}>();
-
-type SupermarketName =
-  | 'dirk'
-  | 'plus'
-  | 'coop'
-  | 'jumbo'
-  | 'hoogvliet'
-  | 'ah'
-  | 'dekamarkt'
-  | 'aldi'
-  | 'vomar'
-  | 'lidl'; // Added Lidl
-
-// Define Supermarket interface locally
+// Define Supermarket interface locally (keep for supermarket list definition)
 interface Supermarket {
   id: SupermarketName;
   name: string;
@@ -86,19 +63,21 @@ const supermarkets: Supermarket[] = [
   },
 ];
 
-// Control modal visibility locally
-const isModalOpen = ref(true);
+// Instantiate the composable
+const {
+  settings,
+  showModal,
+  setMode,
+  toggleSupermarket,
+  completeOnboarding,
+} = useOnboardingSettings();
 
-// Add state for the selection mode
-type SelectionMode = 'overview' | 'cheapest';
-const selectionMode = ref<SelectionMode>('overview'); // Default to overview
-
-// Define radio options
+// Keep radio options
 const modeOptions = [
   {
     value: 'overview',
     label:
-      'Toon een overzicht van de supermarkt(en) waar ik boodschappen doe (aanbevolen)',
+      'Toon een overzicht van de supermarkt(en) waar ik boodschappen doe (aanbevolen).',
   },
   {
     value: 'cheapest',
@@ -107,40 +86,22 @@ const modeOptions = [
   },
 ];
 
-// Basic state (will be expanded)
-const selectedSupermarketIds = ref<SupermarketName[]>([]);
-
-// Function to toggle selection
-const toggleSupermarket = (id: SupermarketName) => {
-  const index = selectedSupermarketIds.value.indexOf(id);
-  if (index === -1) {
-    selectedSupermarketIds.value.push(id);
-  } else {
-    selectedSupermarketIds.value.splice(index, 1);
-  }
-};
-
-// Basic handler (will be expanded)
+// Replace handleConfirm - completeOnboarding now handles closing the modal
 const handleConfirm = () => {
-  emit('confirm', {
-    mode: selectionMode.value,
-    selectedIds:
-      selectionMode.value === 'overview'
-        ? selectedSupermarketIds.value
-        : [], // Send empty array if mode is 'cheapest'
-  });
-  isModalOpen.value = false; // Close the modal
+  completeOnboarding(
+    settings.value.mode,
+    settings.value.selectedSupermarketIds
+  );
+
+  showModal.value = false;
+  // No need to manually set isModalOpen = false here if parent handles closing
 };
 
-// Watch for changes in selectionMode and reset selected supermarkets
-watch(selectionMode, () => {
-  selectedSupermarketIds.value = [];
-});
-
-// Computed property for confirm button disabled state
+// Replace computed property for disabled state to use composable state
 const isConfirmDisabled = computed(() => {
-  if (selectionMode.value === 'overview') {
-    return selectedSupermarketIds.value.length === 0;
+  if (settings.value.mode === 'overview') {
+    // Disable if overview mode is selected and no supermarkets are chosen
+    return settings.value.selectedSupermarketIds.length === 0;
   }
   // Always enable if 'cheapest' mode is selected
   return false;
@@ -148,8 +109,9 @@ const isConfirmDisabled = computed(() => {
 </script>
 
 <template>
+  <!-- Bind v-model directly to the composable's showModal -->
   <UModal
-    v-model="isModalOpen"
+    v-model="showModal"
     prevent-close
     :ui="{
       container: '-translate-y-20',
@@ -172,16 +134,22 @@ const isConfirmDisabled = computed(() => {
           <p class="mb-2 font-medium">
             Hoe wil jij de goedkoopste boodschappen te zien krijgen?
           </p>
+          <!-- Use setMode for v-model update -->
           <URadioGroup
-            v-model="selectionMode"
+            :model-value="settings.mode"
+            @update:model-value="
+              setMode($event as 'overview' | 'cheapest')
+            "
             :options="modeOptions"
             legend="Kies een optie"
-            :ui="{ fieldset: 'space-y-2' }"
+            :ui="{
+              fieldset: 'space-y-2',
+            }"
           />
         </div>
 
-        <!-- Conditional Supermarket Selection -->
-        <div v-if="selectionMode === 'overview'" class="space-y-4">
+        <!-- Conditional Supermarket Selection - use settings.mode -->
+        <div v-if="settings.mode === 'overview'" class="space-y-4">
           <p>
             Selecteer hieronder de supermarkten waar je boodschappen
             wilt vergelijken.
@@ -197,7 +165,8 @@ const isConfirmDisabled = computed(() => {
               v-for="(supermarket, index) in supermarkets"
               :key="supermarket.id"
               :variant="
-                selectedSupermarketIds.includes(
+                settings.selectedSupermarketIds.includes(
+                  // Use composable state
                   supermarket.id as SupermarketName
                 )
                   ? 'solid'
@@ -205,7 +174,7 @@ const isConfirmDisabled = computed(() => {
               "
               :style="{ transitionDelay: `${index * 50}ms` }"
               @click="
-                toggleSupermarket(supermarket.id as SupermarketName)
+                toggleSupermarket(supermarket.id as SupermarketName) // Use composable function
               "
             >
               <img

@@ -17,6 +17,8 @@
 
     <NavigationSlideover />
 
+    <UModals />
+
     <USlideovers />
   </ion-app>
 </template>

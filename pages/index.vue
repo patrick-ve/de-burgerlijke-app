@@ -109,14 +109,7 @@ onMounted(() => {
   </Teleport>
 
   <div class="space-y-6 p-4">
-    <OnboardingModal
-      v-model="isOnboardingModalOpen"
-      :supermarkets="availableSupermarkets"
-      @confirm="
-        (selectedIds) =>
-          console.log('Onboarding confirmed:', selectedIds)
-      "
-    />
+    <OnboardingModal :supermarkets="availableSupermarkets" />
 
     <UCard>
       <template #header>
