@@ -44,10 +44,10 @@ interface SupermarketData {
 // --- Zod Schema for AI ---
 const StandardizedUnitSchema = z.object({
   unit: z
-    .enum(['kg', 'liter', 'piece'])
+    .enum(['kg', 'liter', 'piece', 'g', 'ml'])
     .nullable()
     .describe(
-      "The standardized unit ('kg', 'liter', 'piece'). Use null if it cannot be determined."
+      "The standardized unit ('kg', 'liter', 'piece', 'g', 'ml'). Use null if it cannot be determined."
     ),
   quantity: z
     .number()
@@ -64,7 +64,7 @@ interface ProductProperties {
   price: number;
   amount: string | null;
   standardizedPricePerUnit: number | null;
-  standardizedUnit: 'kg' | 'liter' | 'piece' | null;
+  standardizedUnit: 'kg' | 'liter' | 'piece' | 'g' | 'ml' | null;
   createdAt: Date;
   updatedAt: Date;
   supermarketName: string; // Store supermarket name directly
@@ -77,17 +77,18 @@ async function calculateStandardizedPrice(
   amount: string | undefined
 ): Promise<{
   standardized_price_per_unit: number | null;
-  standardized_unit: 'kg' | 'liter' | 'piece' | null;
+  standardized_unit: 'kg' | 'liter' | 'piece' | 'g' | 'ml' | null;
 }> {
   try {
     const prompt = `You must analyze product information and determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
 
       Determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
-      1.  **Prioritize the amount:** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively.
+      1.  **Prioritize the amount:** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively. **Ignore words like 'stuk' or 'stuks' in the product name if the amount field provides specific quantity information.**
       2.  **If amount is generic or missing:** If the amount is generic (e.g., "per stuk", "zak", "pak", "ca. 500g") or missing, **analyze the 'Name'** to determine the unit and quantity.
           - Look for weight indicators (g, kg) -> use 'kg'.
           - Look for volume indicators (ml, l) -> use 'liter'.
           - Look for explicit piece counts or terms suggesting countability (e.g., "Avocado", "Eieren", "Rollen") -> use 'piece'. Assume 1 piece if no specific count is found in the name.
+          - **Crucially, disregard terms like 'stuk' or 'stuks' at the end of the name when determining piece count from the name itself. Cheese could be named "Jonge kaas 48+ stuk", which could lead you to think it's 48 pieces, but it's actually 1 piece. 48+ refers to the age of the cheese.**
       3.  **Ambiguity:** If neither the amount nor the name allows for reliable determination of both unit and quantity, return null for both 'unit' and 'quantity'.
 
       Provide the result as a JSON object matching the provided schema.
@@ -105,7 +106,8 @@ async function calculateStandardizedPrice(
         {
           role: 'user',
           content: `
-            Name and/or amount: ${name} ${amount}
+            Name: ${name}
+            Amount: ${amount}
             Price: €${price}
           `,
         },
