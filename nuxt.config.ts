@@ -20,7 +20,10 @@ export default defineNuxtConfig({
     firecrawlApiKey: process.env.FIRECRAWL_API_KEY,
     googleAiApiKey: process.env.GOOGLE_AI_API_KEY,
     rapidApiKeyYoutube: process.env.RAPID_API_KEY_YOUTUBE,
-    public: {},
+    weaviateApiKey: process.env.WEAVIATE_API_KEY,
+    public: {
+      weaviateUrl: process.env.WEAVIATE_URL,
+    },
   },
 
   // Configure Nuxt UI module
