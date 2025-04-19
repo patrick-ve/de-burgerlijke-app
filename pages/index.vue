@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'; // Add onMounted
 import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import the type
+import type { Supermarket } from '~/types/shopping-list'; // Import the Supermarket type
 import {
   useWeather,
   type WeatherInfo,
@@ -73,6 +74,11 @@ const formattedDisplayDate = computed(() => {
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const { openNav } = useNavigationState();
 
+// State for the OnboardingModal
+const isOnboardingModalOpen = ref(true); // Or true if it should open initially
+const availableSupermarkets = ref<Supermarket[]>([]);
+// TODO: Fetch actual supermarkets list, e.g., using useAsyncData or from static config
+
 const toggleHamburgerMenu = () => {
   openNav();
 };
@@ -103,6 +109,15 @@ onMounted(() => {
   </Teleport>
 
   <div class="space-y-6 p-4">
+    <OnboardingModal
+      v-model="isOnboardingModalOpen"
+      :supermarkets="availableSupermarkets"
+      @confirm="
+        (selectedIds) =>
+          console.log('Onboarding confirmed:', selectedIds)
+      "
+    />
+
     <UCard>
       <template #header>
         <h2 class="text-xl font-semibold">

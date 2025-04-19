@@ -132,6 +132,11 @@ const handleConfirm = () => {
   isModalOpen.value = false; // Close the modal
 };
 
+// Watch for changes in selectionMode and reset selected supermarkets
+watch(selectionMode, () => {
+  selectedSupermarketIds.value = [];
+});
+
 // Computed property for confirm button disabled state
 const isConfirmDisabled = computed(() => {
   if (selectionMode.value === 'overview') {
