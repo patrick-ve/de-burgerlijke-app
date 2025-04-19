@@ -21,12 +21,22 @@ async function searchProducts() {
 
   // Perform query - Adjusting query to match 'Products' collection
   const response = await productsCollection.query.nearText(
-    'Frikandel', // Example query for products
+    'Jonge kaas', // Example query for products
     {
       limit: 10,
       returnMetadata: ['distance'],
       // Specify which properties to return if needed
-      // returnProperties: ['name', 'price', 'supermarketName']
+      returnProperties: [
+        'name',
+        'amount',
+        'price',
+        'standardizedPricePerUnit',
+        'standardizedUnit',
+        'supermarketName',
+      ],
+      // filters: productsCollection.filter
+      //   .byProperty('supermarketName')
+      //   .equal('Albert Heijn'),
     }
   );
 
@@ -39,19 +49,17 @@ async function searchProducts() {
         price,
         standardizedPricePerUnit,
         standardizedUnit,
+        amount,
       },
     } = item;
 
-    // Print product details (adjust properties based on your schema)
-    console.log(
-      `${supermarketName}: ${name} - €${price} - €${standardizedPricePerUnit}/${standardizedUnit}`
-    );
     // Print the distance of the object from the query
     // Handle potential undefined metadata and distance
     if (item.metadata && item.metadata.distance !== undefined) {
-      // Now it's safe to use item.metadata.distance
       const similarity = (1 - item.metadata.distance) * 100;
-      console.log(`Similarity to query: ${similarity.toFixed(2)}%`); // Using similarity makes more sense
+      console.log(
+        `${supermarketName}: ${name} - €${price} - ${amount} - €${standardizedPricePerUnit}/${standardizedUnit} (${similarity.toFixed(2)}%)`
+      );
     }
   }
 }
