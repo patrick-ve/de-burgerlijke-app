@@ -19,7 +19,6 @@ import {
 import { openai } from '@ai-sdk/openai';
 import { performance } from 'perf_hooks';
 import { z } from 'zod';
-import pLimit from 'p-limit';
 
 // --- Constants ---
 const PRODUCTS_COLLECTION_NAME = 'Products';
@@ -266,9 +265,7 @@ async function ingestData() {
   }
 
   // --- Concurrency and Batch Settings ---
-  const WEAVIATE_BATCH_SIZE = 100; // Weaviate recommended batch size
-  const CONCURRENT_AI_LIMIT = 50; // Adjusted AI concurrency limit
-  const aiLimiter = pLimit(CONCURRENT_AI_LIMIT);
+  const WEAVIATE_BATCH_SIZE = 200; // Weaviate recommended batch size
 
   try {
     // Optional: Clear existing data (Use with caution!)
@@ -336,96 +333,131 @@ async function ingestData() {
       }
 
       consola.info(
-        `Processing ${validProductsData.length} products for "${supermarketName}"...`
+        `Processing ${validProductsData.length} products for "${supermarketName}" in batches of ${WEAVIATE_BATCH_SIZE}...`
       );
 
-      // Prepare product objects in batches
-      let productBatch: DataObject<ProductProperties>[] = [];
+      // Process products in batches matching Weaviate batch size
+      for (
+        let i = 0;
+        i < validProductsData.length;
+        i += WEAVIATE_BATCH_SIZE
+      ) {
+        const productBatchSlice = validProductsData.slice(
+          i,
+          i + WEAVIATE_BATCH_SIZE
+        );
+        const currentBatchSize = productBatchSlice.length;
 
-      for (const product of validProductsData) {
-        totalProductsProcessed++;
-        const progressPercentage =
-          totalProductsToProcess > 0
-            ? (totalProductsProcessed / totalProductsToProcess) * 100
-            : 0;
-
-        // Calculate ETA
-        let etaString = 'ETA: Calculating...';
-        if (totalProductsProcessed > 10) {
-          // Start calculating ETA after a few items
-          const elapsedTime = performance.now() - startTime;
-          const avgTimePerProduct =
-            elapsedTime / totalProductsProcessed;
-          const remainingProducts =
-            totalProductsToProcess - totalProductsProcessed;
-          const estimatedRemainingTimeMs =
-            remainingProducts * avgTimePerProduct;
-          const etaMinutes = Math.floor(
-            estimatedRemainingTimeMs / 60000
-          );
-          const etaSeconds = Math.floor(
-            (estimatedRemainingTimeMs % 60000) / 1000
-          );
-          etaString = `ETA: ${etaMinutes}m ${etaSeconds}s`;
-        }
-
-        // Updated log message with ETA and failure count
         consola.info(
-          `Processing ${totalProductsProcessed}/${totalProductsToProcess} (${progressPercentage.toFixed(1)}%) | Failures: ${totalFailures} | ${etaString} | Product: ${product.n}`
+          `[${supermarketName}] Preparing AI generation for batch of ${currentBatchSize} products (Batch ${Math.floor(i / WEAVIATE_BATCH_SIZE) + 1})...`
         );
 
-        // Calculate Standardized Price (Concurrently via Limiter)
-        const standardizedResult = await aiLimiter(() =>
+        // Create promises for AI calls for the current batch
+        const aiPromises = productBatchSlice.map((product) =>
           calculateStandardizedPrice(product.n, product.p, product.s)
         );
 
-        if (
-          standardizedResult.standardized_price_per_unit === null ||
-          standardizedResult.standardized_unit === null
-        ) {
-          totalFailures++;
+        consola.info(
+          `[${supermarketName}] Starting parallel AI generation for ${currentBatchSize} products...`
+        );
+        let standardizedResults;
+        try {
+          // Execute AI calls in parallel for the batch
+          standardizedResults = await Promise.all(aiPromises);
+          consola.success(
+            `[${supermarketName}] Completed AI generation for batch of ${currentBatchSize} products.`
+          );
+        } catch (aiBatchError) {
+          consola.error(
+            `[${supermarketName}] Error during parallel AI generation for a batch:`,
+            aiBatchError
+          );
+          // If Promise.all fails, we mark all items in this AI batch as failed and skip Weaviate insertion for this batch.
+          totalFailures += currentBatchSize;
+          totalProductsProcessed += currentBatchSize; // Ensure processed count increases
+          consola.warn(
+            `[${supermarketName}] Skipping Weaviate insertion for this batch due to AI errors.`
+          );
+          continue; // Skip to the next batch
         }
 
-        // Prepare properties object, matching the ProductProperties interface
-        const productProperties: ProductProperties = {
-          name: product.n,
-          link: product.l,
-          price: product.p,
-          amount: product.s || null,
-          standardizedPricePerUnit:
-            standardizedResult.standardized_price_per_unit,
-          standardizedUnit: standardizedResult.standardized_unit,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          // Add the supermarket name directly
-          supermarketName: supermarketName,
-        };
+        // Prepare Weaviate batch using the results
+        const weaviateBatch: DataObject<ProductProperties>[] = [];
+        let batchAiFailures = 0;
 
-        // Push object with properties field
-        productBatch.push({ properties: productProperties });
+        for (let j = 0; j < currentBatchSize; j++) {
+          const product = productBatchSlice[j];
+          const standardizedResult = standardizedResults[j];
 
-        // Insert batch when full or at the end of the supermarket's products
-        if (
-          productBatch.length >= WEAVIATE_BATCH_SIZE ||
-          totalProductsProcessed === totalProductsToProcess ||
-          validProductsData.indexOf(product) ===
-            validProductsData.length - 1
-        ) {
-          // Include last product name in batch insert log
-          const lastProductNameInBatch = product.n; // Get name of the last product processed
+          totalProductsProcessed++;
+          const progressPercentage =
+            totalProductsToProcess > 0
+              ? (totalProductsProcessed / totalProductsToProcess) *
+                100
+              : 0;
+
+          // Calculate ETA (simplified logging inside batch loop)
+          let etaString = 'ETA: Calculating...';
+          if (totalProductsProcessed > 10) {
+            const elapsedTime = performance.now() - startTime;
+            const avgTimePerProduct =
+              elapsedTime / totalProductsProcessed;
+            const remainingProducts =
+              totalProductsToProcess - totalProductsProcessed;
+            const estimatedRemainingTimeMs =
+              remainingProducts * avgTimePerProduct;
+            const etaMinutes = Math.floor(
+              estimatedRemainingTimeMs / 60000
+            );
+            const etaSeconds = Math.floor(
+              (estimatedRemainingTimeMs % 60000) / 1000
+            );
+            etaString = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+          }
+
+          // Log progress for each product processed within the batch
+          consola.log(
+            `Processed ${totalProductsProcessed}/${totalProductsToProcess} (${progressPercentage.toFixed(1)}%) | Total AI Failures: ${totalFailures} | ${etaString}` // Simplified log
+          );
+
+          if (
+            standardizedResult.standardized_price_per_unit === null ||
+            standardizedResult.standardized_unit === null
+          ) {
+            totalFailures++;
+            batchAiFailures++;
+          }
+
+          // Prepare properties object
+          const productProperties: ProductProperties = {
+            name: product.n,
+            link: product.l,
+            price: product.p,
+            amount: product.s || null,
+            standardizedPricePerUnit:
+              standardizedResult.standardized_price_per_unit,
+            standardizedUnit: standardizedResult.standardized_unit,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            supermarketName: supermarketName,
+          };
+
+          weaviateBatch.push({ properties: productProperties });
+        }
+
+        // Insert the prepared Weaviate batch
+        if (weaviateBatch.length > 0) {
           consola.info(
-            `Inserting batch of ${productBatch.length} products for "${supermarketName}" (last: ${lastProductNameInBatch})...`
+            `[${supermarketName}] Inserting Weaviate batch of ${weaviateBatch.length} products (AI failures in this batch: ${batchAiFailures})...`
           );
           try {
-            // Pass the array of property objects to insertMany
             const batchResult =
-              await productsCollection.data.insertMany(productBatch);
+              await productsCollection.data.insertMany(weaviateBatch);
             const insertedCount = Object.keys(
               batchResult.uuids || {}
             ).length;
             totalProductsAdded += insertedCount;
 
-            // Handle errors reported in the batch result
             if (
               batchResult.errors &&
               Object.keys(batchResult.errors).length > 0
@@ -435,24 +467,24 @@ async function ingestData() {
               ).length;
               totalProductsSkipped += errorCount;
               consola.warn(
-                `  ${errorCount} errors during batch insert for "${supermarketName}".`
+                `  [${supermarketName}] ${errorCount} errors during Weaviate batch insert.`
               );
             } else {
               consola.success(
-                `  Batch inserted successfully (${insertedCount} products).`
+                `  [${supermarketName}] Weaviate batch inserted successfully (${insertedCount} products).`
               );
             }
           } catch (batchError) {
             consola.error(
-              `Critical error during batch insert for "${supermarketName}":`,
+              `[${supermarketName}] Critical error during Weaviate batch insert:`,
               batchError
             );
-            // Assume all items in the current batch failed if the request itself failed
-            totalProductsSkipped += productBatch.length;
-          } finally {
-            // Clear the batch for the next iteration
-            productBatch = [];
+            totalProductsSkipped += weaviateBatch.length;
           }
+        } else {
+          consola.warn(
+            `[${supermarketName}] Skipping empty Weaviate batch insertion.`
+          );
         }
       }
     }
