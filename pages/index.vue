@@ -110,7 +110,7 @@ onMounted(() => {
             ingrediënten en instructies.
           </p>
           <UButton
-            to="/recipes/add"
+            to="/recipes?newRecipe=true"
             variant="solid"
             color="primary"
             icon="i-heroicons-plus-circle"
