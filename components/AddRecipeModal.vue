@@ -228,6 +228,9 @@ async function submitRecipeRequest() {
 
 // Helper function to get the submit button text
 const submitButtonText = computed(() => {
+  if (isLoading.value) {
+    return 'Bezig met ophalen recept...'; // Loading state text
+  }
   switch (selectedInputType.value) {
     case 'ai':
       return 'Genereer';
@@ -240,7 +243,7 @@ const submitButtonText = computed(() => {
 
 // Helper function to disable submit button
 const isSubmitDisabled = computed(() => {
-  if (isLoading.value) return true;
+  // isLoading is checked separately in the button's :disabled prop now
   switch (selectedInputType.value) {
     case 'ai':
       return !recipePrompt.value.trim();
@@ -414,8 +417,7 @@ const isSubmitDisabled = computed(() => {
           </UButton>
           <UButton
             @click="submitRecipeRequest"
-            :loading="isLoading"
-            :disabled="isSubmitDisabled"
+            :disabled="isLoading || isSubmitDisabled"
             class="font-bold"
             size="lg"
           >
