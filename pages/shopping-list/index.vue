@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useShoppingList } from '~/composables/useShoppingList';
 import type { ShoppingListItem } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
+import { useOnboardingSettings } from '~/composables/useOnboardingSettings';
 import { consola } from 'consola';
 
 // Interface for the single product object returned by the API
@@ -29,6 +30,7 @@ const {
   replaceList,
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
+const { selectedSupermarketIds } = useOnboardingSettings();
 const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const isLoadingPrices = ref(false);
@@ -87,12 +89,19 @@ const fetchCheapestProducts = async () => {
 
     consola.info('Fetching cheapest products for:', ingredientNames);
 
+    // Include selected supermarket IDs in the fetch request
+    const requestBody = {
+      ingredientNames,
+      selectedSupermarketIds: selectedSupermarketIds.value,
+    };
+    consola.info('Request Body:', requestBody);
+
     // Explicitly type the expected response with the CORRECT type
     const results: ApiReturnType = await $fetch(
       '/api/shopping-list/find-cheapest',
       {
         method: 'POST',
-        body: { ingredientNames },
+        body: requestBody,
       }
     );
 

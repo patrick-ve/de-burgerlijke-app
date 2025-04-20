@@ -1,7 +1,9 @@
 import {
   type WeaviateClient,
   type WeaviateObject,
+  // Filters, // Not used directly for building in v3
 } from 'weaviate-client';
+import type { SupermarketName } from '~/composables/useOnboardingSettings';
 
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env' }); // Assuming you use dotenv
@@ -33,7 +35,8 @@ export interface WeaviateProductResult
 export async function searchProducts(
   query: string,
   limit: number,
-  client: WeaviateClient
+  client: WeaviateClient,
+  supermarketFilter?: SupermarketName[] // Add optional supermarket filter
 ): Promise<WeaviateProductResult[]> {
   if (!client) {
     console.error('Weaviate client is not provided.');
@@ -59,12 +62,27 @@ export async function searchProducts(
   ];
 
   try {
+    // Add logging right before the query inside the try block
+    if (supermarketFilter && supermarketFilter.length > 0) {
+      console.log(
+        'DEBUG: Applying supermarket filter inside try block:',
+        supermarketFilter
+      );
+    }
+
     const response = await productsCollection.query.hybrid(query, {
       limit: limit,
       fusionType: 'RelativeScore',
       alpha: 0.75,
       returnMetadata: ['distance'], // Include distance in metadata
       returnProperties: returnProperties, // Use the string[] type
+      // Use v4 filter syntax: .containsAny() for multiple values
+      filters:
+        supermarketFilter && supermarketFilter.length > 0
+          ? productsCollection.filter
+              .byProperty('supermarketName')
+              .containsAny(supermarketFilter)
+          : undefined,
     });
 
     // Type assertion might still be needed if WeaviateClient types are loose

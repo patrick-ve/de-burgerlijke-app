@@ -8,9 +8,11 @@ import { z } from 'zod';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { type WeaviateClient } from 'weaviate-client';
+import type { SupermarketName } from '~/composables/useOnboardingSettings'; // Import SupermarketName type
 
 interface RequestBody {
   ingredientNames: string[];
+  selectedSupermarketIds?: SupermarketName[]; // Make it optional
 }
 
 interface ProductResult {
@@ -43,10 +45,12 @@ const SelectedProductSchema = z.object({
 
 // Define a schema for the AI to return a SINGLE product ID (or null) per ingredient
 const SelectedProductIdsResponseSchema = z.object({
-  productsByIngredient: z.record(
-    z.string(), // Ingredient name key
-    z.string().nullable() // Single product ID or null
-  ),
+  productsByIngredient: z
+    .record(
+      z.string(), // Ingredient name key
+      z.string().nullable() // Single product ID or null
+    )
+    .nullable(),
 });
 
 // Define the final API return type using the full product interface
@@ -82,11 +86,18 @@ export default defineEventHandler(
       );
     }
 
-    const { ingredientNames } = body;
+    const { ingredientNames, selectedSupermarketIds } = body;
 
     consola.info(
-      `Received request to find cheapest products for: ${ingredientNames.join(', ')}`
+      `Received request to find cheapest products for: ${ingredientNames.join(
+        ', '
+      )}`
     );
+    if (selectedSupermarketIds && selectedSupermarketIds.length > 0) {
+      consola.info(
+        `Filtering by supermarkets: ${selectedSupermarketIds.join(', ')}`
+      );
+    }
 
     const searchPromises = ingredientNames.map(async (name) => {
       try {
@@ -95,7 +106,8 @@ export default defineEventHandler(
           await searchProducts(
             name,
             initialSearchLimit, // Still fetching 10 initially
-            weaviateClient
+            weaviateClient,
+            selectedSupermarketIds // Pass the filter IDs
           );
 
         if (similarProductsRaw.length === 0) {
@@ -219,6 +231,7 @@ export default defineEventHandler(
       consola.info(
         'Sending request to AI for single best product ID selection...'
       );
+
       const { object: selectedIdsByIngredient } =
         await generateObject({
           model: openai('gpt-4o'), // Using gpt-4o potentially
