@@ -90,17 +90,19 @@ onMounted(() => {
         <div
           class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
         >
-          <div
-            class="flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 mb-3 shadow group-hover:scale-110 transition"
-          >
-            <UIcon
-              name="i-heroicons-book-open"
-              class="w-7 h-7 text-pink-400"
-            />
+          <div class="flex items-center gap-3 w-full mb-3">
+            <div
+              class="flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 shadow group-hover:scale-110 transition"
+            >
+              <UIcon
+                name="i-heroicons-book-open"
+                class="w-5 h-5 text-pink-400"
+              />
+            </div>
+            <h3 class="font-semibold text-gray-900 text-lg">
+              1. Voeg recepten toe
+            </h3>
           </div>
-          <h3 class="font-semibold text-gray-900 text-lg mb-1">
-            1. Voeg recepten toe
-          </h3>
           <p class="text-sm text-gray-600 mb-3">
             Importeer eenvoudig recepten van websites, YouTube, of via
             een foto van een kookboek of notitie. Deze worden
@@ -122,17 +124,19 @@ onMounted(() => {
         <div
           class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
         >
-          <div
-            class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-3 shadow group-hover:scale-110 transition"
-          >
-            <UIcon
-              name="i-heroicons-calendar-days"
-              class="w-7 h-7 text-blue-400"
-            />
+          <div class="flex items-center gap-3 w-full mb-3">
+            <div
+              class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 shadow group-hover:scale-110 transition"
+            >
+              <UIcon
+                name="i-heroicons-calendar-days"
+                class="w-5 h-5 text-blue-400"
+              />
+            </div>
+            <h3 class="font-semibold text-gray-900 text-lg">
+              2. Plan maaltijden in
+            </h3>
           </div>
-          <h3 class="font-semibold text-gray-900 text-lg mb-1">
-            2. Plan maaltijden in
-          </h3>
           <p class="text-sm text-gray-600 mb-3">
             Gebruik de planner om je opgeslagen recepten in te plannen
             voor de komende dagen of week.
@@ -152,17 +156,19 @@ onMounted(() => {
         <div
           class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
         >
-          <div
-            class="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-3 shadow group-hover:scale-110 transition"
-          >
-            <UIcon
-              name="i-heroicons-shopping-cart"
-              class="w-7 h-7 text-green-400"
-            />
+          <div class="flex items-center gap-3 w-full mb-3">
+            <div
+              class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 shadow group-hover:scale-110 transition"
+            >
+              <UIcon
+                name="i-heroicons-shopping-cart"
+                class="w-5 h-5 text-green-400"
+              />
+            </div>
+            <h3 class="font-semibold text-gray-900 text-lg">
+              3. Genereer je boodschappenlijst
+            </h3>
           </div>
-          <h3 class="font-semibold text-gray-900 text-lg mb-1">
-            3. Genereer je boodschappenlijst
-          </h3>
           <p class="text-sm text-gray-600 mb-3">
             Genereer automatisch een boodschappenlijst op basis van je
             planning. Wij helpen je de goedkoopste opties te vinden

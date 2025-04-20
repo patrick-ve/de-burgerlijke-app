@@ -25,11 +25,11 @@ const navigation = [
     to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
   },
-  {
-    label: 'Baby',
-    to: '/baby',
-    icon: 'i-heroicons-user',
-  },
+  // {
+  //   label: 'Baby',
+  //   to: '/baby',
+  //   icon: 'i-heroicons-user',
+  // },
 ];
 
 // Close slideover on navigation
