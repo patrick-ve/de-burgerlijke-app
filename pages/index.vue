@@ -47,7 +47,7 @@ onMounted(() => {
 
     <!-- Modern Hero Section -->
     <section
-      class="relative flex flex-col items-center justify-center rounded-3xl backdrop-blur-md px-6 py-10"
+      class="relative flex flex-col items-center justify-center rounded-3xl backdrop-blur-md px-6"
     >
       <div class="absolute inset-0 pointer-events-none">
         <div
@@ -88,9 +88,9 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Card 1 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition"
         >
-          <div class="flex items-center gap-3 w-full mb-3">
+          <div class="flex items-center gap-3 w-full mb-0">
             <div
               class="flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 shadow group-hover:scale-110 transition"
             >
@@ -122,9 +122,9 @@ onMounted(() => {
         </div>
         <!-- Card 2 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition"
         >
-          <div class="flex items-center gap-3 w-full mb-3">
+          <div class="flex items-center gap-3 w-full mb-0">
             <div
               class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 shadow group-hover:scale-110 transition"
             >
@@ -154,9 +154,9 @@ onMounted(() => {
         </div>
         <!-- Card 3 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition"
         >
-          <div class="flex items-center gap-3 w-full mb-3">
+          <div class="flex items-center gap-3 w-full mb-0">
             <div
               class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 shadow group-hover:scale-110 transition"
             >
