@@ -444,7 +444,7 @@ const router = useRouter();
           v-if="grandTotal > 0"
           class="px-2 text-right font-semibold text-gray-800 text-lg"
         >
-          Totaal (alle gevonden prijzen):
+          Totaal:
           {{ formatCurrency(grandTotal) }}
         </div>
 
