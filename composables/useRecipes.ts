@@ -107,6 +107,60 @@ function parseStepTimer(
     : null;
 }
 
+// Helper function to extract YouTube video ID from various URL formats
+function extractYouTubeId(url: string | null): string | null {
+  if (!url) return null;
+  let videoId: string | null = null;
+  try {
+    const parsedUrl = new URL(url);
+    // Standard watch URL
+    if (
+      parsedUrl.hostname.includes('youtube.com') &&
+      parsedUrl.pathname === '/watch'
+    ) {
+      videoId = parsedUrl.searchParams.get('v');
+      // Shortened URL
+    } else if (parsedUrl.hostname === 'youtu.be') {
+      videoId = parsedUrl.pathname.slice(1); // Remove leading '/'
+      // Embed URL
+    } else if (
+      parsedUrl.hostname.includes('youtube.com') &&
+      parsedUrl.pathname.startsWith('/embed/')
+    ) {
+      videoId = parsedUrl.pathname.split('/embed/')[1];
+      // Shorts URL
+    } else if (
+      parsedUrl.hostname.includes('youtube.com') &&
+      parsedUrl.pathname.startsWith('/shorts/')
+    ) {
+      videoId = parsedUrl.pathname.split('/shorts/')[1];
+    }
+    // Add more checks if needed for other URL formats
+  } catch (e) {
+    console.warn(
+      'Could not parse YouTube URL with URL API, trying regex:',
+      url,
+      e
+    );
+    // Fallback regex for cases where URL parsing might fail or miss patterns
+    const regex =
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    if (match && match[1]) {
+      videoId = match[1];
+    }
+  }
+
+  // Basic validation and cleanup (YouTube IDs are typically 11 chars)
+  if (videoId && videoId.length >= 11) {
+    // Remove potential extra parameters attached to the ID
+    return videoId.substring(0, 11);
+  }
+
+  console.warn('Could not extract YouTube ID from URL:', url);
+  return null;
+}
+
 export const useRecipes = () => {
   // Use useStorage to make recipes persistent
   const storedRecipes = useStorage<Recipe[]>('recipes', []);
@@ -123,6 +177,11 @@ export const useRecipes = () => {
    * Adds a new recipe parsed from an AIRecipeDTO to the persistent list.
    */
   const addRecipe = (aiRecipe: AIRecipeDTO): Recipe => {
+    // Extract YouTube ID *before* creating the Recipe object
+    const youtubeVideoId = extractYouTubeId(
+      aiRecipe.youtubeUrl ?? null
+    );
+
     const newRecipe: Recipe = {
       id: uuidv4(), // uuidv4 always returns a string
       // Ensure title conforms to Recipe type (string)
@@ -134,6 +193,8 @@ export const useRecipes = () => {
       cookTime: parseDuration(aiRecipe.cookTime),
       cuisine: aiRecipe.cuisine ?? null,
       portions: parsePortions(aiRecipe.portions) ?? 1, // Default to 1 if null
+      // Assign the pre-calculated ID
+      youtubeVideoId, // Use the variable directly
       ingredients: (aiRecipe.ingredients ?? []).map((ing) => ({
         id: uuidv4(), // Generate unique ingredient ID
         name: ing.name,
@@ -161,6 +222,15 @@ export const useRecipes = () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+
+    // --- Set image from YouTube thumbnail if imageUrl is missing ---
+    if (!newRecipe.imageUrl && newRecipe.youtubeVideoId) {
+      newRecipe.imageUrl = `https://img.youtube.com/vi/${newRecipe.youtubeVideoId}/hqdefault.jpg`;
+      console.log(
+        `Set image URL from YouTube thumbnail for recipe: ${newRecipe.title}`
+      );
+    }
+    // --- End YouTube thumbnail logic ---
 
     storedRecipes.value.push(newRecipe);
     console.log('Added new recipe:', newRecipe);

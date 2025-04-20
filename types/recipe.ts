@@ -70,6 +70,7 @@ export interface Recipe {
   householdId?: string | null;
   sourceUrl?: string | null;
   youtubeUrl?: string | null;
+  youtubeVideoId?: string | null; // Added for storing extracted ID
   imageUrl?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
