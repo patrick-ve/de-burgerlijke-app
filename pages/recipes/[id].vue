@@ -197,6 +197,10 @@ const openContextMenu = () => {
   isContextMenuOpen.value = true;
 };
 
+const goBackToRecipes = () => {
+  router.push('/recipes');
+};
+
 // Function to open the confirmation modal
 const openConfirmationModal = () => {
   isContextMenuOpen.value = false; // Close context menu first
@@ -240,7 +244,7 @@ onMounted(async () => {
     title: recipe.value?.title || 'Loading Recipe...',
     showLeftAction: true,
     showRightAction: true, // Show the right action button
-    leftActionHandler: defaultLeftAction,
+    leftActionHandler: goBackToRecipes,
     rightActionHandler: openContextMenu, // Set handler to open context menu
   });
 });
