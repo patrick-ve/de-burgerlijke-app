@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
     const systemPrompt = createSystemPrompt(ogTitle, ogVideo);
 
     const { object: recipe } = await generateObject({
-      model: openai('gpt-4o-mini'),
+      model: openai('gpt-4.1-nano-2025-04-14'),
       schema: recipeSchema,
       prompt: `${systemPrompt}\n\nRecipe content (Markdown):\n${recipeContent.markdown}`, // Pass only markdown now
     });

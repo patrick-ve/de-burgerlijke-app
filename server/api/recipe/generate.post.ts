@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
     // Generate the recipe using the AI SDK
     const { object: generatedRecipe } = await generateObject({
-      model: openai('gpt-4o-mini'), // Or your preferred model
+      model: openai('gpt-4.1-nano-2025-04-14'), // Or your preferred model
       schema: recipeSchema,
       prompt: `System Instructions:\n${systemPrompt}\n\nUser Request:\n${body.prompt}`,
     });
