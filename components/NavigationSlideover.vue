@@ -53,39 +53,42 @@ watch(
     }"
   >
     <div
-      class="bg-primary flex items-center h-16 justify-between p-2 border-b border-gray-200 dark:border-gray-800"
+      class="p-4 space-y-4 h-full flex flex-col bg-gradient-to-b from-pink-50 via-blue-50 to-green-50"
     >
-      <h3 class="pl-2 text-base font-bold leading-6 text-white">
-        De Burgerlijke App
-      </h3>
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">
+          De Burgerlijke App
+        </h3>
+        <UButton
+          color="gray"
+          variant="ghost"
+          icon="i-heroicons-x-mark-20-solid"
+          size="md"
+          class="-mr-2 text-gray-700"
+          @click="closeNav"
+        />
+      </div>
 
-      <UButton
-        color="white"
-        variant="ghost"
-        icon="i-heroicons-x-mark-20-solid"
-        size="xl"
-        class="text-white font-bold translate-y-1"
-        @click="closeNav"
-      />
+      <nav class="flex-grow space-y-1">
+        <NuxtLink
+          v-for="link in navigation"
+          :key="link.to"
+          :disabled="link.to === '/baby'"
+          :to="link.to"
+          class="flex items-center gap-3 px-3 py-2 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
+          active-class="bg-white/50 text-primary-700 font-semibold"
+        >
+          <UIcon :name="link.icon" class="w-5 h-5" />
+          <span>{{ link.label }}</span>
+        </NuxtLink>
+      </nav>
+
+      <div class="mt-auto flex justify-center">
+        <img
+          src="/illustration.png"
+          class="w-[60%] h-auto object-contain"
+        />
+      </div>
     </div>
-
-    <div class="p-4 space-y-1">
-      <NuxtLink
-        v-for="link in navigation"
-        :key="link.to"
-        :disabled="link.to === '/baby'"
-        :to="link.to"
-        class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-        active-class="border-l-2 border-primary text-primary-500 font-bold bg-primary-50"
-      >
-        <UIcon :name="link.icon" class="w-5 h-5" />
-        <span>{{ link.label }}</span>
-      </NuxtLink>
-    </div>
-
-    <img
-      src="/illustration.png"
-      class="w-[50%] h-auto object-cover absolute bottom-2 left-2"
-    />
   </USlideover>
 </template>
