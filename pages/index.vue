@@ -88,7 +88,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Card 1 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
         >
           <div class="flex items-center gap-3 w-full mb-3">
             <div
@@ -114,7 +114,7 @@ onMounted(() => {
             variant="solid"
             color="primary"
             icon="i-heroicons-plus-circle"
-            class="mt-auto"
+            class="mt-auto font-bold"
             size="sm"
           >
             Voeg een recept toe
@@ -122,7 +122,7 @@ onMounted(() => {
         </div>
         <!-- Card 2 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
         >
           <div class="flex items-center gap-3 w-full mb-3">
             <div
@@ -146,7 +146,7 @@ onMounted(() => {
             variant="solid"
             color="primary"
             icon="i-heroicons-calendar-days"
-            class="mt-auto"
+            class="mt-auto font-bold"
             size="sm"
           >
             Ga naar de planner
@@ -154,7 +154,7 @@ onMounted(() => {
         </div>
         <!-- Card 3 -->
         <div
-          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-6 transition hover:scale-[1.025] hover:shadow-2xl"
+          class="group relative flex flex-col items-start rounded-2xl bg-white shadow-lg p-3 transition hover:scale-[1.025] hover:shadow-2xl"
         >
           <div class="flex items-center gap-3 w-full mb-3">
             <div
@@ -179,7 +179,7 @@ onMounted(() => {
             variant="solid"
             color="primary"
             icon="i-heroicons-list-bullet"
-            class="mt-auto"
+            class="mt-auto font-bold"
             size="sm"
           >
             Bekijk boodschappenlijst
