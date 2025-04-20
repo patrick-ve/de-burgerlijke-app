@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useShoppingList } from '~/composables/useShoppingList';
 import type { ShoppingListItem } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useOnboardingSettings } from '~/composables/useOnboardingSettings';
 import { consola } from 'consola';
+import { ingredientCategories } from '~/types/recipe';
+import type { IngredientCategory } from '~/types/recipe';
+import type { SupermarketName } from '~/composables/useOnboardingSettings';
 
 // Interface for the single product object returned by the API
 interface Product {
@@ -18,8 +21,141 @@ interface Product {
   supermarketName: string;
 }
 
+// --- Supermarket Definitions (from OnboardingModal.vue) ---
+// Interface for the supermarket data structure
+interface Supermarket {
+  id: SupermarketName;
+  name: string;
+  ico: string;
+}
+
+const supermarkets: Supermarket[] = [
+  {
+    id: 'ah',
+    name: 'Albert Heijn',
+    ico: 'https://www.ah.nl/favicon.ico',
+  },
+  {
+    id: 'jumbo',
+    name: 'Jumbo',
+    ico: 'https://www.jumbo.com/INTERSHOP/static/WFS/Jumbo-Grocery-Site/-/-/nl_NL/images/favicon.ico',
+  },
+  {
+    id: 'plus',
+    name: 'PLUS',
+    ico: 'https://www.werkenbijplus.nl/WBP/img/plusMarker.png',
+  },
+  {
+    id: 'dirk',
+    name: 'Dirk',
+    ico: 'https://d3r3h30p75xj6a.cloudfront.net/static-images/dirk/web/app_icon.png',
+  },
+  {
+    id: 'aldi',
+    name: 'ALDI',
+    ico: 'https://play-lh.googleusercontent.com/SacQDsmttU6UOYjVLls5a7mvUYCS5yMEZt5XF6m0zUq34mrSf9O5vZBDPazxk4RBPCA=w240-h480',
+  },
+  {
+    id: 'coop',
+    name: 'Coop',
+    ico: 'https://www.coop.nl/assets/themes/custom/img/logo_apple_180x180.png',
+  },
+  {
+    id: 'hoogvliet',
+    name: 'Hoogvliet',
+    ico: 'https://www.hoogvliet.com/INTERSHOP/static/WFS/org-webshop-Site/-/-/nl_NL/img/smart_banner_icon.png',
+  },
+  {
+    id: 'vomar',
+    name: 'Vomar',
+    ico: 'https://www.vomar.nl/apple-touch-icon.png',
+  },
+  {
+    id: 'dekamarkt',
+    name: 'DekaMarkt',
+    ico: 'https://d3r3h30p75xj6a.cloudfront.net/static-images/deka/web/favicon.svg',
+  },
+];
+
+// Helper to find supermarket details by name (or key)
+const getSupermarketDetails = (
+  key: string
+): Supermarket | undefined => {
+  // Attempt to match by ID first (more reliable if key is the ID)
+  const foundById = supermarkets.find((s) => s.id === key);
+  if (foundById) return foundById;
+  // Fallback: attempt to match by name (case-insensitive)
+  return supermarkets.find(
+    (s) => s.name.toLowerCase() === key.toLowerCase()
+  );
+};
+// --- End Supermarket Definitions ---
+
 // Type for the actual API response
 type ApiReturnType = Record<string, Product | null>;
+
+// --- Category Definitions (similar to ShoppingList.vue) ---
+const categoryEmojis: Record<IngredientCategory | 'Other', string> = {
+  Fruit: '🍎',
+  Vegetables: '🥕',
+  'Pasta & Rice': '🍝',
+  'Meals & Salads': '🥗',
+  'Deli & Cheese': '🧀',
+  'Meat & Fish': '🥩',
+  'Plant-Based': '🌱',
+  'Dairy & Eggs': '🥛',
+  Bakery: '🍞',
+  'Breakfast & Spreads': '🥣',
+  'Sweets & Confectionery': '🍫',
+  'Snacks & Nuts': '🥜',
+  Beverages: '🥤',
+  Pantry: '🥫',
+  'Spices & Seasonings': '🧂',
+  Nutrition: '💪',
+  Oils: '🍳',
+  Frozen: '🧊',
+  Alcohol: '🍷',
+  Pharmacy: '💊',
+  'Personal Care': '🧴',
+  'Baby & Child': '👶',
+  Household: '🧼',
+  Pet: '🐾',
+  Leisure: '🪁',
+  Other: '🛒', // Default/Other category
+};
+
+const categoryTranslations: Record<
+  IngredientCategory | 'Other',
+  string
+> = {
+  Fruit: 'Fruit',
+  Vegetables: 'Groenten',
+  'Pasta & Rice': 'Pasta & rijst',
+  'Meals & Salads': 'Maaltijden & salades',
+  'Deli & Cheese': 'Vleeswaren & kaas',
+  'Meat & Fish': 'Vlees & vis',
+  'Plant-Based': 'Plantaardig',
+  'Dairy & Eggs': 'Zuivel & eieren',
+  Bakery: 'Bakkerij',
+  'Breakfast & Spreads': 'Ontbijt & broodbeleg',
+  'Sweets & Confectionery': 'Snoep & zoetwaren',
+  'Snacks & Nuts': 'Snacks & noten',
+  Beverages: 'Dranken',
+  Pantry: 'Voorraadkast',
+  'Spices & Seasonings': 'Kruiden & specerijen',
+  Nutrition: 'Voeding',
+  Oils: 'Olie',
+  Frozen: 'Diepvries',
+  Alcohol: 'Alcohol',
+  Pharmacy: 'Drogisterij',
+  'Personal Care': 'Persoonlijke verzorging',
+  'Baby & Child': 'Baby & kind',
+  Household: 'Huishouden',
+  Pet: 'Huisdier',
+  Leisure: 'Vrije tijd',
+  Other: 'Overig', // Default/Other category
+};
+// --- End Category Definitions ---
 
 // Use the composable to get shopping list state and actions
 const {
@@ -161,6 +297,107 @@ const fetchCheapestProducts = async () => {
   }
 };
 
+// --- Group items by Supermarket AND Category (for UNCHECKED items) ---
+const groupedBySupermarketAndCategory = computed(() => {
+  const groups: Record<
+    string,
+    Record<string, ShoppingListItem[]>
+  > = {};
+  const noSupermarketKey = 'Nog geen prijs gevonden'; // Key for items without a supermarket
+  const categoryOrder: (IngredientCategory | 'Other')[] = [
+    ...ingredientCategories,
+    'Other',
+  ];
+
+  shoppingListItems.value.forEach((item) => {
+    // Group ALL items (checked and unchecked)
+    if (!item.isChecked) {
+      const supermarketKey =
+        item.cheapestSupermarket || noSupermarketKey;
+      const categoryKey = item.category ?? 'Other';
+
+      // Ensure supermarket group exists
+      if (!groups[supermarketKey]) {
+        groups[supermarketKey] = {};
+        // Initialize all categories within the new supermarket group
+        categoryOrder.forEach((cat) => {
+          groups[supermarketKey][cat] = [];
+        });
+      }
+
+      // Ensure category group exists (should always exist due to initialization)
+      if (!groups[supermarketKey][categoryKey]) {
+        groups[supermarketKey][categoryKey] = []; // Fallback just in case
+      }
+
+      groups[supermarketKey][categoryKey].push(item);
+    } else {
+      // Handle CHECKED items - group them by their *last known* supermarket if possible,
+      // otherwise put them in the 'No Price' group for consistency.
+      // They will be visually distinct in the template.
+      const supermarketKey =
+        item.cheapestSupermarket || noSupermarketKey; // Use last known supermarket or default
+      const categoryKey = item.category ?? 'Other';
+
+      if (!groups[supermarketKey]) {
+        groups[supermarketKey] = {};
+        categoryOrder.forEach((cat) => {
+          groups[supermarketKey][cat] = [];
+        });
+      }
+      if (!groups[supermarketKey][categoryKey]) {
+        groups[supermarketKey][categoryKey] = [];
+      }
+      groups[supermarketKey][categoryKey].push(item);
+    }
+  });
+
+  // Sort supermarkets (alphabetically, with 'No Price' last)
+  const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
+    if (a === noSupermarketKey) return 1; // Put 'No Price' at the end
+    if (b === noSupermarketKey) return -1;
+    return a.localeCompare(b); // Sort others alphabetically
+  });
+
+  // Create the final sorted structure
+  const sortedGroups: Record<
+    string,
+    Record<string, ShoppingListItem[]>
+  > = {};
+  sortedGroupKeys.forEach((key) => {
+    sortedGroups[key] = groups[key];
+
+    // Filter out empty categories within this supermarket group
+    const filteredCategories: Record<string, ShoppingListItem[]> = {};
+    categoryOrder.forEach((cat) => {
+      if (groups[key][cat] && groups[key][cat].length > 0) {
+        filteredCategories[cat] = groups[key][cat];
+      }
+    });
+    sortedGroups[key] = filteredCategories;
+  });
+
+  return sortedGroups;
+});
+
+// --- Calculate Grand Total for ALL Items with Prices ---
+const grandTotal = computed(() => {
+  return shoppingListItems.value.reduce((total, item) => {
+    if (item.cheapestPrice != null) {
+      return total + item.cheapestPrice;
+    }
+    return total;
+  }, 0);
+});
+
+// Helper function to format currency (can be moved to a composable later)
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('nl-NL', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(value);
+};
+
 onMounted(async () => {
   await nextTick();
   isMounted.value = true;
@@ -179,20 +416,209 @@ const router = useRouter();
 <template>
   <div>
     <UContainer>
-      <!-- Pass items to the ShoppingList component and listen for updates -->
-      <ShoppingList
-        :items="shoppingListItems"
-        :is-loading="isLoadingPrices"
-        @update:item="handleItemUpdate"
-        @delete="handleItemDelete"
-      />
+      <!-- Loading Skeleton (Optional, could add later if needed) -->
+      <div v-if="isLoadingPrices" class="space-y-4 p-4">
+        <USkeleton class="h-8 w-1/2 mb-4" />
+        <div
+          v-for="i in 3"
+          :key="`skel-item-${i}`"
+          class="flex items-center gap-3 py-2 px-2 border border-gray-200 rounded-md"
+        >
+          <USkeleton class="h-5 w-5 rounded" />
+          <div class="flex-1 space-y-1">
+            <USkeleton class="h-4 w-2/3" />
+            <USkeleton class="h-3 w-1/2" />
+          </div>
+          <USkeleton class="h-6 w-16" />
+          <USkeleton class="h-6 w-6" />
+        </div>
+      </div>
 
-      <!-- Placeholder for Actions -->
+      <!-- Display Grouped Items -->
+      <div
+        v-else-if="shoppingListItems.length > 0"
+        class="space-y-6 mt-4"
+      >
+        <!-- Grand Total -->
+        <div
+          v-if="grandTotal > 0"
+          class="px-2 text-right font-semibold text-gray-800 text-lg"
+        >
+          Totaal (alle gevonden prijzen):
+          {{ formatCurrency(grandTotal) }}
+        </div>
+
+        <!-- UNCHECKED Items: Grouped by Supermarket -> Category -->
+        <UCard
+          v-for="(
+            categories, supermarket
+          ) in groupedBySupermarketAndCategory"
+          :key="supermarket"
+          :ui="{
+            header: { padding: 'px-4 py-1 sm:px-6' },
+            body: { padding: 'px-4 pt-0 pb-1 sm:px-6' },
+          }"
+        >
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <img
+                  v-if="getSupermarketDetails(supermarket)?.ico"
+                  :src="getSupermarketDetails(supermarket)?.ico"
+                  :alt="
+                    getSupermarketDetails(supermarket)?.name ??
+                    supermarket
+                  "
+                  class="h-5 w-5"
+                />
+                <h3
+                  class="text-base font-semibold leading-6 text-gray-900"
+                >
+                  {{
+                    getSupermarketDetails(supermarket)?.name ??
+                    supermarket
+                  }}
+                </h3>
+              </div>
+              <!-- Calculate total for UNCHECKED items in this supermarket -->
+              <span
+                v-if="supermarket !== noSupermarketKey"
+                class="text-sm font-semibold text-gray-700"
+              >
+                {{
+                  formatCurrency(
+                    Object.values(categories)
+                      .flat()
+                      .reduce(
+                        (sum, item) =>
+                          sum +
+                          (item.cheapestPrice != null
+                            ? item.cheapestPrice
+                            : 0),
+                        0
+                      )
+                  )
+                }}
+              </span>
+            </div>
+          </template>
+
+          <!-- Loop through categories within the supermarket -->
+          <ul
+            v-for="(items, category) in categories"
+            :key="category"
+            class="py-2 divide-y divide-gray-100"
+          >
+            <h4
+              v-if="items.length > 0"
+              class="text-sm font-semibold px-0 text-gray-600 flex items-center gap-2"
+            >
+              <span class="text-base">{{
+                categoryEmojis[
+                  category as IngredientCategory | 'Other'
+                ]
+              }}</span>
+              <span>{{
+                categoryTranslations[
+                  category as IngredientCategory | 'Other'
+                ]
+              }}</span>
+            </h4>
+
+            <li
+              v-for="item in items"
+              :key="item.id"
+              class="flex items-center justify-between gap-3 py-1.5 pl-1 transition-opacity"
+              :class="{ 'opacity-50': item.isChecked }"
+              data-testid="shopping-list-item"
+            >
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <UCheckbox
+                  :model-value="item.isChecked"
+                  @update:model-value="
+                    handleItemUpdate({ ...item, isChecked: $event })
+                  "
+                  :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
+                  data-testid="item-checkbox"
+                  :ui="{ base: 'flex-shrink-0' }"
+                />
+                <div class="flex-1 min-w-0">
+                  <p
+                    class="text-sm font-medium text-gray-900 truncate"
+                    :class="{
+                      'line-through text-gray-500': item.isChecked,
+                    }"
+                    data-testid="item-name"
+                  >
+                    {{ item.ingredientName }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    <span v-if="item.aggregatedQuantity">{{
+                      item.aggregatedQuantity
+                    }}</span>
+                    <span v-if="item.unit"> {{ item.unit }}</span>
+                    <span
+                      v-if="
+                        item.cheapestAmount &&
+                        supermarket !== 'Nog geen prijs gevonden'
+                      "
+                    >
+                      - {{ item.cheapestAmount }}</span
+                    >
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="flex items-center gap-2 flex-shrink-0"
+                :class="{ 'opacity-50': item.isChecked }"
+              >
+                <span
+                  v-if="
+                    item.cheapestPrice != null &&
+                    supermarket !== 'Nog geen prijs gevonden'
+                  "
+                  class="text-sm font-medium text-gray-900"
+                  :class="{
+                    'line-through text-gray-500': item.isChecked,
+                  }"
+                >
+                  {{ formatCurrency(item.cheapestPrice) }}
+                </span>
+                <!-- Placeholder/indicator if no price yet -->
+                <span
+                  v-else-if="
+                    supermarket === 'Nog geen prijs gevonden'
+                  "
+                  class="text-xs text-gray-400 italic"
+                >
+                  Geen prijs
+                </span>
+                <UButton
+                  icon="i-heroicons-trash"
+                  size="xs"
+                  color="red"
+                  variant="ghost"
+                  :aria-label="`Verwijder ${item.ingredientName}`"
+                  @click="handleItemDelete(item.id)"
+                  data-testid="delete-item-button"
+                />
+              </div>
+            </li>
+          </ul>
+        </UCard>
+      </div>
+      <!-- Empty State -->
+      <div v-else class="mt-6 text-center text-gray-500">
+        Je boodschappenlijst is leeg. Voeg items toe vanuit een
+        recept!
+      </div>
+
+      <!-- Actions (kept as is) -->
       <div
         v-if="shoppingListItems.length > 0"
         class="mt-6 flex flex-wrap justify-end gap-2"
       >
-        <!-- <UButton label="Lijst legen" color="red" variant="outline" /> -->
         <UButton
           label="Prijzen ophalen"
           icon="i-heroicons-currency-euro"
@@ -200,10 +626,6 @@ const router = useRouter();
           :loading="isLoadingPrices"
           @click="fetchCheapestProducts"
         />
-      </div>
-      <div v-else class="mt-6 text-center text-gray-500">
-        Je boodschappenlijst is leeg. Voeg items toe vanuit een
-        recept!
       </div>
     </UContainer>
 
