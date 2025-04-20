@@ -18,8 +18,8 @@
     <NavigationSlideover />
 
     <UModals />
-
     <USlideovers />
+    <UNotifications />
   </ion-app>
 </template>
 

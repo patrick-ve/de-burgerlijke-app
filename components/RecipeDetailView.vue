@@ -365,7 +365,7 @@ const handleAddPortionsToShoppingList = () => {
     leave-to-class="transform translate-y-full"
   >
     <div
-      v-if="selectedTab !== 'instructions'"
+      v-if="false"
       class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
     >
       <UButton

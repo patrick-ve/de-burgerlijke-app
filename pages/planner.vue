@@ -156,6 +156,9 @@ const formatQuantity = (
 
 // --- Add new handler for adding all planned ingredients to shopping list ---
 function addAllPlannedIngredientsToShoppingList() {
+  // Hide the action bar immediately
+  showActionBar.value = false;
+
   let ingredientsAddedCount = 0;
   let mealsProcessedCount = 0;
 
@@ -200,29 +203,26 @@ function addAllPlannedIngredientsToShoppingList() {
     });
   });
 
+  // Show appropriate toast message
   if (ingredientsAddedCount > 0) {
     toast.add({
-      title: 'Boodschappenlijst bijgewerkt',
-      description: `${ingredientsAddedCount} ingrediënt(en) van ${mealsProcessedCount} maaltijd(en) toegevoegd.`,
+      title: 'Boodschappenlijst bijgewerkt!',
+      description: `${ingredientsAddedCount} ${ingredientsAddedCount === 1 ? 'ingrediënt' : 'ingrediënten'} van ${mealsProcessedCount} ${mealsProcessedCount === 1 ? 'maaltijd' : 'maaltijden'} toegevoegd.`,
       icon: 'i-heroicons-check-circle',
       color: 'green',
     });
   } else if (mealsProcessedCount > 0) {
+    // This case means meals were planned, but they had 0 ingredients or portions <= 0
     toast.add({
-      title: 'Geen ingrediënten toegevoegd',
-      description: `De geplande maaltijden bevatten geen ingrediënten om toe te voegen.`,
+      title: 'Niets toegevoegd',
+      description:
+        'De geplande maaltijden hadden geen ingrediënten om toe te voegen.',
       icon: 'i-heroicons-information-circle',
       color: 'blue',
     });
-  } else {
-    toast.add({
-      title: 'Geen maaltijden gepland',
-      description:
-        'Er zijn geen maaltijden gepland om ingrediënten van toe te voegen.',
-      icon: 'i-heroicons-exclamation-circle',
-      color: 'orange',
-    });
   }
+  // No need for an "else" here, because if mealsProcessedCount is 0,
+  // the action bar wouldn't have been visible anyway (due to hasPlannedMeals being false).
 }
 
 // Computed property to check if any meals are planned in the week
