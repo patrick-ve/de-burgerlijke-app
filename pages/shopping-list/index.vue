@@ -29,11 +29,14 @@ const {
   updateItem,
   deleteItem,
   clearList,
+  replaceList,
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
 const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const isLoadingPrices = ref(false);
+const isOptimizingList = ref(false);
+const toast = useToast();
 
 // Define Head for the page
 useHead({
@@ -62,11 +65,13 @@ const confirmClearList = () => {
 
 // Function to fetch cheapest products
 const fetchCheapestProducts = async () => {
+  if (isLoadingPrices.value || isOptimizingList.value) return;
+
   isLoadingPrices.value = true;
   try {
     const itemsToFetch = shoppingListItems.value.filter(
       (item) => !item.isChecked
-    ); // Only fetch for unchecked items
+    );
     const ingredientNames = itemsToFetch.map(
       (item) => item.ingredientName
     );
@@ -75,18 +80,12 @@ const fetchCheapestProducts = async () => {
       consola.info(
         'No unchecked items in the shopping list to fetch prices for.'
       );
-      // Optionally reset prices for already fetched items if needed
-      // shoppingListItems.value.forEach(item => {
-      //   if (item.cheapestPrice) {
-      //     updateItem({
-      //       ...item,
-      //       cheapestPrice: undefined,
-      //       cheapestSupermarket: undefined,
-      //       cheapestAmount: undefined,
-      //     });
-      //   }
-      // });
-      isLoadingPrices.value = false; // Ensure loading state is reset
+      toast.add({
+        title: 'Geen items om prijzen voor op te halen',
+        description: 'Vink items uit om prijzen op te halen.',
+        color: 'orange',
+      });
+      isLoadingPrices.value = false;
       return;
     }
 
@@ -104,6 +103,7 @@ const fetchCheapestProducts = async () => {
     consola.success('Received cheapest products:', results);
 
     // Integrate results into the shopping list items
+    let updateCount = 0;
     Object.entries(results).forEach(([ingredientName, products]) => {
       const cheapestProduct = products[0]; // Assuming the first product is the cheapest
 
@@ -120,28 +120,78 @@ const fetchCheapestProducts = async () => {
             cheapestSupermarket: cheapestProduct.supermarketName,
             cheapestAmount: cheapestProduct.amount,
           });
-          consola.info(
-            `Updated price for ${ingredientName}: ${cheapestProduct.price} at ${cheapestProduct.supermarketName}`
-          );
-        } else {
-          consola.warn(
-            `Could not find corresponding item for ingredient: ${ingredientName} in the list or it was checked.`
-          );
+          updateCount++;
         }
-      } else {
-        consola.warn(
-          `No product found for ingredient: ${ingredientName}`
-        );
       }
     });
+    if (updateCount > 0) {
+      toast.add({
+        title: `Prijzen bijgewerkt voor ${updateCount} item(s)`,
+        color: 'green',
+      });
+    } else {
+      toast.add({
+        title: 'Geen nieuwe prijzen gevonden',
+        color: 'orange',
+      });
+    }
 
     // TODO: Handle ingredients for which no prices were found (clear existing price?)
     // TODO: Update the ShoppingList component to display the cheapestPrice, cheapestSupermarket, and cheapestAmount fields.
   } catch (error) {
     consola.error('Error fetching cheapest products:', error);
-    // TODO: Show user-friendly error message (e.g., using UToast)
+    toast.add({
+      title: 'Fout bij ophalen prijzen',
+      description: 'Kon de productprijzen niet ophalen.',
+      color: 'red',
+    });
   } finally {
     isLoadingPrices.value = false;
+  }
+};
+
+// Function to optimize the shopping list using AI
+const handleOptimizeList = async () => {
+  if (isLoadingPrices.value || isOptimizingList.value) return;
+  if (shoppingListItems.value.length === 0) {
+    toast.add({
+      title: 'Lijst is al leeg',
+      description: 'Er zijn geen items om te optimaliseren.',
+      color: 'orange',
+    });
+    return;
+  }
+
+  isOptimizingList.value = true;
+  consola.info('Optimizing shopping list...');
+  try {
+    const currentItems = JSON.parse(
+      JSON.stringify(shoppingListItems.value)
+    ); // Deep clone to avoid reactivity issues? Or pass ref directly? Pass value.
+    const optimizedList: ShoppingListItem[] = await $fetch(
+      '/api/shopping-list/clean-up',
+      {
+        method: 'POST',
+        body: currentItems, // Send the current list
+      }
+    );
+
+    replaceList(optimizedList); // Replace the list with the optimized one
+    consola.success('Shopping list optimized successfully.');
+    toast.add({
+      title: 'Boodschappenlijst geoptimaliseerd!',
+      icon: 'i-heroicons-sparkles',
+      color: 'green',
+    });
+  } catch (error) {
+    consola.error('Error optimizing shopping list:', error);
+    toast.add({
+      title: 'Fout bij optimaliseren',
+      description: 'Kon de boodschappenlijst niet optimaliseren.',
+      color: 'red',
+    });
+  } finally {
+    isOptimizingList.value = false;
   }
 };
 
@@ -173,15 +223,29 @@ const router = useRouter();
       <!-- Placeholder for Actions -->
       <div
         v-if="shoppingListItems.length > 0"
-        class="mt-6 flex justify-end"
+        class="mt-6 flex flex-wrap justify-end gap-2"
       >
         <!-- <UButton label="Lijst legen" color="red" variant="outline" /> -->
         <UButton
+          label="Lijst optimaliseren"
+          icon="i-heroicons-sparkles"
+          variant="outline"
+          :loading="isOptimizingList"
+          :disabled="isLoadingPrices"
+          @click="handleOptimizeList"
+        />
+        <UButton
           label="Prijzen ophalen"
+          icon="i-heroicons-currency-euro"
           class="ml-2"
           :loading="isLoadingPrices"
+          :disabled="isOptimizingList"
           @click="fetchCheapestProducts"
         />
+      </div>
+      <div v-else class="mt-6 text-center text-gray-500">
+        Je boodschappenlijst is leeg. Voeg items toe vanuit een
+        recept!
       </div>
     </UContainer>
 
