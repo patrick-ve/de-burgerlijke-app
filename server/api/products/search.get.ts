@@ -1,24 +1,20 @@
-import { db } from '~/server/utils/db';
-import { products, supermarkets } from '~/server/db/schema';
-import { sql, like, eq, asc } from 'drizzle-orm';
+import { type WeaviateClient } from 'weaviate-client';
 
-// Define the expected structure for a single result row before grouping
-interface ProductQueryResult {
-  id: string;
+// Define the structure of the properties we expect from Weaviate
+interface ProductProperties {
   name: string;
   link: string;
   price: number;
   amount: string | null;
-  supermarketId: string; // Keep for potential future use
   supermarketName: string;
+  // Add index signature to satisfy Weaviate's Properties constraint
+  [key: string]: any;
+  // Add other properties if needed, e.g., standardizedPricePerUnit, standardizedUnit
 }
 
-// Define the structure of the final response
+// Define the structure of the final response (grouping by supermarket)
 interface GroupedSearchResults {
-  [supermarketName: string]: Omit<
-    ProductQueryResult,
-    'supermarketId' | 'supermarketName'
-  >[];
+  [supermarketName: string]: ProductProperties[];
 }
 
 export default defineEventHandler(async (event) => {
@@ -36,61 +32,93 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const searchPattern = `%${searchTerm.trim()}%`;
-  const initialFetchLimit = 1000; // Increased limit from 200
-  const limitPerSupermarket = 10;
+  const weaviateClient = event.context
+    .weaviate as WeaviateClient | null;
+
+  if (!weaviateClient) {
+    console.error(
+      'Weaviate client is not available in event context.'
+    );
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Search service unavailable',
+    });
+  }
+
+  // --- Configuration for Search ---
+  const collectionName = 'Products';
+  const searchLimit = 100; // How many results to fetch from Weaviate initially
+  const limitPerSupermarket = 10; // How many results per supermarket in the final output
+  // Explicitly type as string[] to match Weaviate options
+  const returnProperties: string[] = [
+    'name',
+    'link',
+    'price',
+    'amount',
+    'supermarketName',
+  ];
 
   try {
-    // Fetch a larger set of results, ordered to potentially help grouping
-    const flatResults = await db
-      .select({
-        id: products.id,
-        name: products.name,
-        link: products.link,
-        price: products.price,
-        amount: products.amount,
-        supermarketId: supermarkets.id, // Keep the ID temporarily if needed
-        supermarketName: supermarkets.name,
-      })
-      .from(products)
-      .leftJoin(
-        supermarkets,
-        eq(products.supermarketId, supermarkets.id)
-      )
-      .where(like(products.name, searchPattern))
-      .orderBy(supermarkets.name, asc(products.name)) // Order results
-      .limit(initialFetchLimit);
+    const productsCollection =
+      weaviateClient.collections.get<ProductProperties>(
+        collectionName
+      );
 
-    // Group results in code
+    console.log(`Performing nearText search for: "${searchTerm}"`);
+
+    const result = await productsCollection.query.nearText(
+      searchTerm,
+      {
+        limit: searchLimit,
+        returnProperties: returnProperties,
+        // Optionally add metadata if needed, e.g., for distance/similarity
+        // returnMetadata: ['distance'],
+      }
+    );
+
+    console.log(
+      `Weaviate query returned ${result.objects.length} results.`
+    );
+
+    // Group results by supermarketName
     const groupedResults: GroupedSearchResults = {};
 
-    for (const product of flatResults) {
-      // Ensure supermarketName exists (should due to LEFT JOIN and schema)
-      if (!product.supermarketName) continue;
+    for (const item of result.objects) {
+      const product = item.properties;
+
+      // Basic validation
+      if (!product || !product.supermarketName) {
+        console.warn('Skipping item with missing properties:', item);
+        continue;
+      }
+
+      const supermarketName = product.supermarketName;
 
       // Initialize array for supermarket if it doesn't exist
-      if (!groupedResults[product.supermarketName]) {
-        groupedResults[product.supermarketName] = [];
+      if (!groupedResults[supermarketName]) {
+        groupedResults[supermarketName] = [];
       }
 
       // Add product to the group if the limit per supermarket is not reached
       if (
-        groupedResults[product.supermarketName].length <
-        limitPerSupermarket
+        groupedResults[supermarketName].length < limitPerSupermarket
       ) {
-        // Omit supermarketId and supermarketName from the final product object in the array
-        const { supermarketId, supermarketName, ...productData } =
-          product;
-        groupedResults[product.supermarketName].push(productData);
+        // Assert type here to satisfy the GroupedSearchResults structure
+        groupedResults[supermarketName].push(
+          product as ProductProperties
+        );
       }
     }
 
     return groupedResults;
   } catch (error: any) {
-    console.error('Error searching products:', error);
+    console.error(
+      `Error searching products in Weaviate for term "${searchTerm}":`,
+      error
+    );
     throw createError({
       statusCode: 500,
-      statusMessage: 'Failed to search products',
+      statusMessage: `Failed to search products: ${error.message || 'Unknown error'}`,
     });
   }
 });

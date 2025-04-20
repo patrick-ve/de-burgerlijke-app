@@ -1,10 +1,13 @@
 import { defineEventHandler, readBody } from 'h3';
-import { findSimilarProducts } from '../../../lib/query-embeddings';
+import {
+  searchProducts,
+  type WeaviateProductResult,
+} from '@/lib/query-products';
 import { consola } from 'consola';
 import { z } from 'zod';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import fs from 'node:fs';
+import { type WeaviateClient } from 'weaviate-client';
 
 interface RequestBody {
   ingredientNames: string[];
@@ -14,10 +17,8 @@ interface ProductResult {
   id: string;
   name: string;
   price: number;
-  link: string;
   amount: string | null;
-  supermarketId: string;
-  distance: number;
+  similarity: number;
   standardized_price_per_unit: number | null;
   standardized_unit: string | null;
   supermarketName: string;
@@ -51,11 +52,28 @@ const SelectedProductIdsResponseSchema = z.object({
 // Define the final API return type using the full product interface
 type ApiReturnType = Record<string, ProductResult[]>;
 
+// Define structure for grouping results within the handler
+interface GroupedProductResults {
+  [supermarketName: string]: ProductResult[];
+}
+
 export default defineEventHandler(
   async (event): Promise<ApiReturnType> => {
     const body = await readBody<RequestBody>(event);
+    const weaviateClient = event.context
+      .weaviate as WeaviateClient | null;
 
-    console.time('findSimilarProducts'); // Start timer
+    if (!weaviateClient) {
+      consola.error(
+        'Weaviate client is not available in event context.'
+      );
+      throw new Error('Search service unavailable');
+    }
+
+    const initialSearchLimit = 15; // Fetch more products initially
+    const limitPerSupermarket = 5; // Limit to top N per supermarket
+
+    console.time('findCheapestProducts'); // Renamed timer for clarity
 
     if (!body || !Array.isArray(body.ingredientNames)) {
       throw new Error(
@@ -71,42 +89,57 @@ export default defineEventHandler(
 
     const searchPromises = ingredientNames.map(async (name) => {
       try {
-        const similarProductsRaw = await findSimilarProducts(
-          name,
-          10,
-          10
-        );
-
-        if (similarProductsRaw.length > 0) {
-          consola.success(
-            `Found ${similarProductsRaw.length} similar products for "${name}"`
+        // Fetch a larger set of initial results using the imported function
+        const similarProductsRaw: WeaviateProductResult[] =
+          await searchProducts(
+            name,
+            initialSearchLimit,
+            weaviateClient
           );
-        } else {
-          consola.warn(`No similar product found for "${name}"`);
+
+        if (similarProductsRaw.length === 0) {
+          consola.warn(`No similar products found for "${name}"`);
+          return { ingredientName: name, similarProducts: [] };
         }
 
-        const similarProducts: ProductResult[] =
-          similarProductsRaw.map((p) => ({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            link: p.link,
-            amount: p.amount,
-            supermarketId: p.supermarketId,
-            distance: p.distance,
-            standardized_price_per_unit:
-              p.standardized_price_per_unit,
-            standardized_unit: p.standardized_unit,
-            supermarketName: p.supermarketName,
-          }));
+        consola.success(
+          `Found ${similarProductsRaw.length} initial similar products for "${name}"`
+        );
+
+        // --- Transform Raw Weaviate Results ---
+        const transformedProducts: ProductResult[] =
+          similarProductsRaw.map((rawProduct) => {
+            const distance = rawProduct.metadata?.distance ?? 1; // Default to 1 if distance is missing
+            // Calculate similarity: (1 - distance) * 100, clamped between 0 and 100
+            const similarity = Math.max(
+              0,
+              Math.min(100, (1 - distance) * 100)
+            );
+
+            return {
+              id: rawProduct.uuid, // Use uuid as the primary identifier
+              name: rawProduct.properties.name ?? 'Unknown Name',
+              price: rawProduct.properties.price ?? 0,
+              amount: rawProduct.properties.amount ?? null,
+              supermarketName:
+                rawProduct.properties.supermarketName ??
+                'Unknown Supermarket',
+              standardized_price_per_unit:
+                rawProduct.properties.standardizedPricePerUnit ??
+                null,
+              standardized_unit:
+                rawProduct.properties.standardizedUnit ?? null,
+              similarity: similarity, // Add calculated similarity
+            };
+          });
 
         return {
           ingredientName: name,
-          similarProducts: similarProducts,
+          similarProducts: transformedProducts, // Use the transformed list
         };
       } catch (error: any) {
         consola.error(
-          `Error finding product for "${name}":`,
+          `Error finding/processing products for "${name}":`,
           error.message
         );
         return {
@@ -116,65 +149,43 @@ export default defineEventHandler(
       }
     });
 
+    // This 'results' variable now contains the *curated* products per ingredient
     const results = await Promise.all(searchPromises);
 
     consola.info(
-      'Finished initial product search. Starting AI processing.'
+      'Finished product search and curation. Starting AI processing.'
     );
 
-    // Log the initial 10 products found for each ingredient
-    results.forEach((item) => {
-      if (item.similarProducts.length > 0) {
-        consola.info(
-          `Initial products for "${item.ingredientName}":`,
-          item.similarProducts
-        );
-      } else {
-        consola.warn(
-          `No initial products found for "${item.ingredientName}" to log.`
-        );
-      }
-    });
+    console.dir(results, { depth: null });
 
-    // Prepare data for AI prompt
-    const promptData = results
-      .filter((item) => item.similarProducts.length > 0) // Only process ingredients with results
-      .map((item) => ({
-        ingredient: item.ingredientName,
-        // Provide only necessary fields to the AI
-        products: item.similarProducts.map((p) => ({
-          id: p.id,
-          name: p.name,
-          standardized_price_per_unit: p.standardized_price_per_unit,
-          standardized_unit: p.standardized_unit,
-        })),
-      }));
-
-    if (promptData.length === 0) {
-      consola.warn(
-        'No products found for any ingredient. Skipping AI step.'
-      );
-      console.timeEnd('findSimilarProducts');
-      return {}; // Return empty object if no products to process
-    }
-
-    // Updated AI prompt
+    // --- Updated AI Prompt ---
     const prompt = `
-        Given the following list of ingredients and their top 10 potential product matches from different supermarkets:
-        ${JSON.stringify(promptData, null, 2)}
+        Given the following list of ingredients and a curated list of potential product matches (already transformed):
+        ${JSON.stringify(results, null, 2)} // Sending transformed results
 
-        For each ingredient, analyze its 'products' array (which contains up to 10 items). Your goal is to select the top 5 products that best match the ingredient description and offer good value.
+        For each ingredient, analyze its 'similarProducts' array. Each product in this array has the following structure:
+        {
+          "id": "string",
+          "name": "string",
+          "price": number,
+          "amount": "string | null",
+          "supermarketName": "string",
+          "standardized_price_per_unit": "number | null",
+          "standardized_unit": "string | null",
+          "similarity": number // Percentage (0-100), higher is more similar
+        }
+
+        Your goal is to select the top 5 products for each ingredient that best match the ingredient description and offer good value FROM THIS TRANSFORMED LIST.
 
         Selection Criteria:
-        1. Relevance: Prioritize products whose 'name' most closely matches the 'ingredient'. When a clove of garlic is requested, prioritize products that are called 'garlic cloves' or 'garlic' and not 'garlic powder' or 'garlic paste'.
+        1. Relevance: Prioritize products with higher 'similarity' scores. Also, consider if the product 'name' closely matches the original 'ingredientName'. For example, when "garlic cloves" is requested, prioritize products named 'garlic cloves' or 'garlic', avoiding 'garlic powder' or 'garlic paste', even if similarity is high due to vector proximity.
         2. Value: Use 'standardized_price_per_unit' as the primary indicator of value. Lower is better.
         3. Availability of Standardized Price: Strongly prefer products that HAVE a 'standardized_price_per_unit'.
 
         Process:
-        - First, identify the 5 most relevant products from the top 10 list for the ingredient.
-        - From these 5, check if any are missing the 'standardized_price_per_unit'.
-        - If a product is missing 'standardized_price_per_unit', try to replace it with the next most relevant product from the *original* top 10 list that *does* have a 'standardized_price_per_unit'.
-        - Continue this replacement process until you have 5 products, or you run out of suitable candidates in the top 10 list that have a standardized price. It's acceptable to return fewer than 5 products if necessary, but aim for 5.
+        - Analyze the 'similarProducts' list for the ingredient based on relevance (similarity + name match) and standardized price availability.
+        - Select up to 5 of the best matches based on the criteria above.
+        - It's acceptable to return fewer than 5 products if not enough suitable candidates are found in the curated list.
 
         Output Format:
         - Return a single JSON object.
@@ -196,96 +207,56 @@ export default defineEventHandler(
           }
         }
         \`\`\`
-        Or, if no products are found for any ingredient:
-        \`\`\`json
-        {
-          "productsByIngredient": {}
-        }
-        \`\`\`
       `;
 
     try {
       consola.info(
-        'Sending request to AI for top 5 product ID selection...'
+        'Sending request to AI for top 5 product ID selection from curated list...'
       );
-      // Use the new schema expecting only IDs
-      const { object: selectedIdsByIngredient } =
-        await generateObject({
-          model: openai('gpt-4.1'),
-          schema: SelectedProductIdsResponseSchema, // Use the new schema for IDs
-          prompt: prompt,
-        });
+      // const { object: selectedIdsByIngredient } =
+      //   await generateObject({
+      //     model: openai('gpt-4.1'),
+      //     schema: SelectedProductIdsResponseSchema,
+      //     prompt: prompt,
+      //   });
 
-      consola.success(
-        'Successfully received and validated AI response (product IDs).'
-      );
+      // consola.success(
+      //   'Successfully received and validated AI response (product IDs).'
+      // );
 
-      // --- Map IDs back to full product details and sort ---
-      const finalResults: ApiReturnType = {};
-      const allProductsMap = new Map<string, ProductResult>();
+      // // --- Map IDs back to full product details and sort ---
+      // const finalResults: ApiReturnType = {};
 
-      // Create a map of all initially fetched products for quick lookup
-      results.forEach((item) => {
-        item.similarProducts.forEach((product) => {
-          allProductsMap.set(product.id, product);
-        });
-      });
+      // for (const [ingredientName, productIds] of Object.entries(
+      //   selectedIdsByIngredient.productsByIngredient
+      // )) {
+      //   const productsForIngredient: ProductResult[] = [];
+      //   for (const productId of productIds) {
+      //     const product = allProductsMap.get(productId);
+      //     if (product) {
+      //       productsForIngredient.push(product);
+      //     } else {
+      //       consola.warn(
+      //         `Product ID "${productId}" selected by AI for ingredient "${ingredientName}" not found in the initial map.`
+      //       );
+      //     }
+      //   }
+      //   // Optional: Sort products within the ingredient list if needed
+      //   // productsForIngredient.sort((a, b) => a.similarity - b.similarity); // Example sort by similarity (ascending)
+      //   finalResults[ingredientName] = productsForIngredient;
+      // }
 
-      for (const ingredientName in selectedIdsByIngredient.productsByIngredient) {
-        const selectedIds =
-          selectedIdsByIngredient.productsByIngredient[
-            ingredientName
-          ];
-
-        // Ensure selectedIds is an array before mapping
-        if (Array.isArray(selectedIds)) {
-          const selectedFullProducts: ProductResult[] = selectedIds
-            .map((id: string) => allProductsMap.get(id)) // Add explicit type for id
-            .filter((p): p is ProductResult => p !== undefined); // Keep type guard
-
-          // Sort the selected full products by standardized_price_per_unit
-          selectedFullProducts.sort((a, b) => {
-            if (
-              a.standardized_price_per_unit === null &&
-              b.standardized_price_per_unit === null
-            ) {
-              return 0; // Keep original order if both are null
-            }
-            if (a.standardized_price_per_unit === null) {
-              return 1; // a (null) comes after b (non-null)
-            }
-            if (b.standardized_price_per_unit === null) {
-              return -1; // b (null) comes after a (non-null)
-            }
-            return (
-              a.standardized_price_per_unit -
-              b.standardized_price_per_unit
-            );
-          });
-
-          // Assign the sorted full products to the final result object
-          finalResults[ingredientName] = selectedFullProducts;
-        } else {
-          consola.warn(
-            `Received non-array value for selected IDs for ingredient: ${ingredientName}. Skipping.`
-          );
-          finalResults[ingredientName] = []; // Assign empty array if IDs are not valid
-        }
-      }
-      // --- End mapping and sorting ---
-
-      console.timeEnd('findSimilarProducts'); // End timer and log duration
-      return finalResults; // Return the object structured with full product details
+      // console.timeEnd('findCheapestProducts');
+      // return finalResults; // Return the correctly structured final results
     } catch (error: any) {
       consola.error('Error during AI processing:', error);
-      // Log additional details if it's a validation error
       if (error.message?.includes('Type validation failed')) {
         consola.error(
           'AI response validation failed. Cause:',
           error.cause
         );
       }
-      console.timeEnd('findSimilarProducts'); // End timer even on error
+      console.timeEnd('findCheapestProducts'); // Use updated timer name
       throw new Error('Failed to select products using AI.');
     }
   }

@@ -21,7 +21,7 @@ import { performance } from 'perf_hooks';
 import { z } from 'zod';
 
 // --- Constants ---
-const PRODUCTS_COLLECTION_NAME = 'Products';
+const PRODUCTS_COLLECTION_NAME = 'groceries';
 const dataFilePath = path.join(
   process.cwd(),
   'data',
@@ -42,7 +42,7 @@ interface SupermarketData {
 }
 
 // --- Zod Schema for AI ---
-const StandardizedUnitSchema = z.object({
+const AnalyzedProductsNameSchema = z.object({
   unit: z
     .enum(['kg', 'liter', 'piece', 'g', 'ml'])
     .nullable()
@@ -55,11 +55,18 @@ const StandardizedUnitSchema = z.object({
     .describe(
       'The quantity in the specified standardized unit. Use null if it cannot be determined.'
     ),
+  standardizedName: z
+    .string()
+    .nullable()
+    .describe(
+      'The standardized name of the product. Use null if it cannot be determined.'
+    ),
 });
 
 // --- Interface for Weaviate Product Properties ---
 interface ProductProperties {
-  name: string;
+  originalName: string;
+  standardizedName: string | null;
   link: string;
   price: number;
   amount: string | null;
@@ -78,9 +85,11 @@ async function calculateStandardizedPrice(
 ): Promise<{
   standardized_price_per_unit: number | null;
   standardized_unit: 'kg' | 'liter' | 'piece' | 'g' | 'ml' | null;
+  standardized_name: string | null;
 }> {
   try {
-    const prompt = `You must analyze product information and determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
+    const prompt = `
+      You must analyze product information and determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
 
       Determine the standard unit (kg, liter, or piece) and the quantity in that unit. Follow these steps:
       1.  **Prioritize the amount:** If it clearly specifies a weight (e.g., "500g", "1 kg", "2x250g"), volume (e.g., "750ml", "1.5L", "6x330ml"), or number of pieces (e.g., "6 stuks", "12 rollen"), use that information directly. Calculate the total quantity in kg, liter, or pieces respectively. **Ignore words like 'stuk' or 'stuks' in the product name if the amount field provides specific quantity information.**
@@ -91,12 +100,28 @@ async function calculateStandardizedPrice(
           - **Crucially, disregard terms like 'stuk' or 'stuks' at the end of the name when determining piece count from the name itself. Cheese could be named "Jonge kaas 48+ stuk", which could lead you to think it's 48 pieces, but it's actually 1 piece. 48+ refers to the age of the cheese.**
       3.  **Ambiguity:** If neither the amount nor the name allows for reliable determination of both unit and quantity, return null for both 'unit' and 'quantity'.
 
+      Also, I want you to analyze the name of the product and generate a standardized name for the product. It is important that you remove any additional information that is not the name of the product, such as the (Dutch) supermarket name, product size, product weight, product volume, product count, etc.
+      Dutch supermarket names in the original name could be "AH", "Albert Heijn", "Jumbo", "Plus", "Lidl", "Aldi", "Dirk", "Dirk van den Broek", "Coop", "Spar", "Hoogvliet", "DekaMarkt", "Vomar".
+      
+      Product size could be "1kg", "250g", "100g", "1L", "750ml", "330ml", "12 stuks", "6 stuks", "stuk", etc.
+      Product weight could be "100g", "250g", "500g", "1kg", etc.
+      Product volume could be "1L", "750ml", "330ml", etc.
+      Product count could be "12 stuks", "6 stuks", "48+ stuk", etc.
+      
+      Some examples: 
+      "Jonge kaas 48+ stuk" should be standardized to "Jonge kaas".
+      "Kipfilet 100g" should be standardized to "Kipfilet".
+      "Appel 1kg" should be standardized to "Appel".
+      "AH Extra virgine olijfolie" should be standardized to "Extra virgine olijfolie".
+
+      When you are not sure about the standardized name, you can return the original name.
+
       Provide the result as a JSON object matching the provided schema.
     `;
 
     const { object: standardizedInfo } = await generateObject({
       model: openai('gpt-4.1-nano-2025-04-14'), // Using a slightly cheaper model
-      schema: StandardizedUnitSchema,
+      schema: AnalyzedProductsNameSchema,
       mode: 'json',
       messages: [
         {
@@ -123,6 +148,7 @@ async function calculateStandardizedPrice(
       const standardized_price_per_unit =
         price / standardizedInfo.quantity;
       return {
+        standardized_name: standardizedInfo.standardizedName,
         standardized_price_per_unit: parseFloat(
           standardized_price_per_unit.toFixed(4)
         ),
@@ -130,6 +156,7 @@ async function calculateStandardizedPrice(
       };
     } else {
       return {
+        standardized_name: null,
         standardized_price_per_unit: null,
         standardized_unit: null,
       };
@@ -137,11 +164,11 @@ async function calculateStandardizedPrice(
   } catch (error: unknown) {
     if (RetryError.isInstance(error)) {
       consola.warn(
-        `AI calculation failed for product "${name}" after retries: ${error.reason}. Cause: ${error.cause}`
+        `AI calculation failed for product "${name}". It is not possible to calculate the standardized price per unit.`
       );
     } else if (NoObjectGeneratedError.isInstance(error)) {
       consola.warn(
-        `AI calculation failed for product "${name}", no object generated: ${error.response}. Cause: ${error.cause}`
+        `AI calculation failed for product "${name}", no object generated. It is not possible to calculate the standardized price per unit.`
       );
     } else {
       consola.warn(
@@ -149,6 +176,7 @@ async function calculateStandardizedPrice(
       );
     }
     return {
+      standardized_name: null,
       standardized_price_per_unit: null,
       standardized_unit: null,
     };
@@ -184,7 +212,15 @@ async function setupWeaviate(): Promise<WeaviateClient | null> {
         await client.collections.create({
           name: PRODUCTS_COLLECTION_NAME,
           properties: [
-            { name: 'name', dataType: configure.dataType.TEXT },
+            {
+              name: 'originalName',
+              dataType: configure.dataType.TEXT,
+              skipVectorization: true,
+            },
+            {
+              name: 'standardizedName',
+              dataType: configure.dataType.TEXT,
+            },
             {
               name: 'link',
               dataType: configure.dataType.TEXT,
@@ -417,9 +453,18 @@ async function ingestData() {
             etaString = `ETA: ${etaMinutes}m ${etaSeconds}s`;
           }
 
+          // Calculate AI failure percentage, handling division by zero
+          const aiFailurePercentage =
+            totalProductsProcessed > 0
+              ? (
+                  (totalFailures / totalProductsProcessed) *
+                  100
+                ).toFixed(1)
+              : '0.0';
+
           // Log progress for each product processed within the batch
           consola.log(
-            `Processed ${totalProductsProcessed}/${totalProductsToProcess} (${progressPercentage.toFixed(1)}%) | Total AI Failures: ${totalFailures} | ${etaString}` // Simplified log
+            `Processed ${totalProductsProcessed}/${totalProductsToProcess} (${progressPercentage.toFixed(1)}%) | AI Failures: ${totalFailures} (${aiFailurePercentage}%) | ${etaString}`
           );
 
           if (
@@ -432,7 +477,9 @@ async function ingestData() {
 
           // Prepare properties object
           const productProperties: ProductProperties = {
-            name: product.n,
+            originalName: product.n,
+            standardizedName:
+              standardizedResult.standardized_name || null,
             link: product.l,
             price: product.p,
             amount: product.s || null,
