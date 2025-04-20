@@ -159,6 +159,15 @@ export function useShoppingList() {
     console.log('Shopping List Cleared');
   };
 
+  /**
+   * Replaces the entire shopping list with a new set of items.
+   * Useful after operations like AI cleanup.
+   */
+  const replaceList = (newItems: ShoppingListItem[]) => {
+    shoppingListItems.value = newItems;
+    console.log('Shopping List Replaced:', shoppingListItems.value);
+  };
+
   // TODO: Add functions for removing items, etc.
 
   return {
@@ -167,6 +176,7 @@ export function useShoppingList() {
     updateItem,
     deleteItem,
     clearList,
+    replaceList,
     // Expose other functions as needed
   };
 }

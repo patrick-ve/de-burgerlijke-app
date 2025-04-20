@@ -137,3 +137,5 @@ export const recipeSchema = z
 export type AIRecipeDTO = z.infer<typeof recipeSchema>;
 export type Ingredient = z.infer<typeof ingredientSchema>;
 export type Step = z.infer<typeof stepSchema>;
+
+export { ingredientCategories };
