@@ -35,7 +35,6 @@ const { headerState, setHeader } = useHeaderState();
 const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const isLoadingPrices = ref(false);
-const isOptimizingList = ref(false);
 const toast = useToast();
 
 // Define Head for the page
@@ -65,7 +64,7 @@ const confirmClearList = () => {
 
 // Function to fetch cheapest products
 const fetchCheapestProducts = async () => {
-  if (isLoadingPrices.value || isOptimizingList.value) return;
+  if (isLoadingPrices.value) return;
 
   isLoadingPrices.value = true;
   try {
@@ -150,51 +149,6 @@ const fetchCheapestProducts = async () => {
   }
 };
 
-// Function to optimize the shopping list using AI
-const handleOptimizeList = async () => {
-  if (isLoadingPrices.value || isOptimizingList.value) return;
-  if (shoppingListItems.value.length === 0) {
-    toast.add({
-      title: 'Lijst is al leeg',
-      description: 'Er zijn geen items om te optimaliseren.',
-      color: 'orange',
-    });
-    return;
-  }
-
-  isOptimizingList.value = true;
-  consola.info('Optimizing shopping list...');
-  try {
-    const currentItems = JSON.parse(
-      JSON.stringify(shoppingListItems.value)
-    ); // Deep clone to avoid reactivity issues? Or pass ref directly? Pass value.
-    const optimizedList: ShoppingListItem[] = await $fetch(
-      '/api/shopping-list/clean-up',
-      {
-        method: 'POST',
-        body: currentItems, // Send the current list
-      }
-    );
-
-    replaceList(optimizedList); // Replace the list with the optimized one
-    consola.success('Shopping list optimized successfully.');
-    toast.add({
-      title: 'Boodschappenlijst geoptimaliseerd!',
-      icon: 'i-heroicons-sparkles',
-      color: 'green',
-    });
-  } catch (error) {
-    consola.error('Error optimizing shopping list:', error);
-    toast.add({
-      title: 'Fout bij optimaliseren',
-      description: 'Kon de boodschappenlijst niet optimaliseren.',
-      color: 'red',
-    });
-  } finally {
-    isOptimizingList.value = false;
-  }
-};
-
 onMounted(async () => {
   await nextTick();
   isMounted.value = true;
@@ -216,6 +170,7 @@ const router = useRouter();
       <!-- Pass items to the ShoppingList component and listen for updates -->
       <ShoppingList
         :items="shoppingListItems"
+        :is-loading="isLoadingPrices"
         @update:item="handleItemUpdate"
         @delete="handleItemDelete"
       />
@@ -227,19 +182,10 @@ const router = useRouter();
       >
         <!-- <UButton label="Lijst legen" color="red" variant="outline" /> -->
         <UButton
-          label="Lijst optimaliseren"
-          icon="i-heroicons-sparkles"
-          variant="outline"
-          :loading="isOptimizingList"
-          :disabled="isLoadingPrices"
-          @click="handleOptimizeList"
-        />
-        <UButton
           label="Prijzen ophalen"
           icon="i-heroicons-currency-euro"
           class="ml-2"
           :loading="isLoadingPrices"
-          :disabled="isOptimizingList"
           @click="fetchCheapestProducts"
         />
       </div>

@@ -71,6 +71,7 @@ const categoryTranslations: Record<
 
 const props = defineProps<{
   items: ShoppingListItem[];
+  isLoading?: boolean; // Add isLoading prop (optional)
 }>();
 
 const emit = defineEmits<{
@@ -161,7 +162,43 @@ const formatCurrency = (value: number): string => {
 </script>
 
 <template>
-  <div v-if="items.length > 0" class="space-y-4">
+  <!-- Loading Skeleton -->
+  <div v-if="isLoading" class="space-y-4">
+    <!-- Simulate category headers and items -->
+    <div v-for="i in 3" :key="`skel-cat-${i}`" class="space-y-3">
+      <USkeleton class="h-6 w-1/3" />
+      <!-- Category header -->
+      <div
+        v-for="j in 4"
+        :key="`skel-item-${i}-${j}`"
+        class="flex items-center gap-3 py-1 px-2"
+      >
+        <USkeleton class="h-5 w-5 rounded" />
+        <!-- Checkbox -->
+        <div class="flex-1 space-y-1">
+          <USkeleton class="h-4 w-2/3" />
+          <!-- Item name -->
+          <USkeleton class="h-3 w-1/4" />
+          <!-- Item details -->
+          <USkeleton class="h-3 w-1/2" />
+          <!-- Price info -->
+        </div>
+        <USkeleton class="h-6 w-6" />
+        <!-- Delete button -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Actual List Content -->
+  <div v-else-if="items.length > 0" class="space-y-4">
+    <!-- Grand Total Display -->
+    <div
+      v-if="grandTotal > 0"
+      class="mt-4 px-2 text-right font-semibold text-gray-800"
+    >
+      Totaal goedkoopste opties: {{ formatCurrency(grandTotal) }}
+    </div>
+
     <div
       v-for="(categoryItems, category) in groupedItems"
       :key="category"
@@ -281,19 +318,24 @@ const formatCurrency = (value: number): string => {
 </template>
 
 <style scoped>
-/* Leave animation */
+/* List transition animations */
+.list-move,
+.list-enter-active,
 .list-leave-active {
   transition: all 0.3s ease;
-  position: absolute; /* Important for smooth transition of remaining items */
-  width: 100%; /* Prevent item collapse during transition */
-}
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px) scaleY(0.8); /* Example: Slide right and shrink slightly */
 }
 
-/* Move transition for reordering items smoothly */
-.list-move {
-  transition: transform 0.3s ease;
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* Ensure leaving items are taken out of layout flow */
+.list-leave-active {
+  position: absolute;
+  width: calc(
+    100% - 1rem
+  ); /* Adjust based on padding/margins if needed */
 }
 </style>

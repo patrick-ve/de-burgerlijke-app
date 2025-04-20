@@ -8,14 +8,20 @@ import type { Recipe } from '~/types/recipe';
 // import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import from composable
 import { useShoppingList } from '~/composables/useShoppingList'; // Import useShoppingList
 import type { Ingredient } from '~/types/recipe'; // Import Ingredient type
+import { consola } from 'consola'; // Added for debugging optimization
+import type { ShoppingListItem } from '~/types/shopping-list'; // Added for optimizedList type
 
 const { setHeader } = useHeaderState();
 const { recipes } = useRecipes();
 const { getMealsForDate, addMeal, removeMeal, getDateString } =
   useMealPlanner();
-const { addIngredients: addIngredientsToShoppingList } =
-  useShoppingList(); // Get addIngredients function
+const {
+  addIngredients: addIngredientsToShoppingList,
+  replaceList,
+  items: shoppingListItems,
+} = useShoppingList(); // Get replaceList and items
 const toast = useToast(); // For user feedback
+const isOptimizingList = ref(false); // Add loading state for optimization
 
 // Set header title
 onMounted(async () => {
@@ -154,10 +160,70 @@ const formatQuantity = (
   return quantity.toFixed(2).replace(/\\.?(0+)$/, ''); // Keep up to 2 decimal places, remove trailing zeros and potential dot
 };
 
-// --- Add new handler for adding all planned ingredients to shopping list ---
-function addAllPlannedIngredientsToShoppingList() {
+// --- Add new handler for optimizing the list after adding ingredients ---
+async function optimizeListAndShowFeedback() {
+  if (isOptimizingList.value) return; // Prevent multiple triggers
+  if (shoppingListItems.value.length === 0) {
+    // No need to optimize an empty list
+    return;
+  }
+
+  isOptimizingList.value = true;
+  consola.info(
+    'Optimizing shopping list after adding from planner...'
+  );
+  try {
+    const currentItems = JSON.parse(
+      JSON.stringify(shoppingListItems.value)
+    ); // Deep clone
+    const optimizedList: ShoppingListItem[] = await $fetch(
+      '/api/shopping-list/clean-up',
+      {
+        method: 'POST',
+        body: currentItems, // Send the current list
+      }
+    );
+
+    replaceList(optimizedList); // Replace the list with the optimized one
+    consola.success(
+      'Shopping list optimized successfully after adding from planner.'
+    );
+    toast.add({
+      id: 'list-optimized-toast', // Added ID to prevent duplicates if triggered quickly
+      title: 'Boodschappenlijst geoptimaliseerd!',
+      description: 'Dubbele items samengevoegd en opgeschoond.',
+      icon: 'i-heroicons-sparkles',
+      color: 'green',
+    });
+  } catch (error) {
+    consola.error(
+      'Error optimizing shopping list after adding from planner:',
+      error
+    );
+    toast.add({
+      id: 'list-optimize-error-toast',
+      title: 'Fout bij optimaliseren',
+      description:
+        'Kon de boodschappenlijst niet automatisch opschonen.',
+      color: 'red',
+    });
+  } finally {
+    isOptimizingList.value = false;
+  }
+}
+
+// --- Modify handler for adding all planned ingredients ---
+async function addAllPlannedIngredientsToShoppingList() {
   // Hide the action bar immediately
   showActionBar.value = false;
+  if (isOptimizingList.value) {
+    toast.add({
+      title: 'Optimalisatie bezig',
+      description: 'Wacht even tot de lijst is opgeschoond.',
+      color: 'orange',
+    });
+    return;
+  }
 
   let ingredientsAddedCount = 0;
   let mealsProcessedCount = 0;
@@ -203,7 +269,7 @@ function addAllPlannedIngredientsToShoppingList() {
     });
   });
 
-  // Show appropriate toast message
+  // Show appropriate toast message for adding
   if (ingredientsAddedCount > 0) {
     toast.add({
       title: 'Boodschappenlijst bijgewerkt!',
@@ -211,8 +277,9 @@ function addAllPlannedIngredientsToShoppingList() {
       icon: 'i-heroicons-check-circle',
       color: 'green',
     });
+    // --- Call optimization AFTER adding ingredients ---
+    await optimizeListAndShowFeedback(); // Use await if you want to ensure it finishes before potentially other actions
   } else if (mealsProcessedCount > 0) {
-    // This case means meals were planned, but they had 0 ingredients or portions <= 0
     toast.add({
       title: 'Niets toegevoegd',
       description:
@@ -457,6 +524,8 @@ const router = useRouter();
           icon="i-heroicons-shopping-cart-solid"
           @click="addAllPlannedIngredientsToShoppingList"
           class="font-bold"
+          :loading="isOptimizingList"
+          :disabled="isOptimizingList"
         />
       </div>
     </Transition>
