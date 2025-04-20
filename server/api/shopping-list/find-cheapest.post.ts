@@ -76,7 +76,6 @@ export default defineEventHandler(
     }
 
     const initialSearchLimit = 10; // Fetch more products initially
-    const limitPerSupermarket = 5; // Limit to top N per supermarket
 
     console.time('findCheapestProducts'); // Renamed timer for clarity
 
@@ -232,9 +231,10 @@ export default defineEventHandler(
         'Sending request to AI for single best product ID selection...'
       );
 
-      const { object: selectedIdsByIngredient } =
+      // Capture the full result including usage
+      const { object: selectedIdsByIngredient, usage: aiUsage } =
         await generateObject({
-          model: openai('gpt-4o'), // Using gpt-4o potentially
+          model: openai('gpt-4.1-mini-2025-04-14'), // Using gpt-4o potentially
           schema: SelectedProductIdsResponseSchema, // Use the updated schema
           prompt: prompt,
         });
@@ -242,32 +242,61 @@ export default defineEventHandler(
       consola.success(
         'Successfully received and validated AI response (product IDs).'
       );
-      console.dir(selectedIdsByIngredient, { depth: null });
+      // Log the token usage
+      consola.info(
+        `AI Token Usage: Prompt=${aiUsage.promptTokens}, Completion=${aiUsage.completionTokens}, Total=${aiUsage.totalTokens}`
+      );
+
+      // Calculate the estimated cost
+      const inputCostPerMillion = 0.4; // $0.40 per 1M input tokens
+      const outputCostPerMillion = 1.6; // $1.60 per 1M output tokens
+
+      const inputCost =
+        (aiUsage.promptTokens / 1_000_000) * inputCostPerMillion;
+      const outputCost =
+        (aiUsage.completionTokens / 1_000_000) * outputCostPerMillion;
+      const totalCost = inputCost + outputCost;
+
+      consola.info(
+        `Estimated AI Cost: $${totalCost.toFixed(6)} (Input: $${inputCost.toFixed(6)}, Output: $${outputCost.toFixed(6)})`
+      );
 
       // --- Map selected IDs back to full product details ---
       const finalResults: ApiReturnType = {};
 
-      for (const [ingredientName, productId] of Object.entries(
-        selectedIdsByIngredient.productsByIngredient
-      )) {
-        if (productId) {
-          // Check if AI returned an ID (not null)
-          const product = allProductsMap.get(productId);
-          if (product) {
-            finalResults[ingredientName] = product;
+      // Fix Linter Error: Check if productsByIngredient is not null before iterating
+      if (selectedIdsByIngredient?.productsByIngredient) {
+        for (const [ingredientName, productId] of Object.entries(
+          selectedIdsByIngredient.productsByIngredient
+        )) {
+          if (productId) {
+            // Check if AI returned an ID (not null)
+            const product = allProductsMap.get(productId);
+            if (product) {
+              finalResults[ingredientName] = product;
+            } else {
+              consola.warn(
+                `Product ID "${productId}" selected by AI for ingredient "${ingredientName}" not found in the initial map.`
+              );
+              finalResults[ingredientName] = null; // Set to null if ID mapping fails
+            }
           } else {
-            consola.warn(
-              `Product ID "${productId}" selected by AI for ingredient "${ingredientName}" not found in the initial map.`
+            // AI returned null for this ingredient
+            finalResults[ingredientName] = null;
+            consola.info(
+              `AI returned null (no suitable product) for "${ingredientName}".`
             );
-            finalResults[ingredientName] = null; // Set to null if ID mapping fails
           }
-        } else {
-          // AI returned null for this ingredient
-          finalResults[ingredientName] = null;
-          consola.info(
-            `AI returned null (no suitable product) for "${ingredientName}".`
-          );
         }
+      } else {
+        consola.warn(
+          'AI did not return a productsByIngredient object.'
+        );
+        // Handle the case where the entire productsByIngredient structure is missing or null
+        // Depending on requirements, you might want to set all ingredients to null in finalResults
+        ingredientNames.forEach((name) => {
+          finalResults[name] = null;
+        });
       }
 
       console.timeEnd('findCheapestProducts');
