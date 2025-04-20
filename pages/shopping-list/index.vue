@@ -5,23 +5,20 @@ import type { ShoppingListItem } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { consola } from 'consola';
 
-// Add these interfaces near the top, after the imports
+// Interface for the single product object returned by the API
 interface Product {
   id: string;
   name: string;
   price: number;
-  link: string;
-  amount: string | null; // Amount can be null based on the example
-  supermarketId: string;
-  distance: number;
-  standardized_price_per_unit: number;
-  standardized_unit: string;
+  amount: string | null;
+  distance: number; // Represents similarity score from API
+  standardized_price_per_unit: number | null; // Allow null
+  standardized_unit: string | null; // Allow null
   supermarketName: string;
 }
 
-interface CheapestProductResult {
-  [ingredientName: string]: Product[];
-}
+// Type for the actual API response
+type ApiReturnType = Record<string, Product | null>;
 
 // Use the composable to get shopping list state and actions
 const {
@@ -90,8 +87,8 @@ const fetchCheapestProducts = async () => {
 
     consola.info('Fetching cheapest products for:', ingredientNames);
 
-    // Explicitly type the expected response
-    const results: CheapestProductResult = await $fetch(
+    // Explicitly type the expected response with the CORRECT type
+    const results: ApiReturnType = await $fetch(
       '/api/shopping-list/find-cheapest',
       {
         method: 'POST',
@@ -103,26 +100,32 @@ const fetchCheapestProducts = async () => {
 
     // Integrate results into the shopping list items
     let updateCount = 0;
-    Object.entries(results).forEach(([ingredientName, products]) => {
-      const cheapestProduct = products[0]; // Assuming the first product is the cheapest
+    Object.entries(results).forEach(
+      ([ingredientName, cheapestProduct]) => {
+        // cheapestProduct is now the Product object itself, or null
 
-      if (cheapestProduct) {
-        const itemToUpdate = shoppingListItems.value.find(
-          (item) =>
-            item.ingredientName === ingredientName && !item.isChecked
-        );
+        if (cheapestProduct) {
+          const itemToUpdate = shoppingListItems.value.find(
+            (item) =>
+              item.ingredientName === ingredientName &&
+              !item.isChecked
+          );
 
-        if (itemToUpdate) {
-          updateItem({
-            ...itemToUpdate,
-            cheapestPrice: cheapestProduct.price,
-            cheapestSupermarket: cheapestProduct.supermarketName,
-            cheapestAmount: cheapestProduct.amount,
-          });
-          updateCount++;
+          if (itemToUpdate) {
+            updateItem({
+              ...itemToUpdate,
+              cheapestPrice: cheapestProduct.price,
+              cheapestSupermarket: cheapestProduct.supermarketName,
+              cheapestAmount: cheapestProduct.amount,
+              // Optionally store standardized info if needed later
+              // cheapestStandardizedPrice: cheapestProduct.standardized_price_per_unit,
+              // cheapestStandardizedUnit: cheapestProduct.standardized_unit,
+            });
+            updateCount++;
+          }
         }
       }
-    });
+    );
     if (updateCount > 0) {
       toast.add({
         title: `Prijzen bijgewerkt voor ${updateCount} item(s)`,

@@ -59,8 +59,10 @@ export async function searchProducts(
   ];
 
   try {
-    const response = await productsCollection.query.nearText(query, {
+    const response = await productsCollection.query.hybrid(query, {
       limit: limit,
+      fusionType: 'RelativeScore',
+      alpha: 0.75,
       returnMetadata: ['distance'], // Include distance in metadata
       returnProperties: returnProperties, // Use the string[] type
     });
