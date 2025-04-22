@@ -116,11 +116,6 @@ onMounted(async () => {
   });
 });
 
-onUnmounted(() => {
-  resetHeader();
-  isMounted.value = false;
-});
-
 useHead({ title: 'Mijn Taken' }); // Set page title
 </script>
 

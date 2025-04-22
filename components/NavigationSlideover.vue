@@ -16,7 +16,7 @@ const navigation = [
     icon: 'i-heroicons-book-open',
   },
   {
-    label: 'Planner',
+    label: 'Maaltijdenplanner',
     to: '/planner',
     icon: 'i-heroicons-calendar-days',
   },
@@ -25,6 +25,16 @@ const navigation = [
     to: '/shopping-list',
     icon: 'i-heroicons-shopping-cart',
   },
+  {
+    label: 'Takenlijst',
+    to: '/to-do',
+    icon: 'i-heroicons-check-circle',
+  },
+  // {
+  //   label: 'Verjaardagen',
+  //   to: '/birthdays',
+  //   icon: 'i-heroicons-cake',
+  // },
   // {
   //   label: 'Baby',
   //   to: '/baby',
