@@ -8,6 +8,9 @@ import { consola } from 'consola';
 import { ingredientCategories } from '~/types/recipe';
 import type { IngredientCategory } from '~/types/recipe';
 import type { SupermarketName } from '~/composables/useOnboardingSettings';
+import { useMouse, useWindowScroll } from '@vueuse/core';
+import { unref } from 'vue';
+import type { VirtualElement } from '@popperjs/core';
 
 // Define the key used for items without a price/supermarket
 const noSupermarketKey = 'Nog geen prijs gevonden';
@@ -175,6 +178,25 @@ const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const toast = useToast();
 
+// --- Context Menu State ---
+const isContextMenuOpen = ref(false);
+const { x, y } = useMouse();
+const { y: windowY } = useWindowScroll();
+const virtualElement = ref<VirtualElement>({
+  getBoundingClientRect: () => ({
+    width: 0,
+    height: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  }),
+});
+// --- End Context Menu State ---
+
 // Define Head for the page
 useHead({
   title: 'Boodschappenlijst',
@@ -192,12 +214,85 @@ const handleItemDelete = (itemId: string) => {
 
 // Handler to trigger the action stored in state
 const triggerRightAction = () => {
-  isClearConfirmationModalOpen.value = true;
+  if (headerState.value.rightActionHandler) {
+    headerState.value.rightActionHandler();
+  }
 };
 
 const confirmClearList = () => {
   clearList();
   isClearConfirmationModalOpen.value = false;
+};
+
+// Function to open the context menu using mouse coordinates
+const openContextMenu = () => {
+  const top = unref(y) - unref(windowY);
+  const left = unref(x);
+
+  virtualElement.value.getBoundingClientRect = () => ({
+    width: 0,
+    height: 0,
+    top,
+    left,
+    right: left,
+    bottom: top,
+    x: left,
+    y: top,
+    toJSON: () => JSON.stringify(this),
+  });
+
+  isContextMenuOpen.value = true;
+};
+
+// Function to copy shopping list to clipboard
+const copyShoppingListToClipboard = () => {
+  isContextMenuOpen.value = false;
+  const uncheckedItems = shoppingListItems.value.filter(
+    (item) => !item.isChecked
+  );
+
+  if (uncheckedItems.length === 0) {
+    toast.add({
+      title: 'Lijst is leeg',
+      description: 'Geen items om te kopiëren.',
+      icon: 'i-heroicons-exclamation-triangle',
+      color: 'orange',
+    });
+    return;
+  }
+
+  const listText = uncheckedItems
+    .map((item) => {
+      const parts = [];
+      if (item.aggregatedQuantity) {
+        parts.push(item.aggregatedQuantity);
+      }
+      if (item.unit) {
+        parts.push(item.unit);
+      }
+      parts.push(item.ingredientName);
+      return parts.join(' ');
+    })
+    .join('\n');
+
+  navigator.clipboard
+    .writeText(listText)
+    .then(() => {
+      toast.add({
+        title: 'Gekopieerd!',
+        description: 'Boodschappenlijst gekopieerd naar klembord.',
+        icon: 'i-heroicons-clipboard-document-check',
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to copy list:', err);
+      toast.add({
+        title: 'Kopiëren mislukt',
+        description: 'Kon de lijst niet naar het klembord kopiëren.',
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'red',
+      });
+    });
 };
 
 // --- Group items by Supermarket AND Category (for UNCHECKED items) ---
@@ -308,7 +403,8 @@ onMounted(async () => {
     title: 'Boodschappenlijst',
     showLeftAction: true,
     showRightAction: true,
-    rightActionHandler: triggerRightAction,
+    leftActionHandler: () => router.push('/'),
+    rightActionHandler: openContextMenu,
   });
 });
 
@@ -478,7 +574,12 @@ const router = useRouter();
                   aria-label="Prijs laden"
                 >
                   <span>€</span>
-                  <USkeleton class="h-4 w-10" />
+                  <USkeleton
+                    class="h-4 w-10"
+                    :ui="{
+                      background: 'bg-primary-100',
+                    }"
+                  />
                 </span>
                 <span
                   v-else-if="
@@ -524,12 +625,47 @@ const router = useRouter();
         v-if="
           headerState.showRightAction && shoppingListItems.length > 0
         "
-        color="red"
-        aria-label="Maak lijst leeg"
-        label="Maak leeg"
-        class="font-bold text-xs"
+        icon="i-heroicons-ellipsis-vertical"
+        color="gray"
+        variant="ghost"
+        aria-label="Opties"
         @click="triggerRightAction"
       />
+    </Teleport>
+
+    <Teleport to="body">
+      <UContextMenu
+        v-model="isContextMenuOpen"
+        :virtual-element="virtualElement"
+        :popper="{ placement: 'bottom-end' }"
+        :ui="{ container: 'z-50 group' }"
+      >
+        <div class="p-1 space-y-1">
+          <UButton
+            label="Kopieer lijst"
+            variant="ghost"
+            color="gray"
+            icon="i-heroicons-clipboard-document"
+            class="w-full justify-start"
+            @click="copyShoppingListToClipboard"
+            data-testid="copy-list-button"
+          />
+          <UButton
+            label="Maak lijst leeg"
+            color="red"
+            variant="ghost"
+            icon="i-heroicons-trash"
+            class="w-full justify-start"
+            @click="
+              () => {
+                isContextMenuOpen = false;
+                isClearConfirmationModalOpen = true;
+              }
+            "
+            data-testid="clear-list-button"
+          />
+        </div>
+      </UContextMenu>
     </Teleport>
 
     <UModal
