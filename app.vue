@@ -27,6 +27,14 @@
 import { useHeaderState } from '~/composables/useHeaderState'; // Ensure correct path
 
 const { headerState } = useHeaderState();
+
+// Utility to help users reset color mode if stuck in dark mode
+onMounted(() => {
+  // Only run on client
+  if (process.client) {
+    localStorage.removeItem('nuxt-color-mode');
+  }
+});
 </script>
 
 <style>

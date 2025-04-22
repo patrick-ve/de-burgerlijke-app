@@ -26,6 +26,10 @@ export default defineNuxtConfig({
     },
   },
 
+  colorMode: {
+    preference: 'light',
+  },
+
   // Configure Nuxt UI module
   ui: {
     global: true,
