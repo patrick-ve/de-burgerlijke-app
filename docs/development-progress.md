@@ -168,6 +168,8 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [-] Logic to combine identical ingredients (sum quantities, respect units). (Basic implementation in composable)
   - [-] Implement ingredient name standardization. (Basic implementation in composable)
   - [x] Improved aggregation logic in `useShoppingList` to handle unit variations (null/empty) and basic pluralization ("cloves" -> "clove").
+  - [x] **AI-driven Cleanup:** Implemented `/api/shopping-list/clean-up` endpoint using AI to merge, standardize, and categorize items.
+  - [x] Integrated AI cleanup call into `pages/planner.vue` after adding all ingredients.
 - [x] **Portion Scaling Integration (Client-side):** Ensure generated list quantities reflect scheduled meal portions.
 - [x] **Ingredient Categories:**
   - [x] Updated `types/recipe.ts` with refined ingredient categories (e.g., replaced 'Produce' with 'Fruit'/'Vegetables', added 'Alcohol').
@@ -176,20 +178,32 @@ Development of the app follows a Test-Driven Development (TDD) approach:
 - [x] **Shopping List UI Enhancements (`components/ShoppingList.vue`):**
   - [x] Grouped items by category, respecting the defined order.
   - [x] Added relevant emojis to category headers.
+  - [x] Updated UI in `pages/shopping-list/index.vue` to group by Supermarket -> Category.
+  - [x] Added total price calculation per supermarket group.
+  - [x] Included supermarket icons in group headers.
 - [-] **Price Fetching:**
-  - [ ] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus).
+  - [-] Server API endpoint(s) to fetch prices from supported supermarkets (AH, Jumbo, Lidl, Plus). (Initial AI-based implementation added)
+  - [x] Moved price fetching logic (`fetchCheapestProducts`) into `composables/useShoppingList.ts`.
+  - [x] Automated price fetching after AI list cleanup (`optimizeAndFetchPrices` in `useShoppingList.ts`).
+  - [x] Removed manual "Prijzen ophalen" button from `pages/shopping-list/index.vue`.
 - [-] **Cheapest Option Calculation:**
   - [-] Server API logic to calculate cheapest overall basket. (Initial AI-based implementation added to `find-cheapest.post.ts`)
   - [x] Server API logic to calculate cheapest overall basket (AI integration with `gpt-4o-mini` in `server/api/shopping-list/find-cheapest.post.ts` using Vercel AI SDK and Zod).
-  - [ ] UI to select preferred supermarkets for comparison.
-- [ ] **Price Display:**
-  - [ ] UI (`components/ShoppingList.vue`) to display price per item/supermarket.
-  - [ ] Display total estimated cost per store / cheapest option.
+  - [x] Added support for filtering by selected supermarkets (`useOnboardingSettings`) in `find-cheapest.post.ts`.
+  - [x] Define `Product` interface in `types/shopping-list.ts` for consistency.
+- [x] **Price Display:**
+  - [x] UI (`components/ShoppingList.vue`) to display price per item/supermarket.
+  - [x] Display total estimated cost per store / cheapest option.
+  - [x] Implemented grand total display in `pages/shopping-list/index.vue` and `components/ShoppingList.vue`.
+  - [x] Displayed cheapest price info (price, supermarket, amount) per item in `pages/shopping-list/index.vue`.
 - [x] **List Management:**
   - [x] UI (`components/ShoppingList.vue`) for checking off items.
   - [ ] UI for manually adding/editing items.
   - [ ] Update list status/item status in the backend.
   - [x] Added confirmation modal when clearing the shopping list (`pages/shopping-list/index.vue`).
+  - [x] Replaced "Maak leeg" button with context menu (ellipsis icon) in `pages/shopping-list/index.vue` header.
+    - [x] Added "Maak lijst leeg" option to context menu (triggers existing confirmation modal).
+    - [x] Added "Kopieer lijst" option to context menu (copies formatted list to clipboard, shows toast).
 
 ## Groceries Pricing Insights (`groceries-pricing-insights-prd.md`)
 
