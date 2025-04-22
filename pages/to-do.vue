@@ -12,14 +12,18 @@ import type { ToDo } from '~/composables/useToDos';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useMouse, useWindowScroll } from '@vueuse/core';
 import type { VirtualElement } from '@popperjs/core';
+import DatePicker from '~/components/DatePicker.vue';
+import { format } from 'date-fns';
 
 const {
-  items,
+  sortedPendingTodos,
+  completedTodos,
   addToDo,
   toggleToDo,
   deleteToDo,
   clearCompleted,
   clearAll,
+  setDueDate,
 } = useToDos();
 const { headerState, setHeader, resetHeader, defaultLeftAction } =
   useHeaderState();
@@ -49,18 +53,15 @@ const { y: windowY } = useWindowScroll();
 // Confirmation Modal State
 const isModalOpen = ref(false);
 
+// Date Picker Modal State
+const isDatePickerModalOpen = ref(false);
+const selectedTodoId = ref<string | null>(null);
+const selectedDate = ref<Date | null>(null);
+
 const handleAddToDo = () => {
   addToDo(newTodoText.value);
   newTodoText.value = ''; // Clear input after adding
 };
-
-// Separate computed properties for pending and completed todos
-const pendingTodos = computed(() =>
-  items.value.filter((todo) => !todo.completed)
-);
-const completedTodos = computed(() =>
-  items.value.filter((todo) => todo.completed)
-);
 
 // --- Header Action Handlers ---
 const triggerLeftAction = () => {
@@ -103,6 +104,31 @@ const confirmClearAll = () => {
   isModalOpen.value = false;
 };
 
+// --- Date Picker Modal Actions ---
+const openDatePickerModal = (
+  todoId: string,
+  currentDueDate?: Date | null
+) => {
+  selectedTodoId.value = todoId;
+  selectedDate.value = currentDueDate
+    ? new Date(currentDueDate)
+    : new Date(); // Initialize with current date or today
+  isDatePickerModalOpen.value = true;
+};
+
+const closeDatePickerModal = () => {
+  isDatePickerModalOpen.value = false;
+  selectedTodoId.value = null;
+  selectedDate.value = null;
+};
+
+const saveDueDate = () => {
+  if (selectedTodoId.value && selectedDate.value) {
+    setDueDate(selectedTodoId.value, selectedDate.value);
+  }
+  closeDatePickerModal();
+};
+
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
@@ -124,7 +150,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
     <!-- Add padding-bottom to prevent overlap with action bar -->
 
     <!-- Pending To-Dos -->
-    <div v-if="pendingTodos.length > 0" class="mb-6 px-4">
+    <div v-if="sortedPendingTodos.length > 0" class="mb-6 px-4">
       <h2 class="text-lg font-medium mb-2">Openstaand</h2>
       <TransitionGroup
         tag="ul"
@@ -132,7 +158,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
         class="space-y-2 relative"
       >
         <li
-          v-for="todo in pendingTodos"
+          v-for="todo in sortedPendingTodos"
           :key="todo.id"
           class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-md shadow-sm"
         >
@@ -147,16 +173,46 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                 base: 'h-5 w-5',
               }"
             />
-            <span class="text-gray-800">{{ todo.text }}</span>
+            <div class="flex-grow">
+              <span class="text-gray-800">{{ todo.text }}</span>
+              <!-- Display Due Date -->
+              <p
+                v-if="todo.dueDate"
+                class="text-xs text-gray-500 mt-1"
+              >
+                Deadline:
+                {{
+                  format(new Date(todo.dueDate), 'd MMM, yyyy HH:mm')
+                }}
+              </p>
+            </div>
           </div>
-          <UButton
-            icon="i-heroicons-trash"
-            size="sm"
-            color="red"
-            variant="ghost"
-            @click="deleteToDo(todo.id)"
-            aria-label="Delete ToDo"
-          />
+          <div class="flex items-center space-x-1">
+            <!-- Due Date Button -->
+            <UButton
+              :icon="
+                todo.dueDate
+                  ? 'i-heroicons-calendar-days-solid'
+                  : 'i-heroicons-calendar-days'
+              "
+              size="sm"
+              :color="todo.dueDate ? 'primary' : 'gray'"
+              variant="ghost"
+              @click="openDatePickerModal(todo.id, todo.dueDate)"
+              :aria-label="
+                todo.dueDate ? 'Change Due Date' : 'Set Due Date'
+              "
+            />
+            <!-- Delete Button -->
+            <UButton
+              icon="i-heroicons-trash"
+              size="sm"
+              color="red"
+              variant="ghost"
+              @click="deleteToDo(todo.id)"
+              aria-label="Delete ToDo"
+            />
+          </div>
         </li>
       </TransitionGroup>
     </div>
@@ -186,10 +242,23 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                 base: 'h-5 w-5',
               }"
             />
-            <span class="text-gray-500 line-through">{{
-              todo.text
-            }}</span>
+            <div class="flex-grow">
+              <span class="text-gray-500 line-through">{{
+                todo.text
+              }}</span>
+              <!-- Display Due Date for completed -->
+              <p
+                v-if="todo.dueDate"
+                class="text-xs text-gray-400 mt-1 line-through"
+              >
+                Deadline:
+                {{
+                  format(new Date(todo.dueDate), 'd MMM, yyyy HH:mm')
+                }}
+              </p>
+            </div>
           </div>
+          <!-- No date picker button for completed todos -->
           <UButton
             icon="i-heroicons-trash"
             size="sm"
@@ -204,7 +273,9 @@ useHead({ title: 'Mijn Taken' }); // Set page title
 
     <!-- No To-Dos Message -->
     <div
-      v-if="items.length === 0"
+      v-if="
+        sortedPendingTodos.length === 0 && completedTodos.length === 0
+      "
       class="text-center text-gray-500 py-8 px-4"
     >
       <p>Je hebt nog geen taken toegevoegd.</p>
@@ -285,7 +356,10 @@ useHead({ title: 'Mijn Taken' }); // Set page title
             color="red"
             variant="ghost"
             icon="i-heroicons-trash"
-            :disabled="items.length === 0"
+            :disabled="
+              sortedPendingTodos.length === 0 &&
+              completedTodos.length === 0
+            "
             @click="openConfirmationModal"
           />
         </div>
@@ -342,6 +416,59 @@ useHead({ title: 'Mijn Taken' }); // Set page title
               label="Alles verwijderen"
               icon="i-heroicons-trash"
               @click="confirmClearAll"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+
+    <!-- Date Picker Modal -->
+    <UModal
+      v-model="isDatePickerModalOpen"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900"
+            >
+              Selecteer deadline
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="closeDatePickerModal"
+            />
+          </div>
+        </template>
+
+        <DatePicker v-model="selectedDate" class="w-full" />
+
+        <template #footer>
+          <div class="flex justify-end space-x-2">
+            <UButton
+              color="gray"
+              variant="ghost"
+              label="Annuleren"
+              @click="closeDatePickerModal"
+            />
+            <UButton
+              label="Opslaan"
+              icon="i-heroicons-check"
+              @click="saveDueDate"
+              class="font-bold"
             />
           </div>
         </template>

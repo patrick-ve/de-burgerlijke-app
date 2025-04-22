@@ -9,13 +9,34 @@ export interface ToDo {
   completed: boolean;
   createdAt: Date;
   updatedAt: Date;
+  dueDate?: Date | null; // Add optional dueDate property
 }
 
 // Use useStorage to persist the To-Do list in localStorage
 const toDos = useStorage<ToDo[]>('todos', []);
 
 export function useToDos() {
-  const items = computed(() => toDos.value);
+  // Computed property for sorted pending To-Dos
+  const sortedPendingTodos = computed(() => {
+    return toDos.value
+      .filter((todo) => !todo.completed)
+      .sort((a, b) => {
+        // Items without due date go to the bottom
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+
+        // Sort by due date (closest first)
+        return (
+          new Date(a.dueDate).getTime() -
+          new Date(b.dueDate).getTime()
+        );
+      });
+  });
+
+  // Computed property for completed To-Dos (order maintained)
+  const completedTodos = computed(() => {
+    return toDos.value.filter((todo) => todo.completed);
+  });
 
   /**
    * Adds a new To-Do item to the list.
@@ -31,6 +52,7 @@ export function useToDos() {
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
+      dueDate: null, // Initialize dueDate as null
     };
     toDos.value.push(newToDo);
     console.log('ToDo Added:', newToDo);
@@ -79,12 +101,31 @@ export function useToDos() {
     console.log('All To-Dos Cleared');
   };
 
+  /**
+   * Sets the due date for a specific To-Do item.
+   */
+  const setDueDate = (id: string, dueDate: Date | null) => {
+    const index = toDos.value.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      toDos.value[index].dueDate = dueDate;
+      toDos.value[index].updatedAt = new Date();
+      console.log('ToDo Due Date Set:', toDos.value[index]);
+    } else {
+      console.warn(
+        'Attempted to set due date for non-existent To-Do:',
+        id
+      );
+    }
+  };
+
   return {
-    items,
+    sortedPendingTodos,
+    completedTodos,
     addToDo,
     toggleToDo,
     deleteToDo,
     clearCompleted,
     clearAll,
+    setDueDate,
   };
 }
