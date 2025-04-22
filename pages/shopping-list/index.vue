@@ -171,12 +171,19 @@ const {
   clearList,
   isLoadingPrices,
   isOptimizingList,
+  addItemsFromText,
+  isStandardizingItems,
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
 const { selectedSupermarketIds } = useOnboardingSettings();
 const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const toast = useToast();
+
+// --- State for Add Items Modal ---
+const isAddItemModalOpen = ref(false);
+const addItemTextAreaValue = ref('');
+// --- End Add Items Modal State ---
 
 // --- Context Menu State ---
 const isContextMenuOpen = ref(false);
@@ -295,6 +302,23 @@ const copyShoppingListToClipboard = () => {
     });
 };
 
+// --- Function to handle adding items from modal ---
+const handleAddItemsFromModal = async () => {
+  const itemsAdded = await addItemsFromText(
+    addItemTextAreaValue.value
+  );
+  if (itemsAdded > 0) {
+    // Clear textarea and close modal only if items were added
+    addItemTextAreaValue.value = '';
+    isAddItemModalOpen.value = false;
+    // Optionally trigger price fetch after adding items
+    // fetchCheapestProducts(); // Consider if this should be automatic
+  }
+  // If itemsAdded is 0, the toast is handled within addItemsFromText
+  // and the modal remains open for the user to correct input.
+};
+// --- End Add Items Modal Handler ---
+
 // --- Group items by Supermarket AND Category (for UNCHECKED items) ---
 const groupedBySupermarketAndCategory = computed(() => {
   const groups: Record<
@@ -412,7 +436,7 @@ const router = useRouter();
 </script>
 
 <template>
-  <div class="relative pb-16">
+  <div class="relative pb-20">
     <UContainer class="py-4">
       <div
         v-if="isOptimizingList"
@@ -703,6 +727,97 @@ const router = useRouter();
               label="Bevestigen"
               color="red"
               @click="confirmClearList"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+
+    <!-- Fixed Bottom Action Bar for Adding Items Manually -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="transform translate-y-full"
+      enter-to-class="transform translate-y-0"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="transform translate-y-0"
+      leave-to-class="transform translate-y-full"
+    >
+      <div
+        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+      >
+        <UButton
+          block
+          size="lg"
+          label="Voeg boodschappen toe"
+          icon="i-heroicons-shopping-cart"
+          @click="isAddItemModalOpen = true"
+          class="font-bold"
+        />
+      </div>
+    </Transition>
+
+    <!-- Add Items Modal -->
+    <UModal
+      v-model="isAddItemModalOpen"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900"
+            >
+              Boodschappen toevoegen
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isAddItemModalOpen = false"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-2">
+          <p class="text-sm text-gray-500">
+            Voer elke boodschap op een nieuwe regel in.
+          </p>
+          <UTextarea
+            v-model="addItemTextAreaValue"
+            placeholder="1 liter melk&#10;Brood&#10;500g gehakt"
+            :rows="6"
+            autofocus
+            data-testid="add-items-textarea"
+          />
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end space-x-2">
+            <UButton
+              color="gray"
+              variant="ghost"
+              @click="isAddItemModalOpen = false"
+            >
+              Annuleren
+            </UButton>
+            <UButton
+              label="Toevoegen"
+              :loading="isStandardizingItems"
+              :disabled="
+                !addItemTextAreaValue.trim() || isStandardizingItems
+              "
+              @click="handleAddItemsFromModal"
+              data-testid="confirm-add-items-button"
             />
           </div>
         </template>

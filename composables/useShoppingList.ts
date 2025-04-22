@@ -58,6 +58,7 @@ export function useShoppingList() {
   const { selectedSupermarketIds } = useOnboardingSettings();
   const isLoadingPrices = ref(false);
   const isOptimizingList = ref(false);
+  const isStandardizingItems = ref(false);
 
   /**
    * Adds ingredients from a recipe (with specific portions) to the shopping list.
@@ -294,6 +295,154 @@ export function useShoppingList() {
   };
   // --- End fetchCheapestProducts ---
 
+  // --- Modified function to add items from raw text input via AI standardization ---
+  const addItemsFromText = async (
+    textInput: string
+  ): Promise<number> => {
+    if (!textInput || textInput.trim() === '') {
+      toast.add({
+        title: 'Geen invoer',
+        description: 'Voer boodschappen in om toe te voegen.',
+        icon: 'i-heroicons-exclamation-triangle',
+        color: 'orange',
+      });
+      return 0; // Return 0 items added
+    }
+
+    const lines = textInput
+      .split('\\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (lines.length === 0) {
+      toast.add({
+        title: 'Geen invoer',
+        description: 'Voer boodschappen in om toe te voegen.',
+        icon: 'i-heroicons-exclamation-triangle',
+        color: 'orange',
+      });
+      return 0; // Return 0 items added
+    }
+
+    isStandardizingItems.value = true; // Set loading state
+    consola.info('Starting standardization of text input...');
+    let itemsAddedOrMergedCount = 0;
+
+    try {
+      // Call the new API endpoint
+      const standardizedItems: ShoppingListItem[] = await $fetch(
+        '/api/shopping-list/standardize-text',
+        {
+          method: 'POST',
+          body: { lines },
+        }
+      );
+
+      consola.success(
+        `Received ${standardizedItems.length} standardized items from API.`
+      );
+
+      if (standardizedItems.length === 0) {
+        toast.add({
+          title: 'Niets herkend',
+          description:
+            'Kon geen geldige boodschappen vinden in de invoer.',
+          icon: 'i-heroicons-question-mark-circle',
+          color: 'orange',
+        });
+        return 0;
+      }
+
+      // Merge standardized items into the main list
+      standardizedItems.forEach((stdItem) => {
+        const stdName = standardizeName(stdItem.ingredientName);
+        const unit = standardizeUnit(stdItem.unit); // Standardize unit for comparison
+
+        const existingItemIndex = shoppingListItems.value.findIndex(
+          (item) =>
+            standardizeName(item.ingredientName) === stdName &&
+            standardizeUnit(item.unit) === unit // Compare standardized units
+        );
+
+        if (existingItemIndex > -1) {
+          // --- Update existing item ---
+          const existingItem =
+            shoppingListItems.value[existingItemIndex];
+          let newQuantity = existingItem.aggregatedQuantity;
+          const incomingQuantity = stdItem.aggregatedQuantity;
+
+          // Add quantities if both are numbers
+          if (
+            typeof newQuantity === 'number' &&
+            typeof incomingQuantity === 'number'
+          ) {
+            newQuantity += incomingQuantity;
+          } else if (incomingQuantity !== null) {
+            // If existing quantity is null, use the new quantity (if not null)
+            newQuantity = incomingQuantity;
+          }
+          // If new quantity is null, existing remains unchanged
+
+          shoppingListItems.value[existingItemIndex] = {
+            ...existingItem,
+            aggregatedQuantity: newQuantity,
+            // Overwrite category if the new item has one and the old one didn't
+            category:
+              existingItem.category ?? stdItem.category ?? null,
+            updatedAt: new Date(),
+            // Keep existing recipeIds
+            // Reset price info as quantity/item definition changed
+            priceInfo: [],
+            cheapestPrice: undefined,
+            cheapestSupermarket: undefined,
+            cheapestAmount: undefined,
+          };
+          consola.log(`Merged item: ${stdItem.ingredientName}`);
+          itemsAddedOrMergedCount++;
+        } else {
+          // --- Add new item (already structured by API) ---
+          shoppingListItems.value.push({
+            ...stdItem, // Spread the item received from the API
+            // Ensure timestamps are Date objects (API should return strings)
+            createdAt: new Date(stdItem.createdAt),
+            updatedAt: new Date(stdItem.updatedAt),
+          });
+          consola.log(`Added new item: ${stdItem.ingredientName}`);
+          itemsAddedOrMergedCount++;
+        }
+      });
+
+      if (itemsAddedOrMergedCount > 0) {
+        toast.add({
+          title: 'Items verwerkt',
+          description: `${itemsAddedOrMergedCount} ${itemsAddedOrMergedCount === 1 ? 'item' : 'items'} toegevoegd of samengevoegd.`,
+          icon: 'i-heroicons-check-circle',
+        });
+        // Optionally trigger price fetch or optimization after adding
+        // optimizeAndFetchPrices();
+      }
+    } catch (error) {
+      consola.error(
+        'Error during item standardization or merging:',
+        error
+      );
+      toast.add({
+        id: 'standardize-error-toast',
+        title: 'Fout bij verwerken',
+        description:
+          'Kon de ingevoerde boodschappen niet verwerken. Controleer de server logs.',
+        color: 'red',
+      });
+      itemsAddedOrMergedCount = 0; // Reset count on error
+    } finally {
+      isStandardizingItems.value = false; // Clear loading state
+      consola.info('Finished standardization process.');
+    }
+
+    return itemsAddedOrMergedCount; // Return the count of processed items
+  };
+  // --- End addItemsFromText ---
+
   // --- New function to handle optimization and subsequent price fetch ---
   const optimizeAndFetchPrices = async () => {
     const optimizingToastId = 'optimizing-list-toast'; // Define ID for the toast
@@ -362,11 +511,13 @@ export function useShoppingList() {
     items,
     isLoadingPrices,
     isOptimizingList,
+    isStandardizingItems,
     addIngredients,
     updateItem,
     deleteItem,
     clearList,
     fetchCheapestProducts,
     optimizeAndFetchPrices,
+    addItemsFromText,
   };
 }
