@@ -198,12 +198,18 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] Displayed cheapest price info (price, supermarket, amount) per item in `pages/shopping-list/index.vue`.
 - [x] **List Management:**
   - [x] UI (`components/ShoppingList.vue`) for checking off items.
-  - [ ] UI for manually adding/editing items.
-  - [ ] Update list status/item status in the backend.
-  - [x] Added confirmation modal when clearing the shopping list (`pages/shopping-list/index.vue`).
-  - [x] Replaced "Maak leeg" button with context menu (ellipsis icon) in `pages/shopping-list/index.vue` header.
-    - [x] Added "Maak lijst leeg" option to context menu (triggers existing confirmation modal).
-    - [x] Added "Kopieer lijst" option to context menu (copies formatted list to clipboard, shows toast).
+  - [x] UI (`components/ShoppingList.vue`) for deleting items.
+  - [x] UI (`components/ShoppingList.vue`) for clearing the list.
+  - [x] **Manual Add:**
+    - [x] Added "Voeg boodschappen toe" button in fixed bottom bar (`pages/shopping-list/index.vue`).
+    - [x] Implemented modal (`UModal`) with textarea for multi-line text input.
+    - [x] Created new API endpoint (`/api/shopping-list/standardize-text`) to parse/standardize raw text using AI.
+    - [x] Updated `useShoppingList.ts` (`addItemsFromText`) to call the new endpoint, manage loading state (`isStandardizingItems`), and merge standardized items.
+    - [x] Updated shopping list modal to use loading state for the add button.
+    - [x] Fixed multi-line placeholder formatting in the textarea (`&#10;`).
+  - [x] **Copy to Clipboard:**
+    - [x] Added context menu to shopping list page header.
+    - [x] Implemented "Kopieer lijst" button to copy unchecked items to clipboard.
 
 ## Groceries Pricing Insights (`groceries-pricing-insights-prd.md`)
 
