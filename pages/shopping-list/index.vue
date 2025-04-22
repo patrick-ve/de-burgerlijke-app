@@ -540,7 +540,7 @@ const router = useRouter();
                   "
                   :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
                   data-testid="item-checkbox"
-                  :ui="{ base: 'flex-shrink-0' }"
+                  :ui="{ base: 'flex-shrink-0 w-5 h-5' }"
                 />
                 <div class="flex-1 min-w-0">
                   <p

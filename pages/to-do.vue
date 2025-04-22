@@ -149,6 +149,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
               :ui="{
                 wrapper: 'relative flex items-start',
                 label: 'min-w-0 flex-1 text-sm font-medium',
+                base: 'h-5 w-5',
               }"
             />
             <span class="text-gray-800">{{ todo.text }}</span>
@@ -187,6 +188,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                 wrapper: 'relative flex items-start',
                 label:
                   'min-w-0 flex-1 text-sm font-medium line-through text-gray-500',
+                base: 'h-5 w-5',
               }"
             />
             <span class="text-gray-500 line-through">{{

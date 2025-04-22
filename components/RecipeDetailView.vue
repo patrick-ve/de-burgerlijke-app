@@ -325,6 +325,9 @@ const handleAddPortionsToShoppingList = () => {
                 v-model="step.isComplete"
                 :aria-label="`Mark step ${index + 1} as complete`"
                 data-testid="step-checkbox"
+                :ui="{
+                  base: 'h-5 w-5',
+                }"
               />
               <div class="flex-1 space-y-2">
                 <span
