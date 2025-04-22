@@ -32,6 +32,19 @@ export interface ShoppingListItem {
   cheapestAmount?: string | null;
 }
 
+// --- Add Product interface definition ---
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  amount: string | null;
+  distance?: number; // Optional distance/similarity score
+  standardized_price_per_unit?: number | null;
+  standardized_unit?: string | null;
+  supermarketName: string;
+}
+// --- End Product interface ---
+
 export interface ShoppingList {
   id: string; // Unique identifier
   userId?: string;

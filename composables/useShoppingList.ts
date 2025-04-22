@@ -1,8 +1,18 @@
 import { ref, computed } from 'vue';
 import { useStorage } from '@vueuse/core';
-import type { ShoppingListItem } from '~/types/shopping-list';
-import type { Ingredient } from '~/types/recipe';
+import type {
+  ShoppingListItem,
+  Product,
+} from '~/types/shopping-list';
+import type { Ingredient, IngredientCategory } from '~/types/recipe';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '#imports';
+import { useOnboardingSettings } from '~/composables/useOnboardingSettings';
+import { consola } from 'consola';
+
+// Assuming ApiReturnType is defined somewhere, e.g., in types or directly
+// If not, define it here or import it
+type ApiReturnType = Record<string, Product | null>;
 
 // Use useStorage to persist the shopping list in localStorage
 const shoppingListItems = useStorage<ShoppingListItem[]>(
@@ -44,6 +54,10 @@ const standardizeUnit = (
 
 export function useShoppingList() {
   const items = computed(() => shoppingListItems.value);
+  const toast = useToast();
+  const { selectedSupermarketIds } = useOnboardingSettings();
+  const isLoadingPrices = ref(false);
+  const isOptimizingList = ref(false);
 
   /**
    * Adds ingredients from a recipe (with specific portions) to the shopping list.
@@ -161,22 +175,198 @@ export function useShoppingList() {
 
   /**
    * Replaces the entire shopping list with a new set of items.
-   * Useful after operations like AI cleanup.
+   * INTERNAL function, use optimizeAndFetchPrices for external cleanup trigger.
    */
   const replaceList = (newItems: ShoppingListItem[]) => {
     shoppingListItems.value = newItems;
-    console.log('Shopping List Replaced:', shoppingListItems.value);
+    consola.info(
+      'Shopping List Replaced (Internal):',
+      shoppingListItems.value
+    );
   };
 
-  // TODO: Add functions for removing items, etc.
+  // --- Moved fetchCheapestProducts ---
+  const fetchCheapestProducts = async () => {
+    consola.info('fetchCheapestProducts called.', {
+      isLoading: isLoadingPrices.value,
+    }); // Log entry
+    if (isLoadingPrices.value) {
+      consola.info('Price fetching already in progress.');
+      return;
+    }
+    if (shoppingListItems.value.length === 0) {
+      consola.info(
+        'Shopping list is empty, skipping price fetching.'
+      );
+      return; // No need to fetch if list is empty
+    }
+
+    const itemsToFetch = shoppingListItems.value.filter(
+      (item) => !item.isChecked
+    );
+    const ingredientNames = itemsToFetch.map(
+      (item) => item.ingredientName
+    );
+
+    if (ingredientNames.length === 0) {
+      consola.info('No unchecked items to fetch prices for.');
+      // Optionally show a toast, or just log
+      return;
+    }
+
+    consola.info('Fetching cheapest products for:', ingredientNames);
+    isLoadingPrices.value = true; // Set loading state
+    consola.log('isLoadingPrices set to true'); // Log state change
+
+    try {
+      const requestBody = {
+        ingredientNames,
+        selectedSupermarketIds: selectedSupermarketIds.value,
+      };
+      consola.info('Price Fetch Request Body:', requestBody);
+
+      const results: ApiReturnType = await $fetch(
+        '/api/shopping-list/find-cheapest',
+        {
+          method: 'POST',
+          body: requestBody,
+        }
+      );
+
+      consola.success('Received cheapest products:', results);
+
+      let updateCount = 0;
+      Object.entries(results).forEach(
+        ([ingredientName, cheapestProduct]) => {
+          if (cheapestProduct) {
+            const itemToUpdate = shoppingListItems.value.find(
+              (item) =>
+                item.ingredientName === ingredientName &&
+                !item.isChecked
+            );
+
+            if (itemToUpdate) {
+              consola.log(`Updating price for ${ingredientName}`); // Log item update
+              // Use updateItem to ensure reactivity and timestamp update
+              updateItem({
+                ...itemToUpdate,
+                cheapestPrice: cheapestProduct.price,
+                cheapestSupermarket: cheapestProduct.supermarketName,
+                cheapestAmount: cheapestProduct.amount,
+              });
+              updateCount++;
+            }
+          }
+        }
+      );
+      consola.log('Finished processing price results.'); // Log end of processing
+
+      if (updateCount > 0) {
+        toast.add({
+          id: 'prices-updated-toast',
+          title: `Prijzen bijgewerkt voor ${updateCount} item(s)`,
+          icon: 'i-heroicons-currency-euro',
+        });
+      } else if (Object.keys(results).length > 0) {
+        // Only show 'no new prices' if the API call actually returned something
+        toast.add({
+          id: 'no-new-prices-toast',
+          title: 'Geen nieuwe prijzen gevonden',
+          description:
+            'De prijzen voor de opgezochte items zijn mogelijk al actueel.',
+          color: 'orange',
+        });
+      }
+      // If results were empty, we don't need a toast.
+    } catch (error) {
+      consola.error('Error fetching cheapest products:', error);
+      toast.add({
+        id: 'price-fetch-error-toast',
+        title: 'Fout bij ophalen prijzen',
+        description:
+          'Kon de productprijzen niet ophalen. Probeer het later opnieuw.',
+        color: 'red',
+      });
+    } finally {
+      isLoadingPrices.value = false; // Clear loading state regardless of outcome
+      consola.log('isLoadingPrices set to false'); // Log state change
+    }
+  };
+  // --- End fetchCheapestProducts ---
+
+  // --- New function to handle optimization and subsequent price fetch ---
+  const optimizeAndFetchPrices = async () => {
+    const optimizingToastId = 'optimizing-list-toast'; // Define ID for the toast
+
+    if (isOptimizingList.value) {
+      consola.warn('Optimization already in progress.');
+      // Don't add a new toast if one is likely already showing
+      return;
+    }
+    if (shoppingListItems.value.length === 0) {
+      consola.info('Shopping list is empty, skipping optimization.');
+      return; // No need to optimize an empty list
+    }
+
+    isOptimizingList.value = true;
+    consola.info('Optimizing shopping list and fetching prices...');
+    toast.add({
+      id: optimizingToastId, // Use the defined ID
+      title: 'Boodschappenlijst opschonen...',
+      description: 'Samenvoegen en standaardiseren...', // Optional slightly different description
+      icon: 'i-heroicons-sparkles',
+    });
+
+    try {
+      const currentItems = JSON.parse(
+        JSON.stringify(shoppingListItems.value)
+      ); // Deep clone
+      const optimizedList: ShoppingListItem[] = await $fetch(
+        '/api/shopping-list/clean-up',
+        {
+          method: 'POST',
+          body: currentItems,
+        }
+      );
+
+      replaceList(optimizedList); // Update the list internally
+      consola.success('Shopping list optimized successfully.');
+      // Toast for optimization success is handled implicitly by price fetching starting/succeeding
+
+      // Remove the 'optimizing' toast before starting price fetch
+      toast.remove(optimizingToastId);
+
+      // *Immediately* fetch prices after optimization
+      await fetchCheapestProducts();
+    } catch (error) {
+      consola.error('Error during list optimization:', error);
+      // Ensure the 'optimizing' toast is removed on error too
+      toast.remove(optimizingToastId);
+      toast.add({
+        id: 'list-optimize-error-toast',
+        title: 'Fout bij optimaliseren',
+        description:
+          'Kon de boodschappenlijst niet automatisch opschonen.',
+        color: 'red',
+      });
+    } finally {
+      isOptimizingList.value = false; // Clear optimization loading state
+      // Ensure the toast is removed if the finally block is reached for any other reason
+      // although it should already be removed in try/catch blocks
+      toast.remove(optimizingToastId);
+    }
+  };
+  // --- End optimizeAndFetchPrices ---
 
   return {
     items,
+    isLoadingPrices,
+    isOptimizingList,
     addIngredients,
     updateItem,
     deleteItem,
     clearList,
-    replaceList,
-    // Expose other functions as needed
+    fetchCheapestProducts,
+    optimizeAndFetchPrices,
   };
 }

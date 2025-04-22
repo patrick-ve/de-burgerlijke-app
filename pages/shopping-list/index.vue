@@ -9,6 +9,9 @@ import { ingredientCategories } from '~/types/recipe';
 import type { IngredientCategory } from '~/types/recipe';
 import type { SupermarketName } from '~/composables/useOnboardingSettings';
 
+// Define the key used for items without a price/supermarket
+const noSupermarketKey = 'Nog geen prijs gevonden';
+
 // Interface for the single product object returned by the API
 interface Product {
   id: string;
@@ -163,13 +166,13 @@ const {
   updateItem,
   deleteItem,
   clearList,
-  replaceList,
+  isLoadingPrices,
+  isOptimizingList,
 } = useShoppingList();
 const { headerState, setHeader } = useHeaderState();
 const { selectedSupermarketIds } = useOnboardingSettings();
 const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
-const isLoadingPrices = ref(false);
 const toast = useToast();
 
 // Define Head for the page
@@ -197,113 +200,12 @@ const confirmClearList = () => {
   isClearConfirmationModalOpen.value = false;
 };
 
-// Function to fetch cheapest products
-const fetchCheapestProducts = async () => {
-  if (isLoadingPrices.value) return;
-
-  isLoadingPrices.value = true;
-  try {
-    const itemsToFetch = shoppingListItems.value.filter(
-      (item) => !item.isChecked
-    );
-    const ingredientNames = itemsToFetch.map(
-      (item) => item.ingredientName
-    );
-
-    if (ingredientNames.length === 0) {
-      consola.info(
-        'No unchecked items in the shopping list to fetch prices for.'
-      );
-      toast.add({
-        title: 'Geen items om prijzen voor op te halen',
-        description: 'Vink items uit om prijzen op te halen.',
-        color: 'orange',
-      });
-      isLoadingPrices.value = false;
-      return;
-    }
-
-    consola.info('Fetching cheapest products for:', ingredientNames);
-
-    // Include selected supermarket IDs in the fetch request
-    const requestBody = {
-      ingredientNames,
-      selectedSupermarketIds: selectedSupermarketIds.value,
-    };
-    consola.info('Request Body:', requestBody);
-
-    // Explicitly type the expected response with the CORRECT type
-    const results: ApiReturnType = await $fetch(
-      '/api/shopping-list/find-cheapest',
-      {
-        method: 'POST',
-        body: requestBody,
-      }
-    );
-
-    consola.success('Received cheapest products:', results);
-
-    // Integrate results into the shopping list items
-    let updateCount = 0;
-    Object.entries(results).forEach(
-      ([ingredientName, cheapestProduct]) => {
-        // cheapestProduct is now the Product object itself, or null
-
-        if (cheapestProduct) {
-          const itemToUpdate = shoppingListItems.value.find(
-            (item) =>
-              item.ingredientName === ingredientName &&
-              !item.isChecked
-          );
-
-          if (itemToUpdate) {
-            updateItem({
-              ...itemToUpdate,
-              cheapestPrice: cheapestProduct.price,
-              cheapestSupermarket: cheapestProduct.supermarketName,
-              cheapestAmount: cheapestProduct.amount,
-              // Optionally store standardized info if needed later
-              // cheapestStandardizedPrice: cheapestProduct.standardized_price_per_unit,
-              // cheapestStandardizedUnit: cheapestProduct.standardized_unit,
-            });
-            updateCount++;
-          }
-        }
-      }
-    );
-    if (updateCount > 0) {
-      toast.add({
-        title: `Prijzen bijgewerkt voor ${updateCount} item(s)`,
-        color: 'green',
-      });
-    } else {
-      toast.add({
-        title: 'Geen nieuwe prijzen gevonden',
-        color: 'orange',
-      });
-    }
-
-    // TODO: Handle ingredients for which no prices were found (clear existing price?)
-    // TODO: Update the ShoppingList component to display the cheapestPrice, cheapestSupermarket, and cheapestAmount fields.
-  } catch (error) {
-    consola.error('Error fetching cheapest products:', error);
-    toast.add({
-      title: 'Fout bij ophalen prijzen',
-      description: 'Kon de productprijzen niet ophalen.',
-      color: 'red',
-    });
-  } finally {
-    isLoadingPrices.value = false;
-  }
-};
-
 // --- Group items by Supermarket AND Category (for UNCHECKED items) ---
 const groupedBySupermarketAndCategory = computed(() => {
   const groups: Record<
     string,
     Record<string, ShoppingListItem[]>
   > = {};
-  const noSupermarketKey = 'Nog geen prijs gevonden'; // Key for items without a supermarket
   const categoryOrder: (IngredientCategory | 'Other')[] = [
     ...ingredientCategories,
     'Other',
@@ -336,7 +238,7 @@ const groupedBySupermarketAndCategory = computed(() => {
       // otherwise put them in the 'No Price' group for consistency.
       // They will be visually distinct in the template.
       const supermarketKey =
-        item.cheapestSupermarket || noSupermarketKey; // Use last known supermarket or default
+        item.cheapestSupermarket || noSupermarketKey;
       const categoryKey = item.category ?? 'Other';
 
       if (!groups[supermarketKey]) {
@@ -354,9 +256,9 @@ const groupedBySupermarketAndCategory = computed(() => {
 
   // Sort supermarkets (alphabetically, with 'No Price' last)
   const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
-    if (a === noSupermarketKey) return 1; // Put 'No Price' at the end
+    if (a === noSupermarketKey) return 1;
     if (b === noSupermarketKey) return -1;
-    return a.localeCompare(b); // Sort others alphabetically
+    return a.localeCompare(b);
   });
 
   // Create the final sorted structure
@@ -406,7 +308,7 @@ onMounted(async () => {
     title: 'Boodschappenlijst',
     showLeftAction: true,
     showRightAction: true,
-    rightActionHandler: clearList,
+    rightActionHandler: triggerRightAction,
   });
 });
 
@@ -414,32 +316,23 @@ const router = useRouter();
 </script>
 
 <template>
-  <div>
-    <UContainer>
-      <!-- Loading Skeleton (Optional, could add later if needed) -->
-      <div v-if="isLoadingPrices" class="space-y-4 p-4">
-        <USkeleton class="h-8 w-1/2 mb-4" />
-        <div
-          v-for="i in 3"
-          :key="`skel-item-${i}`"
-          class="flex items-center gap-3 py-2 px-2 border border-gray-200 rounded-md"
-        >
-          <USkeleton class="h-5 w-5 rounded" />
-          <div class="flex-1 space-y-1">
-            <USkeleton class="h-4 w-2/3" />
-            <USkeleton class="h-3 w-1/2" />
-          </div>
-          <USkeleton class="h-6 w-16" />
-          <USkeleton class="h-6 w-6" />
-        </div>
+  <div class="relative pb-16">
+    <UContainer class="py-4">
+      <div
+        v-if="isOptimizingList"
+        class="fixed inset-x-0 top-0 z-50 p-4 flex justify-center pointer-events-none"
+      >
+        <UAlert
+          icon="i-heroicons-sparkles"
+          color="primary"
+          variant="solid"
+          title="Lijst optimaliseren..."
+          description="Bezig met opschonen en samenvoegen."
+          class="shadow-lg max-w-md"
+        />
       </div>
 
-      <!-- Display Grouped Items -->
-      <div
-        v-else-if="shoppingListItems.length > 0"
-        class="space-y-6 mt-4"
-      >
-        <!-- Grand Total -->
+      <div v-if="shoppingListItems.length > 0" class="space-y-4">
         <div
           v-if="grandTotal > 0"
           class="px-2 text-right font-semibold text-gray-800 text-lg"
@@ -448,7 +341,6 @@ const router = useRouter();
           {{ formatCurrency(grandTotal) }}
         </div>
 
-        <!-- UNCHECKED Items: Grouped by Supermarket -> Category -->
         <UCard
           v-for="(
             categories, supermarket
@@ -480,7 +372,6 @@ const router = useRouter();
                   }}
                 </h3>
               </div>
-              <!-- Calculate total for UNCHECKED items in this supermarket -->
               <span
                 v-if="supermarket !== noSupermarketKey"
                 class="text-sm font-semibold text-gray-700"
@@ -503,7 +394,6 @@ const router = useRouter();
             </div>
           </template>
 
-          <!-- Loop through categories within the supermarket -->
           <ul
             v-for="(items, category) in categories"
             :key="category"
@@ -574,10 +464,7 @@ const router = useRouter();
                 :class="{ 'opacity-50': item.isChecked }"
               >
                 <span
-                  v-if="
-                    item.cheapestPrice != null &&
-                    supermarket !== 'Nog geen prijs gevonden'
-                  "
+                  v-if="item.cheapestPrice != null"
                   class="text-sm font-medium text-gray-900"
                   :class="{
                     'line-through text-gray-500': item.isChecked,
@@ -585,15 +472,23 @@ const router = useRouter();
                 >
                   {{ formatCurrency(item.cheapestPrice) }}
                 </span>
-                <!-- Placeholder/indicator if no price yet -->
+                <span
+                  v-else-if="!item.isChecked"
+                  class="flex items-center gap-1 text-sm text-gray-500"
+                  aria-label="Prijs laden"
+                >
+                  <span>€</span>
+                  <USkeleton class="h-4 w-10" />
+                </span>
                 <span
                   v-else-if="
-                    supermarket === 'Nog geen prijs gevonden'
+                    item.isChecked && item.cheapestPrice == null
                   "
                   class="text-xs text-gray-400 italic"
                 >
                   Geen prijs
                 </span>
+
                 <UButton
                   icon="i-heroicons-trash"
                   size="xs"
@@ -608,28 +503,12 @@ const router = useRouter();
           </ul>
         </UCard>
       </div>
-      <!-- Empty State -->
       <div v-else class="mt-6 text-center text-gray-500">
         Je boodschappenlijst is leeg. Voeg items toe vanuit een
         recept!
       </div>
-
-      <!-- Actions (kept as is) -->
-      <div
-        v-if="shoppingListItems.length > 0"
-        class="mt-6 flex flex-wrap justify-end gap-2"
-      >
-        <UButton
-          label="Prijzen ophalen"
-          icon="i-heroicons-currency-euro"
-          class="ml-2"
-          :loading="isLoadingPrices"
-          @click="fetchCheapestProducts"
-        />
-      </div>
     </UContainer>
 
-    <!-- Teleport Clear button to the header -->
     <Teleport to="#header-left-action" v-if="isMounted">
       <UButton
         color="gray"
@@ -653,7 +532,6 @@ const router = useRouter();
       />
     </Teleport>
 
-    <!-- Confirmation Modal -->
     <UModal
       v-model="isClearConfirmationModalOpen"
       :ui="{
