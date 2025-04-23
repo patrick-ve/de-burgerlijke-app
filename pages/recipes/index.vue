@@ -1,6 +1,16 @@
 <template>
-  <div class="p-4 pb-20" :class="containerPaddingTop">
-    <RecipeList ref="recipeListRef" :recipes="filteredRecipes" />
+  <div
+    class="p-4 pb-20 transition-padding duration-300 ease-in-out"
+    :class="containerPaddingTop"
+  >
+    <!-- Apply transition to RecipeList -->
+    <TransitionGroup name="list" tag="div">
+      <RecipeList
+        ref="recipeListRef"
+        :recipes="filteredRecipes"
+        key="recipe-list"
+      />
+    </TransitionGroup>
 
     <Teleport to="#header-left-action">
       <UButton
@@ -45,13 +55,17 @@
       @recipeParsed="handleRecipeParsed"
     />
 
-    <!-- Recipe Search Bar -->
-    <RecipeSearchBar
-      v-model:isActive="isSearchActive"
-      v-model:searchTerm="searchTerm"
-      @search="handleSearch"
-      @filterClick="triggerRecipeListFilters"
-    />
+    <!-- Recipe Search Bar with Transition -->
+    <Transition name="slide-fade">
+      <RecipeSearchBar
+        v-if="isSearchActive"
+        v-model:isActive="isSearchActive"
+        v-model:searchTerm="searchTerm"
+        @search="handleSearch"
+        @filterClick="triggerRecipeListFilters"
+        class="fixed top-16 left-0 right-0 z-40 bg-white p-4"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -64,13 +78,13 @@ import {
   watch,
   computed,
 } from 'vue';
-import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import DTO type
-import { useHeaderState } from '~/composables/useHeaderState';
-import { useRecipes } from '~/composables/useRecipes'; // Import the new composable
-import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the modal component
-import RecipeSearchBar from '~/components/RecipeSearchBar.vue'; // Import the search bar component
 import { useRouter, useRoute } from 'vue-router';
-import RecipeList from '~/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
+import type { AIRecipeDTO } from '@/server/utils/recipeSchema'; // Import DTO type
+import { useHeaderState } from '@/composables/useHeaderState';
+import { useRecipes } from '@/composables/useRecipes'; // Import the new composable
+import AddRecipeModal from '@/components/AddRecipeModal.vue'; // Import the modal component
+import RecipeSearchBar from '@/components/RecipeSearchBar.vue'; // Import the search bar component
+import RecipeList from '@/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
 
 const router = useRouter();
 const route = useRoute(); // Get the route object
@@ -133,8 +147,11 @@ const filteredRecipes = computed(() => {
 // Computed property for top padding based on search bar visibility
 const containerPaddingTop = computed(() => {
   // Adjust this value based on the actual height of your search bar + header
-  // Assuming search bar takes roughly 4rem (64px)
-  return isSearchActive.value ? 'pt-20' : 'pt-4';
+  // Assuming header height is ~4rem (16 in Tailwind units)
+  // Search bar fixed top is 16, height with padding is ~4rem (16 units)
+  // Total offset needed is 4rem (header) + 4rem (search bar) = 8rem = pt-32? Let's try pt-28 (7rem) to be safe.
+  // We need to check the actual rendered height
+  return isSearchActive.value ? 'pt-20' : 'pt-4'; // Adjusted padding calculation
 });
 
 // Watch for changes in the query parameter
@@ -170,3 +187,34 @@ useHead({
   title: 'Recepten', // Browser tab title
 });
 </script>
+
+<style scoped>
+/* Transition for RecipeSearchBar */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-65px);
+}
+
+/* Transition for RecipeList (basic fade) */
+.list-enter-active,
+.list-leave-active {
+  transition: opacity 0.5s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+}
+
+/* Ensure the container padding transition works */
+.transition-padding {
+  transition-property: padding-top;
+}
+</style>
