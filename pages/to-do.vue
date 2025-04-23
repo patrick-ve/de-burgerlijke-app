@@ -455,7 +455,12 @@ useHead({ title: 'Mijn Taken' }); // Set page title
         </template>
 
         <div class="flex justify-center">
-          <DatePicker v-model="selectedDate" class="w-full" />
+          <DatePicker
+            v-model="selectedDate"
+            class="w-full"
+            mode="dateTime"
+            :is24hr="true"
+          />
         </div>
 
         <template #footer>

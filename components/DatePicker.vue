@@ -7,6 +7,7 @@ import type {
   DatePickerRangeObject,
 } from 'v-calendar/dist/types/src/use/datePicker';
 import 'v-calendar/dist/style.css';
+import type { PropType } from 'vue'; // Import PropType
 
 defineOptions({
   inheritAttrs: false,
@@ -18,6 +19,14 @@ const props = defineProps({
       DatePickerDate | DatePickerRangeObject | null
     >,
     default: null,
+  },
+  mode: {
+    type: String as PropType<'date' | 'dateTime' | 'time'>,
+    default: 'dateTime', // Default back to dateTime
+  },
+  is24hr: {
+    type: Boolean,
+    default: true, // Default back to true
   },
 });
 
@@ -56,15 +65,17 @@ function onDayClick(_: any, event: MouseEvent): void {
     v-model.range="date"
     :columns="2"
     v-bind="{ ...attrs, ...$attrs }"
+    :mode="props.mode"
+    :is24hr="props.is24hr"
     @dayclick="onDayClick"
     :locale="nl"
   />
   <VCalendarDatePicker
     v-else
     v-model="date"
-    mode="dateTime"
-    is24hr
     v-bind="{ ...attrs, ...$attrs }"
+    :mode="props.mode"
+    :is24hr="props.is24hr"
     @dayclick="onDayClick"
     :locale="nl"
   />
