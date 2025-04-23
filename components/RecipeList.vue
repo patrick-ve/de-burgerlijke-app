@@ -509,21 +509,6 @@ defineExpose({
               Geen keukens beschikbaar.
             </p>
           </UFormGroup>
-
-          <!-- Filter by Favorites -->
-          <UFormGroup label="Favoriete recepten">
-            <div class="translate-y-2">
-              <UCheckbox
-                v-model="showFavoritesOnly"
-                data-testid="favorite-checkbox-slideover"
-                :label="
-                  showFavoritesOnly
-                    ? 'Toon alle recepten'
-                    : 'Toon favoriete recepten'
-                "
-              />
-            </div>
-          </UFormGroup>
         </div>
 
         <template #footer>
