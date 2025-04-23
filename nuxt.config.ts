@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@vueuse/nuxt',
     '@vite-pwa/nuxt',
+    '@nuxt/fonts',
   ],
 
   ssr: false,
