@@ -45,7 +45,7 @@ const totalTime = computed(() => {
 <template>
   <NuxtLink
     :to="`/recipes/${recipe.id}`"
-    class="recipe-card-link block group relative"
+    class="recipe-card-link block group relative w-48"
     :aria-label="`View recipe: ${recipe.title}`"
   >
     <!-- Favorite Button (Absolute Position) -->
@@ -66,11 +66,14 @@ const totalTime = computed(() => {
     />
 
     <div
-      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-0 hover:shadow-lg transition-shadow duration-200 ease-in-out w-full"
+      class="recipe-card bg-white rounded-xl border-[1px] border-gray-200 overflow-hidden flex flex-col h-64 transition-shadow duration-200 ease-in-out w-full"
     >
-      <!-- Image Section -->
-      <div class="flex-shrink-0">
-        <div v-if="recipe.imageUrl" class="w-24 h-24 overflow-hidden">
+      <!-- Image Section (Top 75%) -->
+      <div class="flex-shrink-0 h-[75%] overflow-hidden">
+        <div
+          v-if="recipe.imageUrl"
+          class="w-full h-full overflow-hidden"
+        >
           <NuxtImg
             :src="recipe.imageUrl"
             :alt="`Image of ${recipe.title}`"
@@ -85,33 +88,36 @@ const totalTime = computed(() => {
         </div>
         <div
           v-else
-          class="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+          class="w-full h-full bg-gray-200 flex items-center justify-center"
         >
           <UIcon
             name="i-heroicons-photo"
-            class="w-10 h-10 text-gray-400 dark:text-gray-500"
+            class="w-10 h-10 text-gray-400"
           />
         </div>
       </div>
 
-      <!-- Text Content Section -->
-      <div class="flex-grow min-w-0 pr-4 pt-4 rounded-lg">
+      <!-- Text Content Section (Bottom 25%) -->
+      <div
+        class="flex-grow min-w-0 p-2 flex flex-col justify-center h-[25%]"
+      >
         <h3
-          class="text-lg font-semibold text-gray-900 dark:text-white recipe-title mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors mt-0 max-w-[22ch] overflow-hidden text-ellipsis whitespace-nowrap"
+          class="text-sm font-semibold text-gray-900 recipe-title mb-1 transition-colors mt-0 overflow-hidden text-ellipsis whitespace-nowrap"
+          :title="recipe.title"
         >
           {{ recipe.title }}
         </h3>
 
         <!-- Metadata Section -->
         <div
-          class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 metadata-info"
+          class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 metadata-info"
         >
           <span
             v-if="recipe.portions"
             class="recipe-portions flex items-center"
             title="Portions"
           >
-            <UIcon name="i-heroicons-users" class="mr-1 h-4 w-4" />
+            <UIcon name="i-heroicons-users" class="mr-1 h-3 w-3" />
             {{ recipe.portions }}
             {{ recipe.portions > 1 ? 'porties' : 'portie' }}
           </span>
@@ -121,20 +127,8 @@ const totalTime = computed(() => {
             class="recipe-total-time flex items-center"
             title="Total time"
           >
-            <UIcon name="i-heroicons-clock" class="mr-1 h-4 w-4" />
+            <UIcon name="i-heroicons-clock" class="mr-1 h-3 w-3" />
             {{ totalTime }} minuten
-          </span>
-          <!-- Cuisine Info -->
-          <span
-            v-if="recipe.cuisine"
-            class="recipe-cuisine flex items-center"
-            title="Cuisine"
-          >
-            <UIcon
-              name="i-heroicons-globe-alt"
-              class="mr-1 h-4 w-4"
-            />
-            {{ recipe.cuisine }}
           </span>
         </div>
       </div>

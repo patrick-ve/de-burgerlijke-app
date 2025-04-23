@@ -5,19 +5,16 @@ import { ref, computed, watch, defineExpose } from 'vue';
 
 interface Props {
   recipes: Recipe[];
-  itemsPerPage?: number;
+  // itemsPerPage is no longer needed
 }
 
 const props = defineProps<Props>();
-
-// Default pagination size
-const itemsPerPage = props.itemsPerPage || 8;
 
 // --- Reactive State ---
 const searchQuery = ref('');
 const selectedCuisine = ref<string | undefined>();
 const showFavoritesOnly = ref(false);
-const currentPage = ref(1);
+// currentPage and itemsPerPage are removed
 // Sort state - only title sort is needed now
 const sortDirection = ref<'asc' | 'desc'>('asc');
 const isFilterSlideoverOpen = ref(false); // State to control slideover visibility
@@ -32,7 +29,7 @@ const timeFilterOptions = [
 // UPDATED type to string | undefined
 const selectedTimeFilter = ref<string | undefined>(); // Holds the selected time range identifier
 
-// Calculate max total time for the range slider
+// Calculate max total time for the range slider - Kept for potential future use but not directly used in filters now
 const maxTotalTime = computed(() => {
   if (!props.recipes || props.recipes.length === 0) {
     return 120; // Default max time if no recipes
@@ -85,6 +82,7 @@ const sortOptions = [
 ];
 
 // Filtered recipes based on search query, cuisine, favorites, and time checkbox
+// --- REMOVED SORTING FROM HERE ---
 const filteredRecipes = computed(() => {
   // Return original recipes array if it's empty
   if (!props.recipes || props.recipes.length === 0) {
@@ -139,51 +137,55 @@ const filteredRecipes = computed(() => {
     });
   }
 
-  // Always apply sorting by title
-  results.sort((a, b) => {
-    const comparison = a.title.localeCompare(b.title);
-    return sortDirection.value === 'asc' ? comparison : -comparison;
-  });
+  // --- SORTING LOGIC REMOVED FROM HERE ---
+  // It will be applied within groupedRecipes
 
   return results;
 });
 
-// Paginated recipes
-const paginatedRecipes = computed(() => {
-  const startIndex = (currentPage.value - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  return filteredRecipes.value.slice(startIndex, endIndex);
+// --- NEW: Grouped Recipes ---
+const groupedRecipes = computed(() => {
+  const groups: Record<string, Recipe[]> = {};
+
+  filteredRecipes.value.forEach((recipe) => {
+    const cuisine = recipe.cuisine || 'Overig'; // Group recipes without cuisine under 'Overig'
+    if (!groups[cuisine]) {
+      groups[cuisine] = [];
+    }
+    groups[cuisine].push(recipe);
+  });
+
+  // Sort recipes within each group
+  for (const cuisine in groups) {
+    groups[cuisine].sort((a, b) => {
+      const comparison = a.title.localeCompare(b.title);
+      return sortDirection.value === 'asc' ? comparison : -comparison;
+    });
+  }
+
+  // Optionally sort the groups by cuisine name (alphabetically)
+  const sortedGroupKeys = Object.keys(groups).sort((a, b) =>
+    a.localeCompare(b)
+  );
+  const sortedGroups: Record<string, Recipe[]> = {};
+  sortedGroupKeys.forEach((key) => {
+    sortedGroups[key] = groups[key];
+  });
+
+  return sortedGroups;
 });
-
-// Total pages for pagination
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredRecipes.value.length / itemsPerPage))
-);
-
-// Navigation methods
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
-};
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
 
 // Reset filters
 const resetFilters = () => {
   searchQuery.value = '';
   selectedCuisine.value = undefined;
   showFavoritesOnly.value = false;
-  currentPage.value = 1;
+  // currentPage.value = 1; // Removed
   sortDirection.value = 'asc';
   selectedTimeFilter.value = undefined; // Reset time filter select
 };
 
-// Check if we need to show no results message (primarily for tests)
+// Check if we need to show no results message - UPDATED for groupedRecipes
 const showNoResultsMessage = computed(() => {
   if (!props.recipes || props.recipes.length === 0) {
     return false; // Don't show if there are no recipes initially
@@ -196,13 +198,16 @@ const showNoResultsMessage = computed(() => {
     showFavoritesOnly.value ||
     selectedTimeFilter.value !== undefined; // Check if time filter is selected
 
-  // Show message only if filters are active AND no results are found
-  return isAnyFilterActive && filteredRecipes.value.length === 0;
+  // Show message only if filters are active AND no results are found in any group
+  return (
+    isAnyFilterActive &&
+    Object.keys(groupedRecipes.value).length === 0
+  );
 });
 
-// Check if we need to show no recipes message (primarily for tests)
+// Check if we need to show no recipes message - UPDATED for groupedRecipes
 const showNoRecipesMessage = computed(() => {
-  // Only show this if NO filters are active and the initial list is empty
+  // Only show this if NO filters are active and the initial list results in no groups
   const isAnyFilterActive =
     searchQuery.value ||
     selectedCuisine.value ||
@@ -211,11 +216,13 @@ const showNoRecipesMessage = computed(() => {
 
   return (
     !isAnyFilterActive &&
-    (!props.recipes || props.recipes.length === 0)
+    (!props.recipes ||
+      props.recipes.length === 0 ||
+      Object.keys(groupedRecipes.value).length === 0)
   );
 });
 
-// Computed property to get active filter labels
+// Computed property to get active filter labels - Remains largely the same
 const activeFilters = computed(() => {
   const filters: { key: string; label: string }[] = [];
 
@@ -286,6 +293,7 @@ defineExpose({
       enter-from-class="opacity-0 translate-y-full"
       enter-to-class="opacity-100 translate-y-0"
     >
+      <!-- Conditionally render action bar only if there are recipes initially -->
       <div
         v-if="props.recipes && props.recipes.length > 0"
         class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200"
@@ -319,7 +327,7 @@ defineExpose({
     <!-- Active Filters Display -->
     <div
       v-if="activeFilters.length > 0"
-      class="flex flex-wrap items-center gap-2 mb-4"
+      class="flex flex-wrap items-center gap-2 mb-4 pt-4"
       data-testid="active-filters-display"
     >
       <UBadge
@@ -342,17 +350,33 @@ defineExpose({
       />
     </div>
 
-    <!-- Recipe Grid -->
+    <!-- Recipe Groups - NEW STRUCTURE -->
     <div
-      v-if="filteredRecipes.length > 0"
-      class="flex flex-wrap gap-2 pb-4"
+      v-if="Object.keys(groupedRecipes).length > 0"
+      class="space-y-4 pb-24"
     >
-      <RecipeCard
-        v-for="recipe in paginatedRecipes"
-        :key="recipe.id ?? recipe.title"
-        :recipe="recipe"
-        class="flex-grow basis-[calc(100%-0.5rem)] sm:basis-[calc(50%-0.5rem)] lg:basis-[calc(33.333%-0.5rem)] xl:basis-[calc(25%-0.5rem)]"
-      />
+      <!-- Iterate over each cuisine group -->
+      <div
+        v-for="(recipesInGroup, cuisine) in groupedRecipes"
+        :key="cuisine"
+      >
+        <h2 class="text-xl font-semibold mb-1 pl-1 mt-0">
+          {{ cuisine }}
+        </h2>
+        <!-- Horizontal scrolling container for recipes within the group -->
+        <div
+          class="flex overflow-x-auto space-x-4 py-2 snap-x snap-mandatory scrollbar-hide"
+          data-testid="recipe-group-scroll"
+        >
+          <RecipeCard
+            v-for="recipe in recipesInGroup"
+            :key="recipe.id ?? recipe.title"
+            :recipe="recipe"
+            class="w-64 flex-shrink-0 snap-start"
+            data-testid="recipe-card-in-group"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- No Results Message -->
@@ -377,37 +401,10 @@ defineExpose({
       class="text-center text-gray-500 py-8"
     >
       <p>Geen recepten gevonden.</p>
+      <!-- Optional: Add a button or link to add recipes if applicable -->
     </div>
 
-    <!-- Pagination Controls -->
-    <div
-      v-if="totalPages > 1"
-      class="flex justify-center items-center gap-2 mt-6"
-    >
-      <UButton
-        icon="i-heroicons-chevron-left"
-        color="gray"
-        variant="ghost"
-        :disabled="currentPage === 1"
-        @click="prevPage"
-        data-testid="prev-page"
-      />
-
-      <UBadge color="gray" variant="soft">
-        {{ currentPage }} / {{ totalPages }}
-      </UBadge>
-
-      <UButton
-        icon="i-heroicons-chevron-right"
-        color="gray"
-        variant="ghost"
-        :disabled="currentPage === totalPages"
-        @click="nextPage"
-        data-testid="next-page"
-      />
-    </div>
-
-    <!-- Filter and Sort Slideover -->
+    <!-- Filter and Sort Slideover - Remains largely the same -->
     <USlideover
       v-model="isFilterSlideoverOpen"
       side="bottom"
@@ -419,12 +416,12 @@ defineExpose({
       prevent-close
     >
       <UCard
-        class="flex flex-col flex-1"
+        class="flex flex-col flex-1 max-h-[80vh]"
         :ui="{
           header: { padding: 'py-2 px-4' },
           body: {
             padding: 'p-4',
-            base: 'flex-1',
+            base: 'flex-1 overflow-y-auto', // Added overflow-y-auto for smaller screens
           },
           footer: { padding: 'p-4' },
           ring: '',
@@ -447,7 +444,11 @@ defineExpose({
         </template>
 
         <!-- Body contains the actual filters and sort options -->
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Using grid layout for better spacing -->
+        <div class="space-y-4">
+          <!-- Search Input (Moved inside slideover for better mobile UX) -->
+          <!-- Removed from here, kept in bottom bar -->
+
           <!-- Sort by Title -->
           <UFormGroup label="Sorteren op titel">
             <USelectMenu
@@ -462,7 +463,7 @@ defineExpose({
           </UFormGroup>
 
           <!-- Quick Recipes -->
-          <UFormGroup label="Max. tijd">
+          <UFormGroup label="Max. kooktijd">
             <USelectMenu
               v-model="selectedTimeFilter"
               :options="timeFilterOptions"
@@ -506,13 +507,30 @@ defineExpose({
               </template>
             </USelectMenu>
             <p v-else class="text-sm text-gray-500 mt-1">
-              Geen keukens beschikbaar.
+              Geen keukens beschikbaar om te filteren.
             </p>
+          </UFormGroup>
+
+          <!-- Toggle Favorites -->
+          <UFormGroup label="Alleen favorieten">
+            <UToggle
+              v-model="showFavoritesOnly"
+              data-testid="favorites-toggle-slideover"
+            />
           </UFormGroup>
         </div>
 
         <template #footer>
-          <div class="flex justify-end gap-4">
+          <div class="flex justify-between gap-4">
+            <UButton
+              variant="ghost"
+              color="gray"
+              @click="resetFilters"
+              data-testid="reset-filters-slideover"
+              size="lg"
+            >
+              Reset
+            </UButton>
             <UButton
               @click="isFilterSlideoverOpen = false"
               data-testid="apply-filters-slideover"
@@ -527,3 +545,14 @@ defineExpose({
     </USlideover>
   </div>
 </template>
+
+<style scoped>
+/* Utility to hide scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+</style>
