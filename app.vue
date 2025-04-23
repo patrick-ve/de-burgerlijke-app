@@ -30,8 +30,7 @@ const { headerState } = useHeaderState();
 
 // Utility to help users reset color mode if stuck in dark mode
 onMounted(() => {
-  // Only run on client
-  if (process.client) {
+  if (import.meta.client) {
     localStorage.removeItem('nuxt-color-mode');
   }
 });
@@ -45,5 +44,9 @@ onMounted(() => {
 
 ion-content {
   padding-top: var(--padding-top) !important;
+}
+
+* {
+  font-family: 'Plus Jakarta Sans', serif;
 }
 </style>

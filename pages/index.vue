@@ -18,7 +18,7 @@ const toggleHamburgerMenu = () => {
 
 onMounted(() => {
   setHeader({
-    title: 'Home',
+    title: 'De Burgerlijke App',
     showLeftAction: true,
     leftActionHandler: toggleHamburgerMenu,
     showRightAction: false,
@@ -59,9 +59,9 @@ onMounted(() => {
       </div>
       <div class="relative flex items-center gap-3">
         <h1
-          class="text-3xl md:text-4xl text-center font-extrabold text-gray-900 tracking-tight"
+          class="text-2xl md:text-4xl text-center font-extrabold text-gray-900 tracking-tight"
         >
-          Welkom bij <br />De Burgerlijke App
+          Bespaar tijd en geld met <br />De Burgerlijke App
         </h1>
       </div>
       <p
