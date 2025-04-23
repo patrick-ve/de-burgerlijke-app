@@ -70,11 +70,19 @@ const totalTime = computed(() => {
     >
       <!-- Image Section -->
       <div class="flex-shrink-0">
-        <div v-if="recipe.imageUrl" class="w-24 h-24">
+        <div
+          v-if="recipe.imageUrl"
+          class="w-24 h-24 overflow-hidden rounded-lg"
+        >
           <NuxtImg
             :src="recipe.imageUrl"
             :alt="`Image of ${recipe.title}`"
             class="object-cover w-full h-full rounded-lg"
+            :class="
+              recipe.imageUrl.includes('youtube')
+                ? 'scale-[140%]'
+                : ''
+            "
             loading="lazy"
           />
         </div>
