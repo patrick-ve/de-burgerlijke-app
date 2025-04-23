@@ -27,7 +27,7 @@
 
     <!-- Input Fields based on type -->
     <UForm
-      :state="{ url, recipePrompt, imageFile }"
+      :state="{ url, recipePrompt, imageFile, recipeText }"
       @submit="submitRecipeRequest"
       class="space-y-4"
     >
@@ -68,6 +68,21 @@
         />
       </UFormGroup>
 
+      <!-- Text Input -->
+      <UFormGroup
+        v-if="selectedInputType === 'text'"
+        label="Plak de recepttekst hier"
+        name="recipeText"
+      >
+        <UTextarea
+          v-model="recipeText"
+          :placeholder="placeholderText"
+          :rows="10"
+          autoresize
+          size="lg"
+        />
+      </UFormGroup>
+
       <!-- Image File Input -->
       <UFormGroup
         v-if="selectedInputType === 'image'"
@@ -82,7 +97,18 @@
           size="lg"
           icon="i-heroicons-photo"
         />
-        <p v-if="imageFile" class="text-sm text-gray-500 mt-1">
+        <!-- Image Preview -->
+        <div v-if="imagePreviewUrl" class="mt-4">
+          <img
+            :src="imagePreviewUrl"
+            alt="Image preview"
+            class="w-full h-auto object-cover rounded border border-gray-300"
+          />
+        </div>
+        <p
+          v-if="imageFile && !imagePreviewUrl"
+          class="text-sm text-gray-500 mt-1"
+        >
           Geselecteerd: {{ imageFile.name }}
         </p>
       </UFormGroup>
@@ -173,6 +199,11 @@ const inputTypes = [
     icon: 'i-heroicons-photo',
   },
   {
+    value: 'text',
+    label: 'Kopiëren/Plakken',
+    icon: 'i-heroicons-clipboard-document-list',
+  },
+  {
     value: 'ai',
     label: 'Ik wil een recept genereren met AI',
     icon: 'i-heroicons-sparkles',
@@ -188,6 +219,8 @@ const selectedInputTypeData = computed(() =>
 const url = ref('');
 const recipePrompt = ref('');
 const imageFile = ref<File | null>(null); // State for the image file
+const imagePreviewUrl = ref<string | null>(null); // State for the image preview URL
+const recipeText = ref(''); // State for pasted text
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
@@ -200,6 +233,8 @@ const explanationText = computed(() => {
       return 'Plak de volledige URL van de YouTube video. We analyseren de video om het recept te verkrijgen.';
     case 'image':
       return 'Upload een duidelijke foto van het recept (bijv. uit een kookboek). Wij lezen de tekst op de foto uit en zetten deze om in een digitaal recept. Het is ook mogelijk om een foto te uploaden van een gerecht dat je hebt gemaakt.';
+    case 'text':
+      return 'Kopieer de volledige tekst van het recept (ingrediënten en bereidingswijze) en plak deze in het tekstvak hieronder. Wij proberen de structuur te herkennen en om te zetten.';
     case 'url':
     default:
       return 'Plak de volledige URL van de webpagina met het recept (bijv. van ah.nl of een receptenblog). We proberen automatisch de ingrediënten en stappen van de pagina te halen.';
@@ -215,6 +250,8 @@ const placeholderText = computed(() => {
       return 'https://www.youtube.com/watch?v=...';
     case 'image':
       return ''; // No placeholder needed for file input
+    case 'text':
+      return 'Plak hier de naam van het recept, de ingrediënten en de bereidingswijze...';
     case 'url':
     default:
       return 'www.ah.nl/recepten/...';
@@ -230,6 +267,8 @@ const apiEndpoint = computed(() => {
       return '/api/recipe/generate';
     case 'image': // New API endpoint for image
       return '/api/recipe/image';
+    case 'text':
+      return '/api/recipe/text'; // New API endpoint for text
     case 'url':
     default:
       return '/api/recipe/url';
@@ -237,14 +276,21 @@ const apiEndpoint = computed(() => {
 });
 
 // Handler for file input change
-function onFileChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const files = target.files;
+function onFileChange(files: FileList | null) {
   if (files && files.length > 0) {
     imageFile.value = files[0];
     error.value = null; // Clear error when file is selected
+    // Generate preview URL
+    if (imagePreviewUrl.value) {
+      URL.revokeObjectURL(imagePreviewUrl.value); // Revoke previous URL
+    }
+    imagePreviewUrl.value = URL.createObjectURL(imageFile.value);
   } else {
     imageFile.value = null;
+    if (imagePreviewUrl.value) {
+      URL.revokeObjectURL(imagePreviewUrl.value);
+      imagePreviewUrl.value = null;
+    }
   }
 }
 
@@ -272,6 +318,11 @@ function validateInput() {
       error.value = `Bestand is te groot (max ${
         maxSizeInBytes / 1024 / 1024
       }MB).`;
+      return false;
+    }
+  } else if (selectedInputType.value === 'text') {
+    if (!recipeText.value.trim()) {
+      error.value = 'Plak de recepttekst in het tekstvak.';
       return false;
     }
   } else {
@@ -325,15 +376,22 @@ async function submitRecipeRequest() {
       formData.append('image', imageFile.value);
       requestBody = formData;
       // No 'Content-Type' header needed for FormData
+    } else if (selectedInputType.value === 'text') {
+      requestBody = { text: recipeText.value };
     } else {
       requestBody =
         selectedInputType.value === 'ai'
           ? { prompt: recipePrompt.value }
-          : { url: url.value };
+          : selectedInputType.value === 'text'
+            ? { text: recipeText.value }
+            : { url: url.value };
       fetchOptions.headers = { 'Content-Type': 'application/json' };
     }
 
-    fetchOptions.body = requestBody;
+    fetchOptions.body =
+      selectedInputType.value === 'image'
+        ? requestBody // FormData
+        : JSON.stringify(requestBody); // Stringify for JSON
 
     console.log(`Submitting ${selectedInputType.value} request...`);
 
@@ -374,7 +432,9 @@ async function submitRecipeRequest() {
         ? 'Genereren'
         : selectedInputType.value === 'image'
           ? 'Afbeelding verwerken'
-          : 'URL versturen'
+          : selectedInputType.value === 'text'
+            ? 'Tekst verwerken'
+            : 'URL versturen'
     } mislukt. ${message}`;
   } finally {
     isLoading.value = false;
@@ -392,6 +452,8 @@ const submitButtonText = computed(() => {
       return 'Verwerk foto';
     case 'youtube':
       return 'Haal YouTube recept op';
+    case 'text':
+      return 'Verwerk tekst';
     case 'url':
     default:
       return 'Haal recept op';
@@ -406,6 +468,8 @@ const isSubmitDisabled = computed(() => {
       return !recipePrompt.value.trim();
     case 'image':
       return !imageFile.value;
+    case 'text':
+      return !recipeText.value.trim();
     case 'url':
     case 'youtube':
     default:
@@ -427,6 +491,10 @@ onMounted(async () => {
 onUnmounted(() => {
   resetHeader();
   isMounted.value = false;
+  // Revoke the object URL to free up memory
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value);
+  }
 });
 
 useHead({
