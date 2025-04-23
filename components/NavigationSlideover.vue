@@ -78,9 +78,7 @@ watch(
       },
     }"
   >
-    <div
-      class="p-4 space-y-4 h-full flex flex-col bg-gradient-to-b from-pink-50 via-blue-50 to-green-50"
-    >
+    <div class="p-4 space-y-4 h-full flex flex-col bg-white">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">
           De Burgerlijke App
@@ -103,7 +101,8 @@ watch(
         >
           <h4
             v-if="group.title !== 'Home'"
-            class="px-3 py-2 mb-0 text-sm font-bold text-gray-800 uppercase tracking-wider"
+            class="px-3 py-2 -mb-1 text-sm font-bold text-primary-500 uppercase tracking-wider"
+            r
           >
             {{ group.title }}
           </h4>
