@@ -6,7 +6,10 @@ import FirecrawlApp, {
   type FirecrawlDocumentMetadata,
 } from '@mendable/firecrawl-js';
 import { recipeSchema } from '~/server/utils/recipeSchema';
-import { ingredientCategories } from '~/types/recipe'; // Import the RENAMED (simplified) categories
+import {
+  ingredientCategories,
+  cuisineCategories,
+} from '~/types/recipe'; // Import the RENAMED (simplified) categories
 
 const inputSchema = z
   .object({
@@ -20,7 +23,7 @@ function createSystemPrompt(
   ogVideo?: string | null
 ): string {
   const categoryList = ingredientCategories.join(', '); // Use RENAMED (simplified) list
-
+  const cuisineList = cuisineCategories.join(', '); // Use RENAMED (simplified) list
   let prompt = `
 You are an expert in analyzing recipes. You are given a markdown representation of a cooking website containing a recipe, including its metadata.
 You must: 
@@ -97,7 +100,7 @@ interface Recipe {
   // Optional cooking time in minutes (can be null)
   cookTime?: number | null
 
-  // Type of cuisine (e.g., Dutch, Italian) (can be null)
+  // Type of cuisine (e.g., Dutch, Italian) (can be null), must be one of the following: ${cuisineList}
   cuisine?: string | null
 
   // Number of portions this recipe yields (must be a positive number)

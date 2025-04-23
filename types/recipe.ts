@@ -28,6 +28,33 @@ export const ingredientCategories = [
   'Other',
 ] as const;
 
+export const cuisineCategories = [
+  'Nederlands',
+  'Italiaans',
+  'Frans',
+  'Spaans',
+  'Grieks',
+  'Marokkaans',
+  'Turks',
+  'Libanees',
+  'Mexicaans',
+  'Indiaas',
+  'Thais',
+  'Vietnamees',
+  'Chinees',
+  'Japans',
+  'Indonesisch',
+  'Koreaans',
+  'Surinaams',
+  'Amerikaans',
+  'Duits',
+  'Brits',
+  'Caribisch',
+  'Zuid-Amerikaans',
+  'West-Afrikaans',
+  'Overig',
+] as const;
+
 // Define the type based on the tuple values
 export type IngredientCategory =
   (typeof ingredientCategories)[number];
