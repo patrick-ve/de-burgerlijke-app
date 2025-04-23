@@ -30,11 +30,11 @@ const navigation = [
     to: '/to-do',
     icon: 'i-heroicons-check-circle',
   },
-  // {
-  //   label: 'Verjaardagen',
-  //   to: '/birthdays',
-  //   icon: 'i-heroicons-cake',
-  // },
+  {
+    label: 'Verjaardagen',
+    to: '/birthdays',
+    icon: 'i-heroicons-cake',
+  },
   // {
   //   label: 'Baby',
   //   to: '/baby',
