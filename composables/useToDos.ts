@@ -10,6 +10,12 @@ export interface ToDo {
   createdAt: Date;
   updatedAt: Date;
   dueDate?: Date | null; // Add optional dueDate property
+  attachment?: {
+    name: string;
+    type: string;
+    size: number;
+    data: string; // Base64 encoded file data
+  } | null; // Add optional attachment property
 }
 
 // Use useStorage to persist the To-Do list in localStorage
@@ -53,6 +59,7 @@ export function useToDos() {
       createdAt: new Date(),
       updatedAt: new Date(),
       dueDate: null, // Initialize dueDate as null
+      attachment: null, // Initialize attachment as null
     };
     toDos.value.push(newToDo);
     console.log('ToDo Added:', newToDo);
@@ -118,6 +125,72 @@ export function useToDos() {
     }
   };
 
+  /**
+   * Attaches a file to a specific To-Do item.
+   * Converts the file to a Base64 string for storage.
+   * Note: Large files might exceed localStorage limits.
+   */
+  const attachFileToToDo = (id: string, file: File) => {
+    const index = toDos.value.findIndex((item) => item.id === id);
+    if (index === -1) {
+      console.warn(
+        'Attempted to attach file to non-existent To-Do:',
+        id
+      );
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        // Check file size (example: limit to 2MB)
+        const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+        if (file.size > maxSize) {
+          console.error(
+            `File size exceeds the limit of ${maxSize / 1024 / 1024}MB. File not attached.`
+          );
+          // Optionally, provide user feedback here (e.g., using a toast notification)
+          return;
+        }
+
+        toDos.value[index].attachment = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: result, // Base64 string
+        };
+        toDos.value[index].updatedAt = new Date();
+        console.log('File Attached to ToDo:', toDos.value[index]);
+      } else {
+        console.error('Failed to read file as Base64 string.');
+      }
+    };
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+    };
+    reader.readAsDataURL(file); // Reads the file as Base64
+  };
+
+  /**
+   * Removes the attachment from a specific To-Do item.
+   */
+  const removeAttachment = (id: string) => {
+    const index = toDos.value.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      if (toDos.value[index].attachment) {
+        toDos.value[index].attachment = null;
+        toDos.value[index].updatedAt = new Date();
+        console.log('Attachment Removed from ToDo:', id);
+      }
+    } else {
+      console.warn(
+        'Attempted to remove attachment from non-existent To-Do:',
+        id
+      );
+    }
+  };
+
   return {
     sortedPendingTodos,
     completedTodos,
@@ -127,5 +200,7 @@ export function useToDos() {
     clearCompleted,
     clearAll,
     setDueDate,
+    attachFileToToDo,
+    removeAttachment,
   };
 }

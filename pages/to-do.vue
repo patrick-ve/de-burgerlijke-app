@@ -24,6 +24,8 @@ const {
   clearCompleted,
   clearAll,
   setDueDate,
+  attachFileToToDo,
+  removeAttachment,
 } = useToDos();
 const { headerState, setHeader, resetHeader, defaultLeftAction } =
   useHeaderState();
@@ -57,6 +59,10 @@ const isModalOpen = ref(false);
 const isDatePickerModalOpen = ref(false);
 const selectedTodoId = ref<string | null>(null);
 const selectedDate = ref<Date | null>(null);
+
+// File Input Ref
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedTodoIdForAttachment = ref<string | null>(null);
 
 const handleAddToDo = () => {
   addToDo(newTodoText.value);
@@ -129,6 +135,40 @@ const saveDueDate = () => {
   closeDatePickerModal();
 };
 
+// --- File Attachment Handlers ---
+const triggerFileInput = (todoId: string) => {
+  selectedTodoIdForAttachment.value = todoId; // Store the id of the todo we're attaching to
+  fileInputRef.value?.click(); // Trigger the hidden file input
+};
+
+const handleFileSelected = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (file && selectedTodoIdForAttachment.value) {
+    attachFileToToDo(selectedTodoIdForAttachment.value, file);
+    // Clear the file input and the stored id after processing
+    if (fileInputRef.value) {
+      fileInputRef.value.value = ''; // Reset file input
+    }
+    selectedTodoIdForAttachment.value = null;
+  } else if (!file) {
+    console.log('No file selected.');
+    selectedTodoIdForAttachment.value = null; // Clear id even if no file selected
+  }
+};
+
+// Helper to get a readable file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return (
+    parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  );
+};
+
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
@@ -148,6 +188,15 @@ useHead({ title: 'Mijn Taken' }); // Set page title
 <template>
   <div class="pb-24">
     <!-- Add padding-bottom to prevent overlap with action bar -->
+
+    <!-- Hidden File Input -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      class="hidden"
+      @change="handleFileSelected"
+      aria-hidden="true"
+    />
 
     <!-- Pending To-Dos -->
     <div v-if="sortedPendingTodos.length > 0" class="mb-6 px-4">
@@ -173,7 +222,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                 base: 'h-5 w-5',
               }"
             />
-            <div class="flex-grow">
+            <div class="flex-grow min-w-0">
               <span class="text-gray-800">{{ todo.text }}</span>
               <!-- Display Due Date -->
               <p
@@ -185,9 +234,50 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                   format(new Date(todo.dueDate), 'd MMM, yyyy HH:mm')
                 }}
               </p>
+              <!-- Display Attachment Info -->
+              <div
+                v-if="todo.attachment"
+                class="mt-1.5 flex items-center space-x-2 text-xs text-gray-600"
+              >
+                <UIcon
+                  name="i-heroicons-paper-clip"
+                  class="h-4 w-4 flex-shrink-0"
+                />
+                <a
+                  :href="todo.attachment.data"
+                  :download="todo.attachment.name"
+                  target="_blank"
+                  class="hover:underline truncate"
+                  :title="`${todo.attachment.name} (${formatFileSize(todo.attachment.size)})`"
+                >
+                  {{ todo.attachment.name }} ({{
+                    formatFileSize(todo.attachment.size)
+                  }})
+                </a>
+                <UButton
+                  icon="i-heroicons-x-mark-solid"
+                  size="2xs"
+                  color="red"
+                  variant="link"
+                  :padded="false"
+                  @click="removeAttachment(todo.id)"
+                  aria-label="Remove Attachment"
+                  class="ml-auto flex-shrink-0"
+                />
+              </div>
             </div>
           </div>
-          <div class="flex items-center space-x-1">
+          <div class="flex items-center space-x-1 flex-shrink-0">
+            <!-- Attach File Button -->
+            <UButton
+              icon="i-heroicons-paper-clip"
+              size="sm"
+              color="gray"
+              variant="ghost"
+              @click="triggerFileInput(todo.id)"
+              aria-label="Attach File"
+              :disabled="!!todo.attachment"
+            />
             <!-- Due Date Button -->
             <UButton
               :icon="
@@ -242,7 +332,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                 base: 'h-5 w-5',
               }"
             />
-            <div class="flex-grow">
+            <div class="flex-grow min-w-0">
               <span class="text-gray-500 line-through">{{
                 todo.text
               }}</span>
@@ -256,9 +346,28 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                   format(new Date(todo.dueDate), 'd MMM, yyyy HH:mm')
                 }}
               </p>
+              <!-- Display Attachment Info for completed -->
+              <div
+                v-if="todo.attachment"
+                class="mt-1.5 flex items-center space-x-2 text-xs text-gray-500 line-through"
+              >
+                <UIcon
+                  name="i-heroicons-paper-clip"
+                  class="h-4 w-4 flex-shrink-0"
+                />
+                <span
+                  class="truncate"
+                  :title="`${todo.attachment.name} (${formatFileSize(todo.attachment.size)})`"
+                >
+                  {{ todo.attachment.name }} ({{
+                    formatFileSize(todo.attachment.size)
+                  }})
+                </span>
+                <!-- No remove button for completed attachments -->
+              </div>
             </div>
           </div>
-          <!-- No date picker button for completed todos -->
+          <!-- No date picker or attach button for completed todos -->
           <UButton
             icon="i-heroicons-trash"
             size="sm"
