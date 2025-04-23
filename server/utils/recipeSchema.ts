@@ -80,6 +80,33 @@ export const stepSchema = z
   })
   .describe('Schema for a preparation step in the recipe');
 
+export const cuisineEnum = z.enum([
+  'Nederlands',
+  'Italiaans',
+  'Frans',
+  'Spaans',
+  'Grieks',
+  'Marokkaans',
+  'Turks',
+  'Libanees',
+  'Mexicaans',
+  'Indiaas',
+  'Thais',
+  'Vietnamees',
+  'Chinees',
+  'Japans',
+  'Indonesisch',
+  'Koreaans',
+  'Surinaams',
+  'Amerikaans',
+  'Duits',
+  'Brits',
+  'Caribisch',
+  'Zuid-Amerikaans',
+  'West-Afrikaans',
+  'Overig',
+]);
+
 export const recipeSchema = z
   .object({
     title: z.string().describe('Title of the recipe'),
@@ -102,11 +129,10 @@ export const recipeSchema = z
       .number()
       .positive()
       .describe('Number of portions this recipe yields'),
-    cuisine: z
-      .string()
+    cuisine: cuisineEnum // Use the defined enum
       .nullable()
       .optional()
-      .describe('Optional type of cuisine (e.g., Dutch, Italian)'),
+      .describe('Optional type of cuisine in Dutch labels'),
     ingredients: z
       .array(ingredientSchema)
       .describe('List of ingredients'),
@@ -137,5 +163,6 @@ export const recipeSchema = z
 export type AIRecipeDTO = z.infer<typeof recipeSchema>;
 export type Ingredient = z.infer<typeof ingredientSchema>;
 export type Step = z.infer<typeof stepSchema>;
+export type Cuisine = z.infer<typeof cuisineEnum>; // Export the type
 
 export { ingredientCategories };
