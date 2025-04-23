@@ -74,7 +74,7 @@ onMounted(async () => {
   isMounted.value = true;
 
   setHeader({
-    title: 'Mijn recepten',
+    title: 'Recepten',
     showLeftAction: true,
     showRightAction: true,
     rightActionHandler: openAddModal, // Ensure the header button also opens the modal
