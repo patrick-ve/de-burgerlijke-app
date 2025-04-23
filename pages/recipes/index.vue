@@ -45,15 +45,9 @@
         aria-label="Voeg nieuw recept toe"
         label="Nieuw recept toevoegen"
         class="font-bold"
-        @click="openAddModal"
+        @click="router.push('/recipes/new')"
       />
     </div>
-
-    <!-- Add Recipe Modal -->
-    <AddRecipeModal
-      v-model:isOpen="isAddModalOpen"
-      @recipeParsed="handleRecipeParsed"
-    />
 
     <!-- Recipe Search Bar with Transition -->
     <Transition name="slide-fade">
@@ -82,7 +76,6 @@ import { useRouter, useRoute } from 'vue-router';
 import type { AIRecipeDTO } from '@/server/utils/recipeSchema'; // Import DTO type
 import { useHeaderState } from '@/composables/useHeaderState';
 import { useRecipes } from '@/composables/useRecipes'; // Import the new composable
-import AddRecipeModal from '@/components/AddRecipeModal.vue'; // Import the modal component
 import RecipeSearchBar from '@/components/RecipeSearchBar.vue'; // Import the search bar component
 import RecipeList from '@/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
 
@@ -91,7 +84,6 @@ const route = useRoute(); // Get the route object
 const { headerState, setHeader, resetHeader } = useHeaderState();
 const isMounted = ref(false);
 const { recipes, addRecipe } = useRecipes(); // Get recipes and addRecipe from the composable
-const isAddModalOpen = ref(false); // State for modal visibility
 const isSearchActive = ref(false); // State for search bar visibility
 const searchTerm = ref(''); // State for the search term
 
@@ -102,20 +94,9 @@ interface RecipeListInstance {
 
 const recipeListRef = ref<RecipeListInstance | null>(null); // Ref for RecipeList component
 
-// Function to open the modal
-const openAddModal = () => {
-  isAddModalOpen.value = true;
-};
-
 // Function to toggle search bar
 const toggleSearch = () => {
   isSearchActive.value = !isSearchActive.value;
-};
-
-// Handler function for the recipeParsed event
-const handleRecipeParsed = (recipeData: AIRecipeDTO) => {
-  addRecipe(recipeData); // Call the addRecipe function from the composable
-  // Modal is closed by the AddRecipeModal component itself upon success
 };
 
 // Handler function for search input changes (can be debounced if needed)
@@ -153,19 +134,6 @@ const containerPaddingTop = computed(() => {
   // We need to check the actual rendered height
   return isSearchActive.value ? 'pt-20' : 'pt-4'; // Adjusted padding calculation
 });
-
-// Watch for changes in the query parameter
-watch(
-  () => route.query.newRecipe,
-  (newValue) => {
-    if (newValue === 'true') {
-      openAddModal();
-      // Optional: Remove the query param after opening the modal
-      // router.replace({ query: { ...route.query, newRecipe: undefined } });
-    }
-  },
-  { immediate: true } // Check immediately on component load
-);
 
 onMounted(async () => {
   await nextTick();
