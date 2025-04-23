@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Recipe } from '@/types/recipe';
 import RecipeCard from '@/components/RecipeCard.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, defineExpose } from 'vue';
 
 interface Props {
   recipes: Recipe[];
@@ -263,6 +263,17 @@ const activeFilters = computed(() => {
   }
 
   return filters;
+});
+
+// --- Expose Method ---
+// Function to open the slideover from the parent
+const openFilters = () => {
+  isFilterSlideoverOpen.value = true;
+};
+
+// Expose the openFilters function to the parent component
+defineExpose({
+  openFilters,
 });
 </script>
 

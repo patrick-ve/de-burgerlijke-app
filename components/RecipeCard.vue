@@ -66,18 +66,15 @@ const totalTime = computed(() => {
     />
 
     <div
-      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-3 hover:shadow-lg transition-shadow duration-200 ease-in-out w-full"
+      class="recipe-card bg-white dark:bg-gray-800 rounded-xl border-[1px] border-gray-200 overflow-hidden flex items-start space-x-4 p-0 hover:shadow-lg transition-shadow duration-200 ease-in-out w-full"
     >
       <!-- Image Section -->
       <div class="flex-shrink-0">
-        <div
-          v-if="recipe.imageUrl"
-          class="w-24 h-24 overflow-hidden rounded-lg"
-        >
+        <div v-if="recipe.imageUrl" class="w-24 h-24 overflow-hidden">
           <NuxtImg
             :src="recipe.imageUrl"
             :alt="`Image of ${recipe.title}`"
-            class="object-cover w-full h-full rounded-lg"
+            class="object-cover w-full h-full"
             :class="
               recipe.imageUrl.includes('youtube')
                 ? 'scale-[140%]'
@@ -98,7 +95,7 @@ const totalTime = computed(() => {
       </div>
 
       <!-- Text Content Section -->
-      <div class="flex-grow min-w-0 pr-4">
+      <div class="flex-grow min-w-0 pr-4 pt-4 rounded-lg">
         <h3
           class="text-lg font-semibold text-gray-900 dark:text-white recipe-title mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors mt-0 max-w-[22ch] overflow-hidden text-ellipsis whitespace-nowrap"
         >
@@ -115,7 +112,8 @@ const totalTime = computed(() => {
             title="Portions"
           >
             <UIcon name="i-heroicons-users" class="mr-1 h-4 w-4" />
-            {{ recipe.portions }} porties
+            {{ recipe.portions }}
+            {{ recipe.portions > 1 ? 'porties' : 'portie' }}
           </span>
           <!-- Merged Prep and Cook Time -->
           <span

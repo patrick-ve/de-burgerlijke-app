@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4">
-    <RecipeList :recipes="recipes" />
+  <div class="p-4 pb-20" :class="containerPaddingTop">
+    <RecipeList ref="recipeListRef" :recipes="filteredRecipes" />
 
     <Teleport to="#header-left-action">
       <UButton
@@ -12,31 +12,65 @@
       />
     </Teleport>
 
+    <!-- Search Icon Button in Header -->
     <Teleport to="#header-right-action">
       <UButton
         v-if="headerState.showRightAction"
-        color="primary"
-        aria-label="Voeg nieuw recept toe"
-        label="Voeg toe"
-        class="font-bold text-xs"
-        @click="openAddModal"
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-magnifying-glass-20-solid"
+        aria-label="Zoek recepten"
+        @click="toggleSearch"
       />
     </Teleport>
 
+    <!-- Fixed Bottom Action Bar -->
+    <div
+      class="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-50"
+    >
+      <UButton
+        block
+        size="lg"
+        color="primary"
+        aria-label="Voeg nieuw recept toe"
+        label="Nieuw recept toevoegen"
+        class="font-bold"
+        @click="openAddModal"
+      />
+    </div>
+
+    <!-- Add Recipe Modal -->
     <AddRecipeModal
       v-model:isOpen="isAddModalOpen"
       @recipeParsed="handleRecipeParsed"
+    />
+
+    <!-- Recipe Search Bar -->
+    <RecipeSearchBar
+      v-model:isActive="isSearchActive"
+      v-model:searchTerm="searchTerm"
+      @search="handleSearch"
+      @filterClick="triggerRecipeListFilters"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  watch,
+  computed,
+} from 'vue';
 import type { AIRecipeDTO } from '~/server/utils/recipeSchema'; // Import DTO type
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useRecipes } from '~/composables/useRecipes'; // Import the new composable
 import AddRecipeModal from '~/components/AddRecipeModal.vue'; // Import the modal component
+import RecipeSearchBar from '~/components/RecipeSearchBar.vue'; // Import the search bar component
 import { useRouter, useRoute } from 'vue-router';
+import RecipeList from '~/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
 
 const router = useRouter();
 const route = useRoute(); // Get the route object
@@ -44,10 +78,24 @@ const { headerState, setHeader, resetHeader } = useHeaderState();
 const isMounted = ref(false);
 const { recipes, addRecipe } = useRecipes(); // Get recipes and addRecipe from the composable
 const isAddModalOpen = ref(false); // State for modal visibility
+const isSearchActive = ref(false); // State for search bar visibility
+const searchTerm = ref(''); // State for the search term
+
+// Add type for exposed RecipeList methods
+interface RecipeListInstance {
+  openFilters: () => void;
+}
+
+const recipeListRef = ref<RecipeListInstance | null>(null); // Ref for RecipeList component
 
 // Function to open the modal
 const openAddModal = () => {
   isAddModalOpen.value = true;
+};
+
+// Function to toggle search bar
+const toggleSearch = () => {
+  isSearchActive.value = !isSearchActive.value;
 };
 
 // Handler function for the recipeParsed event
@@ -55,6 +103,39 @@ const handleRecipeParsed = (recipeData: AIRecipeDTO) => {
   addRecipe(recipeData); // Call the addRecipe function from the composable
   // Modal is closed by the AddRecipeModal component itself upon success
 };
+
+// Handler function for search input changes (can be debounced if needed)
+const handleSearch = (value: string) => {
+  // The actual filtering logic is handled by the computed property `filteredRecipes`
+  // This function is kept for potential future use (e.g., debouncing, explicit search triggers)
+};
+
+// Handler to trigger filters in RecipeList component
+const triggerRecipeListFilters = () => {
+  recipeListRef.value?.openFilters(); // Call exposed method
+};
+
+// Computed property to filter recipes based on searchTerm
+const filteredRecipes = computed(() => {
+  if (!searchTerm.value) {
+    return recipes.value; // Return all recipes if search term is empty
+  }
+  const lowerCaseSearchTerm = searchTerm.value.toLowerCase();
+  return recipes.value.filter(
+    (recipe) =>
+      recipe.title.toLowerCase().includes(lowerCaseSearchTerm)
+    // Add more fields to search here if needed, e.g.:
+    // || recipe.description.toLowerCase().includes(lowerCaseSearchTerm)
+    // || recipe.ingredients.some(ingredient => ingredient.name.toLowerCase().includes(lowerCaseSearchTerm))
+  );
+});
+
+// Computed property for top padding based on search bar visibility
+const containerPaddingTop = computed(() => {
+  // Adjust this value based on the actual height of your search bar + header
+  // Assuming search bar takes roughly 4rem (64px)
+  return isSearchActive.value ? 'pt-20' : 'pt-4';
+});
 
 // Watch for changes in the query parameter
 watch(
@@ -77,7 +158,7 @@ onMounted(async () => {
     title: 'Recepten',
     showLeftAction: true,
     showRightAction: true,
-    rightActionHandler: openAddModal, // Ensure the header button also opens the modal
+    // Removed rightActionHandler as it's now for search
   });
 });
 
