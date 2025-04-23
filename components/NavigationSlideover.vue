@@ -4,42 +4,58 @@ import { useNavigationState } from '~/composables/useNavigationState';
 const { isNavOpen, closeNav } = useNavigationState();
 const route = useRoute();
 
-const navigation = [
+// Define the navigation structure with groups
+const navigationGroups = [
   {
-    label: 'Home',
-    to: '/',
-    icon: 'i-heroicons-home',
+    title: 'Home',
+    links: [
+      {
+        label: 'Home',
+        to: '/',
+        icon: 'i-heroicons-home',
+      },
+    ],
   },
   {
-    label: 'Recepten',
-    to: '/recipes',
-    icon: 'i-heroicons-book-open',
+    title: 'Koken & Boodschappen',
+    links: [
+      {
+        label: 'Recepten',
+        to: '/recipes',
+        icon: 'i-heroicons-book-open',
+      },
+      {
+        label: 'Maaltijdenplanner',
+        to: '/planner',
+        icon: 'i-heroicons-calendar-days',
+      },
+      {
+        label: 'Boodschappenlijst',
+        to: '/shopping-list',
+        icon: 'i-heroicons-shopping-cart',
+      },
+    ],
   },
   {
-    label: 'Maaltijdenplanner',
-    to: '/planner',
-    icon: 'i-heroicons-calendar-days',
+    title: 'Planning & Kalender',
+    links: [
+      {
+        label: 'Takenlijst',
+        to: '/to-do',
+        icon: 'i-heroicons-check-circle',
+      },
+      {
+        label: 'Verjaardagen',
+        to: '/birthdays',
+        icon: 'i-heroicons-cake',
+      },
+      // {
+      //   label: 'Baby',
+      //   to: '/baby',
+      //   icon: 'i-heroicons-user',
+      // },
+    ],
   },
-  {
-    label: 'Boodschappenlijst',
-    to: '/shopping-list',
-    icon: 'i-heroicons-shopping-cart',
-  },
-  {
-    label: 'Takenlijst',
-    to: '/to-do',
-    icon: 'i-heroicons-check-circle',
-  },
-  {
-    label: 'Verjaardagen',
-    to: '/birthdays',
-    icon: 'i-heroicons-cake',
-  },
-  // {
-  //   label: 'Baby',
-  //   to: '/baby',
-  //   icon: 'i-heroicons-user',
-  // },
 ];
 
 // Close slideover on navigation
@@ -80,25 +96,30 @@ watch(
       </div>
 
       <nav class="flex-grow space-y-1">
-        <NuxtLink
-          v-for="link in navigation"
-          :key="link.to"
-          :disabled="link.to === '/baby'"
-          :to="link.to"
-          class="flex items-center gap-3 px-3 py-2 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
-          active-class="bg-white/50 text-primary-700 font-semibold"
+        <div
+          v-for="group in navigationGroups"
+          :key="group.title"
+          class="mb-6"
         >
-          <UIcon :name="link.icon" class="w-5 h-5" />
-          <span>{{ link.label }}</span>
-        </NuxtLink>
+          <h4
+            v-if="group.title !== 'Home'"
+            class="px-3 py-2 mb-0 text-sm font-bold text-gray-800 uppercase tracking-wider"
+          >
+            {{ group.title }}
+          </h4>
+          <NuxtLink
+            v-for="link in group.links"
+            :key="link.to"
+            :disabled="link.to === '/baby'"
+            :to="link.to"
+            class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
+            active-class="bg-white/50 text-primary-700 font-semibold"
+          >
+            <UIcon :name="link.icon" class="w-5 h-5" />
+            <span>{{ link.label }}</span>
+          </NuxtLink>
+        </div>
       </nav>
-
-      <div class="mt-auto flex justify-center">
-        <img
-          src="/illustration.png"
-          class="w-[60%] h-auto object-contain"
-        />
-      </div>
     </div>
   </USlideover>
 </template>
