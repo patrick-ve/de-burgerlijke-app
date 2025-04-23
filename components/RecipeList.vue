@@ -345,7 +345,7 @@ defineExpose({
     <!-- Recipe Grid -->
     <div
       v-if="filteredRecipes.length > 0"
-      class="flex flex-wrap gap-2 pb-20"
+      class="flex flex-wrap gap-2 pb-4"
     >
       <RecipeCard
         v-for="recipe in paginatedRecipes"
