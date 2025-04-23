@@ -61,14 +61,15 @@ onMounted(() => {
         <h1
           class="text-2xl md:text-4xl text-center font-extrabold text-gray-900 tracking-tight"
         >
-          Bespaar tijd en geld met <br />De Burgerlijke App
+          Bespaar tijd en geld,<br />organiseer je huishouden
+          efficiënter
         </h1>
       </div>
       <p
-        class="relative text-lg text-gray-700 mt-4 text-center max-w-2xl"
+        class="relative text-md text-gray-700 mt-4 text-center max-w-2xl"
       >
         Jouw hulp voor het makkelijk organiseren van recepten, plannen
-        van maaltijden, en slim boodschappen doen.<br />
+        van maaltijden en goedkoper boodschappen doen.<br />
       </p>
     </section>
 
