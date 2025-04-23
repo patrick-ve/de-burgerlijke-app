@@ -353,26 +353,26 @@ defineExpose({
     <!-- Recipe Groups - NEW STRUCTURE -->
     <div
       v-if="Object.keys(groupedRecipes).length > 0"
-      class="space-y-4 pb-24"
+      class="space-y-4 pb-0"
     >
       <!-- Iterate over each cuisine group -->
       <div
         v-for="(recipesInGroup, cuisine) in groupedRecipes"
         :key="cuisine"
       >
-        <h2 class="text-xl font-semibold mb-1 pl-1 mt-0">
+        <h2 class="text-xl font-semibold mb-0 pl-4 mt-0">
           {{ cuisine }}
         </h2>
         <!-- Horizontal scrolling container for recipes within the group -->
         <div
-          class="flex overflow-x-auto space-x-4 py-2 snap-x snap-mandatory scrollbar-hide"
+          class="flex overflow-x-auto py-2 snap-x snap-mandatory scrollbar-hide"
           data-testid="recipe-group-scroll"
         >
           <RecipeCard
             v-for="recipe in recipesInGroup"
             :key="recipe.id ?? recipe.title"
             :recipe="recipe"
-            class="w-64 flex-shrink-0 snap-start"
+            class="w-64 flex-shrink-0 snap-start pl-4"
             data-testid="recipe-card-in-group"
           />
         </div>

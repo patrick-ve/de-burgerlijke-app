@@ -1,6 +1,6 @@
 <template>
   <div
-    class="p-4 pb-20 transition-padding duration-300 ease-in-out"
+    class="p-4 px-0 pb-20 transition-padding duration-300 ease-in-out"
     :class="containerPaddingTop"
   >
     <!-- Apply transition to RecipeList -->
