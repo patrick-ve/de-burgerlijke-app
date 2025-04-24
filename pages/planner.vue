@@ -52,11 +52,30 @@ const modalTargetDate = ref<Date | null>(null);
 const modalSelectedRecipeId = ref<string>(''); // State for modal's recipe selection
 const modalSelectedPortions = ref<number>(1); // State for modal's portion selection
 
+// --- Add watcher to update portions based on selected recipe ---
+watch(modalSelectedRecipeId, (newRecipeId) => {
+  if (newRecipeId) {
+    const selectedRecipe = recipes.value.find(
+      (r) => r.id === newRecipeId
+    );
+    if (selectedRecipe && selectedRecipe.portions > 0) {
+      modalSelectedPortions.value = selectedRecipe.portions;
+    } else {
+      // Recipe not found or has 0 portions, default to 1
+      modalSelectedPortions.value = 1;
+    }
+  } else {
+    // No recipe selected, default to 1
+    modalSelectedPortions.value = 1;
+  }
+});
+
 // Function to open the modal for a specific date
 function openPlannerModal(date: Date) {
   modalTargetDate.value = date;
-  modalSelectedRecipeId.value = ''; // Reset selection
-  modalSelectedPortions.value = 1; // Reset portions
+  modalSelectedRecipeId.value = ''; // Reset selection (watcher will set portions to 1)
+  // --- Remove explicit portion reset, handled by watcher now ---
+  // modalSelectedPortions.value = 1;
   isModalOpen.value = true;
 }
 
@@ -271,10 +290,36 @@ const formattedModalDate = computed(() => {
 });
 
 const router = useRouter();
+
+// Helper function to get the ISO week number
+function getISOWeekNumber(date: Date): number {
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  );
+  // Set to nearest Thursday: current date + 4 - current day number
+  // Make Sunday's day number 7
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  // Get first day of year
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  // Calculate full weeks to nearest Thursday
+  const weekNo = Math.ceil(
+    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+  );
+  // Return week number
+  return weekNo;
+}
+
+const currentWeekNumber = computed(() =>
+  getISOWeekNumber(startDisplayDate)
+);
 </script>
 
 <template>
   <UContainer class="pb-24">
+    <!-- Week Number Display -->
+    <div class="text-center text-xl font-semibold my-4">
+      Week {{ currentWeekNumber }}
+    </div>
     <!-- Header is handled by TheHeader component using useHeaderState -->
     <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mt-4">
       <div
@@ -311,7 +356,7 @@ const router = useRouter();
 
         <!-- Day/Date Info and Add Button Section -->
         <div
-          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
+          class="relative z-10 p-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
           :class="{
             'text-white border-b-0': day.meals.value.length > 0,
           }"
@@ -365,7 +410,7 @@ const router = useRouter();
           <!-- Planned Meal Title: Positioned bottom-right when meal exists -->
           <span
             v-if="day.meals.value.length > 0"
-            class="text-xl font-semibold"
+            class="text-lg font-semibold"
             >{{ day.meals.value[0].recipeTitle }} ({{
               day.meals.value[0].portions
             }}
@@ -465,7 +510,7 @@ const router = useRouter();
     >
       <div
         v-if="showActionBar"
-        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-30"
       >
         <UButton
           block
