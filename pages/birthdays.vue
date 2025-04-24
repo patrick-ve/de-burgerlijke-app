@@ -20,6 +20,16 @@ const currentMonth = new Date().getMonth(); // 0-indexed
 const currentDay = new Date().getDate();
 const newBirthdayMonth = ref<number>(currentMonth); // Month (0-11)
 const newBirthdayDay = ref<number>(currentDay); // Day (1-31)
+const newBirthdayYear = ref<number | null>(null); // Optional Year
+
+// Computed property to handle v-model for the year input (accepts null, outputs undefined or number)
+const newBirthdayYearInput = computed({
+  get: () => newBirthdayYear.value ?? undefined,
+  set: (val) => {
+    // v-model.number provides number or undefined if input is cleared/invalid
+    newBirthdayYear.value = val === undefined ? null : val;
+  },
+});
 
 // Month options for the select dropdown
 const monthOptions = computed(() => {
@@ -48,6 +58,7 @@ const openAddModal = () => {
   const now = new Date();
   newBirthdayMonth.value = now.getMonth();
   newBirthdayDay.value = now.getDate();
+  newBirthdayYear.value = null; // Reset year
   isAddModalOpen.value = true;
 };
 
@@ -59,21 +70,37 @@ const saveNewBirthday = () => {
   const name = newBirthdayName.value.trim();
   const month = newBirthdayMonth.value; // 0-11
   const day = newBirthdayDay.value;
+  const year = newBirthdayYear.value; // Optional year
 
   if (name && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
     const currentYear = new Date().getFullYear();
-    const birthdayDate = new Date(currentYear, month, day);
 
+    // Validate day for the selected month
     const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
     if (day > daysInMonth) {
       console.warn(`Invalid day (${day}) for selected month.`);
+      // Add user feedback here, e.g., using a toast notification
       return;
     }
 
-    addBirthday(name, birthdayDate);
+    // Validate year (basic range check)
+    if (year && (year < 1900 || year > currentYear)) {
+      console.warn(
+        `Invalid year provided: ${year}. Year must be between 1900 and ${currentYear}.`
+      );
+      // Add user feedback here
+      return; // Prevent saving with invalid year
+    }
+
+    // Use current year for the date object if no year provided for consistency
+    const birthdayDate = new Date(year ?? currentYear, month, day);
+
+    addBirthday(name, birthdayDate, year); // Pass year to composable
     closeAddModal();
+    newBirthdayYear.value = null; // Reset year after saving
   } else {
     console.warn('Invalid name, month, or day for new birthday.');
+    // Add user feedback here
   }
 };
 
@@ -86,6 +113,32 @@ const formatDate = (date: Date): string => {
     console.error('Error formatting date:', error, date);
     return 'Invalid Date'; // Fallback for invalid dates
   }
+};
+
+// --- Age Calculation --- (Moved outside formatDate)
+const calculateUpcomingAge = (birthday: Birthday): number | null => {
+  if (!birthday.birthYear) return null;
+
+  const today = new Date();
+  const birthDateThisYear = new Date(birthday.date);
+  birthDateThisYear.setFullYear(today.getFullYear());
+
+  let nextBirthdayYear = today.getFullYear();
+
+  // Check if the birthday has already passed this calendar year
+  // Compare month and day, ignoring time
+  const todayMonthDay = today.getMonth() * 100 + today.getDate(); // e.g., Jan 1st = 1, Dec 31st = 1131
+  const birthdayMonthDay =
+    birthDateThisYear.getMonth() * 100 + birthDateThisYear.getDate();
+
+  if (birthdayMonthDay < todayMonthDay) {
+    nextBirthdayYear++; // If passed, the next birthday is next year
+  }
+
+  // Calculate age at the next birthday
+  const age = nextBirthdayYear - birthday.birthYear;
+
+  return age > 0 ? age : null; // Return null if age is 0 or negative (unlikely but safe)
 };
 
 // --- Lifecycle Hooks ---
@@ -122,11 +175,19 @@ useHead({ title: 'Verjaardagen' }); // Set page title
           class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-md shadow-sm"
         >
           <div class="flex-grow mr-2">
-            <span class="text-gray-800 font-medium">{{
-              birthday.name
-            }}</span>
+            <span class="text-gray-800 font-medium"
+              >{{ birthday.name }}
+              <span v-if="birthday.birthYear"
+                >({{ calculateUpcomingAge(birthday) }} jaar)</span
+              ></span
+            >
             <p class="text-sm text-gray-600">
               {{ formatDate(birthday.date) }}
+              <span
+                v-if="calculateUpcomingAge(birthday)"
+                class="text-gray-500"
+              >
+              </span>
             </p>
           </div>
           <!-- Delete Button -->
@@ -260,6 +321,16 @@ useHead({ title: 'Verjaardagen' }); // Set page title
               />
             </UFormGroup>
           </div>
+
+          <UFormGroup label="Geboortejaar (optioneel)" name="year">
+            <UInput
+              v-model.number="newBirthdayYearInput"
+              type="number"
+              placeholder="Jaar (bv. 1990)"
+              :min="1900"
+              :max="new Date().getFullYear()"
+            />
+          </UFormGroup>
 
           <!-- Optional: Display selected date for confirmation -->
           <p

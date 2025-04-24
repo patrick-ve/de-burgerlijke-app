@@ -7,6 +7,7 @@ export interface Birthday {
   id: string;
   name: string;
   date: Date; // Store the full date
+  birthYear?: number; // Optional: Store the year of birth
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,7 +62,11 @@ export function useBirthdays() {
   /**
    * Adds a new Birthday item to the list.
    */
-  const addBirthday = (name: string, date: Date | null) => {
+  const addBirthday = (
+    name: string,
+    date: Date | null,
+    birthYear?: number | null // Add optional birthYear parameter
+  ) => {
     if (!name || name.trim() === '' || !date) {
       console.warn(
         'Attempted to add birthday with missing name or date.'
@@ -69,10 +74,20 @@ export function useBirthdays() {
       return; // Don't add incomplete birthdays
     }
 
+    // Basic validation for birth year (if provided)
+    const currentYear = new Date().getFullYear();
+    if (birthYear && (birthYear < 1900 || birthYear > currentYear)) {
+      console.warn(`Invalid birth year provided: ${birthYear}`);
+      // Decide if you want to prevent adding or just ignore the year
+      // For now, we'll ignore the invalid year by setting it to undefined
+      birthYear = undefined;
+    }
+
     const newBirthday: Birthday = {
       id: uuidv4(),
       name: name.trim(),
       date: new Date(date), // Ensure it's a Date object
+      birthYear: birthYear ?? undefined, // Store year or undefined if null/invalid
       createdAt: new Date(),
       updatedAt: new Date(),
     };
