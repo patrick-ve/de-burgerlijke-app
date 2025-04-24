@@ -3,6 +3,9 @@ import type { Supermarket } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useNavigationState } from '~/composables/useNavigationState';
 
+const pwa = usePWA();
+pwa?.install();
+
 useHead({
   title: 'Home - De Burgerlijke App',
 });
@@ -16,13 +19,17 @@ const toggleHamburgerMenu = () => {
   openNav();
 };
 
+const installPWA = () => {
+  pwa?.install();
+};
+
 onMounted(() => {
   setHeader({
     title: 'De Burgerlijke App',
     showLeftAction: true,
     leftActionHandler: toggleHamburgerMenu,
-    showRightAction: false,
-    rightActionHandler: null,
+    showRightAction: true,
+    rightActionHandler: installPWA,
   });
 });
 </script>
@@ -37,6 +44,17 @@ onMounted(() => {
       icon="i-heroicons-bars-3"
       size="md"
       @click="toggleHamburgerMenu"
+    />
+  </Teleport>
+
+  <Teleport to="#header-right-action">
+    <UButton
+      v-if="headerState.showRightAction"
+      color="primary"
+      variant="solid"
+      label="Installeer"
+      class="font-bold"
+      @click="installPWA"
     />
   </Teleport>
 
