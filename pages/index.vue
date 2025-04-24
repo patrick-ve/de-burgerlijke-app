@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { consola } from 'consola';
 import type { Supermarket } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useNavigationState } from '~/composables/useNavigationState';
 
 const pwa = usePWA();
-pwa?.install();
+// pwa?.install(); // Removed: Installation must be triggered by user action
 
 useHead({
   title: 'Home - De Burgerlijke App',
@@ -19,8 +20,12 @@ const toggleHamburgerMenu = () => {
   openNav();
 };
 
-const installPWA = () => {
-  pwa?.install();
+const installPWA = async () => {
+  try {
+    await pwa?.install();
+  } catch (error) {
+    consola.error('PWA installation failed:', error);
+  }
 };
 
 onMounted(() => {
@@ -28,7 +33,7 @@ onMounted(() => {
     title: 'De Burgerlijke App',
     showLeftAction: true,
     leftActionHandler: toggleHamburgerMenu,
-    showRightAction: true,
+    showRightAction: true, // Keep this true so the Teleport target exists
     rightActionHandler: installPWA,
   });
 });
@@ -48,8 +53,8 @@ onMounted(() => {
   </Teleport>
 
   <Teleport to="#header-right-action">
+    <!-- Conditionally render install button -->
     <UButton
-      v-if="headerState.showRightAction"
       color="primary"
       variant="solid"
       label="Installeer"

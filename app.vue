@@ -1,26 +1,31 @@
 <template>
-  <ion-app>
-    <TheHeader :title="headerState.title">
-      <template #left-action>
-        <!-- Content for this slot will be provided by the page -->
-        <div id="header-left-action"></div>
-      </template>
-      <template #right-action>
-        <!-- Content for this slot will be provided by the page -->
-        <div id="header-right-action"></div>
-      </template>
-    </TheHeader>
+  <div>
+    <NuxtPwaManifest />
+    <NuxtLoadingIndicator />
 
-    <ion-content class="ion-padding">
-      <NuxtPage />
-    </ion-content>
+    <ion-app>
+      <TheHeader :title="headerState.title">
+        <template #left-action>
+          <!-- Content for this slot will be provided by the page -->
+          <div id="header-left-action"></div>
+        </template>
+        <template #right-action>
+          <!-- Content for this slot will be provided by the page -->
+          <div id="header-right-action"></div>
+        </template>
+      </TheHeader>
 
-    <NavigationSlideover />
+      <ion-content class="ion-padding">
+        <NuxtPage />
+      </ion-content>
 
-    <UModals />
-    <USlideovers />
-    <UNotifications />
-  </ion-app>
+      <NavigationSlideover />
+
+      <UModals />
+      <USlideovers />
+      <UNotifications />
+    </ion-app>
+  </div>
 </template>
 
 <script setup lang="ts">
