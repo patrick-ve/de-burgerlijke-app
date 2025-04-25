@@ -427,3 +427,20 @@ Translated UI elements to Dutch.
   - [x] Implemented batch insertion for products to handle large datasets and avoid SQLite variable limits.
   - [x] Added `onConflictDoNothing` for product links to handle potential duplicates gracefully.
   - [x] Successfully ingested supermarket and product data into the SQLite database.
+
+## To-Do List
+
+- [x] Core CRUD functionality (`composables/useToDos.ts`).
+- [x] Basic UI (`pages/to-do.vue`) with pending/completed lists.
+- [x] Input form for adding new tasks.
+- [x] Header integration with context menu for clearing list.
+- [x] Confirmation modal for clearing all tasks.
+- [x] Due date selection using `DatePicker` component and modal.
+- [x] File attachment functionality (storing file data URL).
+- [x] Display attachment info (name, size) and allow removal.
+- [x] PDF Attachment Preview:
+  - [x] Added `vue-pdf-embed` library.
+  - [x] Implemented a preview button for PDF attachments.
+  - [x] Added a modal to display the embedded PDF viewer.
+
+## Other
