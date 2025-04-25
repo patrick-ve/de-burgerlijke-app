@@ -14,6 +14,7 @@ import { useMouse, useWindowScroll } from '@vueuse/core';
 import type { VirtualElement } from '@popperjs/core';
 import DatePicker from '~/components/DatePicker.vue';
 import { format } from 'date-fns';
+import VuePdfEmbed from 'vue-pdf-embed';
 
 const {
   sortedPendingTodos,
@@ -63,6 +64,11 @@ const selectedDate = ref<Date | null>(null);
 // File Input Ref
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedTodoIdForAttachment = ref<string | null>(null);
+
+// PDF Preview Modal State
+const isPdfPreviewModalOpen = ref(false);
+const pdfPreviewSource = ref<string | null>(null);
+const pdfPreviewTitle = ref<string | null>(null);
 
 const handleAddToDo = () => {
   addToDo(newTodoText.value);
@@ -169,6 +175,25 @@ const formatFileSize = (bytes: number): string => {
   );
 };
 
+// --- PDF Preview Handlers ---
+const openPdfPreviewModal = (attachment: ToDo['attachment']) => {
+  if (attachment && attachment.type === 'application/pdf') {
+    pdfPreviewSource.value = attachment.data;
+    pdfPreviewTitle.value = attachment.name;
+    isPdfPreviewModalOpen.value = true;
+  } else {
+    console.warn(
+      'Attempted to preview a non-PDF file or no attachment found.'
+    );
+  }
+};
+
+const closePdfPreviewModal = () => {
+  isPdfPreviewModalOpen.value = false;
+  pdfPreviewSource.value = null;
+  pdfPreviewTitle.value = null;
+};
+
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
@@ -254,6 +279,18 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                     formatFileSize(todo.attachment.size)
                   }})
                 </a>
+                <!-- PDF Preview Button -->
+                <UButton
+                  v-if="todo.attachment.type === 'application/pdf'"
+                  icon="i-heroicons-eye"
+                  size="2xs"
+                  color="gray"
+                  variant="link"
+                  :padded="false"
+                  @click="openPdfPreviewModal(todo.attachment)"
+                  aria-label="Preview PDF"
+                  class="ml-1 flex-shrink-0"
+                />
                 <UButton
                   icon="i-heroicons-x-mark-solid"
                   size="2xs"
@@ -585,6 +622,76 @@ useHead({ title: 'Mijn Taken' }); // Set page title
               icon="i-heroicons-check"
               @click="saveDueDate"
               class="font-bold"
+            />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+
+    <!-- PDF Preview Modal -->
+    <UModal
+      v-model="isPdfPreviewModalOpen"
+      prevent-close
+      :ui="{
+        width: 'sm:max-w-3xl md:max-w-4xl lg:max-w-5xl',
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+          body: { padding: 'p-0 sm:p-0' }, // Remove padding for full width embed
+          header: { padding: 'px-4 py-3 sm:px-6' },
+          footer: { padding: 'px-4 py-3 sm:px-6' },
+        }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3
+              class="text-base font-semibold leading-6 text-gray-900 truncate"
+              :title="pdfPreviewTitle || 'PDF Preview'"
+            >
+              {{ pdfPreviewTitle || 'PDF Preview' }}
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="closePdfPreviewModal"
+              aria-label="Close Preview"
+            />
+          </div>
+        </template>
+
+        <div class="pdf-embed-container h-[75vh] overflow-y-auto">
+          <ClientOnly>
+            <VuePdfEmbed
+              v-if="pdfPreviewSource"
+              :source="pdfPreviewSource"
+            />
+            <template #fallback>
+              <div class="flex items-center justify-center h-full">
+                <UIcon
+                  name="i-heroicons-arrow-path"
+                  class="animate-spin h-8 w-8 text-gray-500"
+                />
+                <span class="ml-2 text-gray-500">Laden...</span>
+              </div>
+            </template>
+          </ClientOnly>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end">
+            <UButton
+              label="Sluiten"
+              color="gray"
+              variant="solid"
+              @click="closePdfPreviewModal"
             />
           </div>
         </template>
