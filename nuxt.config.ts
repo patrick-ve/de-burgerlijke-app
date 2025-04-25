@@ -48,6 +48,7 @@ export default defineNuxtConfig({
         },
       ],
     },
+    registerWebManifestInRouteRules: true,
     workbox: {
       globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
       maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
