@@ -38,7 +38,6 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@vite-pwa/nuxt',
     '@nuxt/fonts',
-    'nuxt-umami',
   ],
 
   ssr: false,
