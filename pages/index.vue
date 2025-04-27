@@ -4,8 +4,7 @@ import type { Supermarket } from '~/types/shopping-list';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useNavigationState } from '~/composables/useNavigationState';
 
-const pwa = usePWA();
-// pwa?.install(); // Removed: Installation must be triggered by user action
+const { $pwa } = useNuxtApp();
 
 useHead({
   title: 'Home - De Burgerlijke App',
@@ -22,7 +21,11 @@ const toggleHamburgerMenu = () => {
 
 const installPWA = async () => {
   try {
-    await pwa?.install();
+    if (!$pwa?.showInstallPrompt) {
+      consola.warn('Install prompt not available.');
+      return;
+    }
+    await $pwa.install();
   } catch (error) {
     consola.error('PWA installation failed:', error);
   }
@@ -34,7 +37,8 @@ onMounted(() => {
     showLeftAction: true,
     leftActionHandler: toggleHamburgerMenu,
     showRightAction: true, // Keep this true so the Teleport target exists
-    rightActionHandler: installPWA,
+    // Right action handler is now handled by the conditional button below
+    // rightActionHandler: installPWA,
   });
 });
 </script>
@@ -53,8 +57,9 @@ onMounted(() => {
   </Teleport>
 
   <Teleport to="#header-right-action">
-    <!-- Conditionally render install button -->
+    <!-- Conditionally render install button only when the prompt is available -->
     <UButton
+      v-if="$pwa?.showInstallPrompt"
       color="primary"
       variant="solid"
       label="Installeer"

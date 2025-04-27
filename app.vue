@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NuxtPwaManifest />
+    <NuxtPwaAssets />
     <NuxtLoadingIndicator />
 
     <ion-app>
@@ -29,11 +29,11 @@
 </template>
 
 <script setup lang="ts">
-import { useHeaderState } from '~/composables/useHeaderState'; // Ensure correct path
+import { useHeaderState } from '~/composables/useHeaderState';
 
 const { headerState } = useHeaderState();
+const { $pwa } = useNuxtApp();
 
-// Utility to help users reset color mode if stuck in dark mode
 onMounted(() => {
   if (import.meta.client) {
     localStorage.removeItem('nuxt-color-mode');

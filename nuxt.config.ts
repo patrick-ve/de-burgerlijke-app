@@ -6,6 +6,28 @@ const sw = process.env.SW === 'true';
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
 
+  // App configuration (should be top-level)
+  app: {
+    head: {
+      link: [
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        // Add other global links here if needed, e.g., favicons
+        // { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ],
+      meta: [
+        { charset: 'utf-8' },
+        {
+          name: 'viewport',
+          content:
+            'viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no',
+        },
+        { name: 'msapplication-tap-highlight', content: 'no' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'color-scheme', content: 'light dark' },
+      ],
+    },
+  },
+
   devtools: { enabled: true },
 
   modules: [
