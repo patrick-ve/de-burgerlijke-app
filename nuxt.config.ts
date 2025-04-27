@@ -9,11 +9,11 @@ export default defineNuxtConfig({
   // App configuration (should be top-level)
   app: {
     head: {
-      link: [
-        { rel: 'manifest', href: '/manifest.webmanifest' },
-        // Add other global links here if needed, e.g., favicons
-        // { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ],
+      title: 'De Burgerlijke App',
+      htmlAttrs: {
+        lang: 'nl',
+      },
+      link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
       meta: [
         { charset: 'utf-8' },
         {
@@ -38,6 +38,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@vite-pwa/nuxt',
     '@nuxt/fonts',
+    'nuxt-umami',
   ],
 
   ssr: false,
