@@ -66,7 +66,7 @@ export default defineNuxtConfig({
     registerType: 'autoUpdate',
     manifest: {
       name: 'De Burgerlijke App',
-      short_name: 'DeBurgerlijkeApp',
+      short_name: 'De Burgerlijke App',
       display: 'standalone',
       theme_color: '#40939a',
       orientation: 'portrait',
