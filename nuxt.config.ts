@@ -50,6 +50,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'De Burgerlijke App',
       short_name: 'DeBurgerlijkeApp',
+      display: 'standalone',
       theme_color: '#40939a',
       icons: [
         {
