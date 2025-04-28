@@ -29,17 +29,21 @@
 </template>
 
 <script setup lang="ts">
+import { consola } from 'consola';
 import { useHeaderState } from '~/composables/useHeaderState';
 import { useDisableDevTools } from '~/composables/useDisableDevTools';
 
 const { headerState } = useHeaderState();
 const { $pwa } = useNuxtApp();
+const router = useRouter();
 
 useDisableDevTools({
   onDetectOpen: () => {
-    if (import.meta.dev) return;
-    window.location.href =
-      'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    if (import.meta.client) {
+      consola.info('Initiating redirect');
+      window.location.href =
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    }
   },
 });
 
