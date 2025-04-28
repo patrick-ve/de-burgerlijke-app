@@ -52,6 +52,7 @@ export default defineNuxtConfig({
       short_name: 'DeBurgerlijkeApp',
       display: 'standalone',
       theme_color: '#40939a',
+      orientation: 'landscape',
       icons: [
         {
           src: 'pwa-192x192.png',
@@ -62,6 +63,29 @@ export default defineNuxtConfig({
           src: 'pwa-512x512.png',
           sizes: '512x512',
           type: 'image/png',
+        },
+      ],
+      screenshots: [
+        {
+          src: 'pwa-screenshot-mobile-1.png',
+          sizes: '832x1794',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Mobile Screenshot',
+        },
+        {
+          src: 'pwa-screenshot-mobile-2.png',
+          sizes: '828x1794',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Mobile Screenshot',
+        },
+        {
+          src: 'pwa-screenshot-mobile-3.png',
+          sizes: '832x1796',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Mobile Screenshot',
         },
       ],
     },
@@ -104,11 +128,6 @@ export default defineNuxtConfig({
   // Configure Nuxt UI module
   ui: {
     global: true,
-    icons: {
-      dynamic: true,
-      families: {
-        heroicons: true,
-      },
-    },
+    // Icons are handled by @nuxt/icon module
   },
 });
