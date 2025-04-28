@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useNavigationState } from '~/composables/useNavigationState';
+import { useRoute } from 'vue-router';
 
 const { isNavOpen, closeNav } = useNavigationState();
 const route = useRoute();
+const pwa = usePWA();
 
 // Define the navigation structure with groups
 const navigationGroups = [
@@ -49,6 +51,11 @@ const navigationGroups = [
         to: '/birthdays',
         icon: 'i-heroicons-cake',
       },
+      {
+        label: 'Vakantie',
+        to: '/holiday',
+        icon: 'i-heroicons-briefcase',
+      },
       // {
       //   label: 'Baby',
       //   to: '/baby',
@@ -56,6 +63,16 @@ const navigationGroups = [
       // },
     ],
   },
+  // {
+  //   title: 'Instellingen',
+  //   links: [
+  //     {
+  //       label: 'Instellingen',
+  //       to: '/settings',
+  //       icon: 'i-heroicons-cog-6-tooth',
+  //     },
+  //   ],
+  // },
 ];
 
 // Close slideover on navigation
@@ -65,6 +82,11 @@ watch(
     closeNav();
   }
 );
+
+const installPWA = () => {
+  pwa?.install();
+  closeNav(); // Optionally close nav after initiating install
+};
 </script>
 
 <template>
@@ -102,7 +124,6 @@ watch(
           <h4
             v-if="group.title !== 'Home'"
             class="px-3 py-2 -mb-1 text-sm font-bold text-primary-500 uppercase tracking-wider"
-            r
           >
             {{ group.title }}
           </h4>
@@ -119,6 +140,18 @@ watch(
           </NuxtLink>
         </div>
       </nav>
+
+      <!-- Settings Link -->
+      <div class="mt-auto pt-4 border-t border-gray-200">
+        <NuxtLink
+          to="/settings"
+          class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
+          active-class="bg-white/50 text-primary-700 font-semibold"
+        >
+          <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
+          <span>Instellingen</span>
+        </NuxtLink>
+      </div>
     </div>
   </USlideover>
 </template>
