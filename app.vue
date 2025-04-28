@@ -30,9 +30,18 @@
 
 <script setup lang="ts">
 import { useHeaderState } from '~/composables/useHeaderState';
+import { useDisableDevTools } from '~/composables/useDisableDevTools';
 
 const { headerState } = useHeaderState();
 const { $pwa } = useNuxtApp();
+
+useDisableDevTools({
+  onDetectOpen: () => {
+    if (import.meta.dev) return;
+    window.location.href =
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  },
+});
 
 onMounted(() => {
   if (import.meta.client) {
