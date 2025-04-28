@@ -541,272 +541,310 @@ onMounted(() => {
         </div>
 
         <!-- View 1: Grouped by Supermarket -->
-        <div v-if="viewModeType === 'supermarket'" class="space-y-4">
-          <UCard
-            v-for="(
-              categories, supermarket
-            ) in groupedBySupermarketAndCategory"
-            :key="supermarket"
-            :ui="{
-              header: { padding: 'px-4 py-1 sm:px-6' },
-              body: { padding: 'px-4 pt-0 pb-1 sm:px-6' },
-            }"
+        <Transition
+          name="view-transition"
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 transform scale-95"
+          enter-to-class="opacity-100 transform scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 transform scale-100"
+          leave-to-class="opacity-0 transform scale-95"
+          mode="out-in"
+        >
+          <div
+            v-if="viewModeType === 'supermarket'"
+            key="supermarket-view"
+            class="space-y-4"
           >
-            <template #header>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <img
-                    v-if="getSupermarketDetails(supermarket)?.ico"
-                    :src="getSupermarketDetails(supermarket)?.ico"
-                    :alt="
-                      getSupermarketDetails(supermarket)?.name ??
-                      supermarket
-                    "
-                    class="h-5 w-5"
-                  />
-                  <h3
-                    class="text-base font-semibold leading-6 text-gray-900"
+            <UCard
+              v-for="(
+                categories, supermarket
+              ) in groupedBySupermarketAndCategory"
+              :key="supermarket"
+              :ui="{
+                header: { padding: 'px-4 py-1 sm:px-6' },
+                body: { padding: 'px-4 pt-0 pb-1 sm:px-6' },
+              }"
+            >
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <img
+                      v-if="getSupermarketDetails(supermarket)?.ico"
+                      :src="getSupermarketDetails(supermarket)?.ico"
+                      :alt="
+                        getSupermarketDetails(supermarket)?.name ??
+                        supermarket
+                      "
+                      class="h-5 w-5"
+                    />
+                    <h3
+                      class="text-base font-semibold leading-6 text-gray-900"
+                    >
+                      {{
+                        getSupermarketDetails(supermarket)?.name ??
+                        supermarket
+                      }}
+                    </h3>
+                  </div>
+                  <span
+                    v-if="supermarket !== noSupermarketKey"
+                    class="text-sm font-semibold text-gray-700"
                   >
                     {{
-                      getSupermarketDetails(supermarket)?.name ??
-                      supermarket
+                      formatCurrency(
+                        Object.values(categories)
+                          .flat()
+                          .reduce(
+                            (sum, item) =>
+                              sum +
+                              (item.cheapestPrice != null
+                                ? item.cheapestPrice
+                                : 0),
+                            0
+                          )
+                      )
                     }}
-                  </h3>
+                  </span>
                 </div>
-                <span
-                  v-if="supermarket !== noSupermarketKey"
-                  class="text-sm font-semibold text-gray-700"
+              </template>
+
+              <ul
+                v-for="(items, category) in categories"
+                :key="category"
+                class="py-2 divide-y divide-gray-100"
+              >
+                <h4
+                  v-if="items.length > 0"
+                  class="text-sm font-semibold px-0 text-gray-600 flex items-center gap-2"
                 >
-                  {{
-                    formatCurrency(
-                      Object.values(categories)
-                        .flat()
-                        .reduce(
-                          (sum, item) =>
-                            sum +
-                            (item.cheapestPrice != null
-                              ? item.cheapestPrice
-                              : 0),
-                          0
-                        )
-                    )
-                  }}
-                </span>
-              </div>
-            </template>
+                  <span class="text-base">{{
+                    categoryEmojis[
+                      category as IngredientCategory | 'Other'
+                    ]
+                  }}</span>
+                  <span>{{
+                    categoryTranslations[
+                      category as IngredientCategory | 'Other'
+                    ]
+                  }}</span>
+                </h4>
 
-            <ul
-              v-for="(items, category) in categories"
-              :key="category"
-              class="py-2 divide-y divide-gray-100"
-            >
-              <h4
-                v-if="items.length > 0"
-                class="text-sm font-semibold px-0 text-gray-600 flex items-center gap-2"
-              >
-                <span class="text-base">{{
-                  categoryEmojis[
-                    category as IngredientCategory | 'Other'
-                  ]
-                }}</span>
-                <span>{{
-                  categoryTranslations[
-                    category as IngredientCategory | 'Other'
-                  ]
-                }}</span>
-              </h4>
+                <li
+                  v-for="item in items"
+                  :key="item.id"
+                  class="flex items-center justify-between gap-3 py-1.5 pl-1 transition-opacity"
+                  :class="{ 'opacity-50': item.isChecked }"
+                  data-testid="shopping-list-item-supermarket-view"
+                >
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <UCheckbox
+                      :model-value="item.isChecked"
+                      @update:model-value="
+                        handleItemUpdate({
+                          ...item,
+                          isChecked: $event,
+                        })
+                      "
+                      :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
+                      data-testid="item-checkbox"
+                      :ui="{ base: 'flex-shrink-0 w-5 h-5' }"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-gray-900 truncate"
+                        :class="{
+                          'line-through text-gray-500':
+                            item.isChecked,
+                        }"
+                        data-testid="item-name"
+                      >
+                        {{ item.ingredientName }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        <span v-if="item.aggregatedQuantity">{{
+                          item.aggregatedQuantity
+                        }}</span>
+                        <span v-if="item.unit"> {{ item.unit }}</span>
+                        <span
+                          v-if="
+                            item.cheapestAmount &&
+                            supermarket !== 'Nog geen prijs gevonden'
+                          "
+                        >
+                          - {{ item.cheapestAmount }}</span
+                        >
+                      </p>
+                    </div>
+                  </div>
 
-              <li
-                v-for="item in items"
-                :key="item.id"
-                class="flex items-center justify-between gap-3 py-1.5 pl-1 transition-opacity"
-                :class="{ 'opacity-50': item.isChecked }"
-                data-testid="shopping-list-item-supermarket-view"
-              >
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <UCheckbox
-                    :model-value="item.isChecked"
-                    @update:model-value="
-                      handleItemUpdate({ ...item, isChecked: $event })
-                    "
-                    :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
-                    data-testid="item-checkbox"
-                    :ui="{ base: 'flex-shrink-0 w-5 h-5' }"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <p
-                      class="text-sm font-medium text-gray-900 truncate"
+                  <div
+                    class="flex items-center gap-2 flex-shrink-0"
+                    :class="{ 'opacity-50': item.isChecked }"
+                  >
+                    <span
+                      v-if="item.cheapestPrice != null"
+                      class="text-sm font-medium text-gray-900"
                       :class="{
                         'line-through text-gray-500': item.isChecked,
                       }"
-                      data-testid="item-name"
+                      data-testid="item-price"
                     >
-                      {{ item.ingredientName }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      <span v-if="item.aggregatedQuantity">{{
-                        item.aggregatedQuantity
-                      }}</span>
-                      <span v-if="item.unit"> {{ item.unit }}</span>
-                      <span
-                        v-if="
-                          item.cheapestAmount &&
-                          supermarket !== 'Nog geen prijs gevonden'
-                        "
-                      >
-                        - {{ item.cheapestAmount }}</span
-                      >
-                    </p>
-                  </div>
-                </div>
+                      {{ formatCurrency(item.cheapestPrice) }}
+                    </span>
+                    <span
+                      v-else-if="
+                        !item.isChecked &&
+                        supermarket !== noSupermarketKey
+                      "
+                      class="flex items-center gap-1 text-sm text-gray-500"
+                      aria-label="Prijs laden"
+                    >
+                      <span>€</span>
+                      <USkeleton
+                        class="h-4 w-10"
+                        :ui="{
+                          background: 'bg-primary-100',
+                        }"
+                      />
+                    </span>
+                    <span
+                      v-else-if="
+                        item.isChecked &&
+                        item.cheapestPrice == null &&
+                        supermarket !== noSupermarketKey
+                      "
+                      class="text-xs text-gray-400 italic"
+                    >
+                      Geen prijs
+                    </span>
+                    <span
+                      v-else-if="
+                        !item.isChecked &&
+                        supermarket === noSupermarketKey
+                      "
+                      class="w-[44px]"
+                      aria-hidden="true"
+                      >&nbsp;</span
+                    >
 
-                <div
-                  class="flex items-center gap-2 flex-shrink-0"
-                  :class="{ 'opacity-50': item.isChecked }"
-                >
-                  <span
-                    v-if="item.cheapestPrice != null"
-                    class="text-sm font-medium text-gray-900"
-                    :class="{
-                      'line-through text-gray-500': item.isChecked,
-                    }"
-                    data-testid="item-price"
-                  >
-                    {{ formatCurrency(item.cheapestPrice) }}
-                  </span>
-                  <span
-                    v-else-if="
-                      !item.isChecked &&
-                      supermarket !== noSupermarketKey
-                    "
-                    class="flex items-center gap-1 text-sm text-gray-500"
-                    aria-label="Prijs laden"
-                  >
-                    <span>€</span>
-                    <USkeleton
-                      class="h-4 w-10"
-                      :ui="{
-                        background: 'bg-primary-100',
-                      }"
+                    <UButton
+                      icon="i-heroicons-trash"
+                      size="xs"
+                      color="red"
+                      variant="ghost"
+                      :aria-label="`Verwijder ${item.ingredientName}`"
+                      @click="handleItemDelete(item.id)"
+                      data-testid="delete-item-button"
                     />
-                  </span>
-                  <span
-                    v-else-if="
-                      item.isChecked &&
-                      item.cheapestPrice == null &&
-                      supermarket !== noSupermarketKey
-                    "
-                    class="text-xs text-gray-400 italic"
-                  >
-                    Geen prijs
-                  </span>
-                  <span
-                    v-else-if="
-                      !item.isChecked &&
-                      supermarket === noSupermarketKey
-                    "
-                    class="w-[44px]"
-                    aria-hidden="true"
-                    >&nbsp;</span
-                  >
-
-                  <UButton
-                    icon="i-heroicons-trash"
-                    size="xs"
-                    color="red"
-                    variant="ghost"
-                    :aria-label="`Verwijder ${item.ingredientName}`"
-                    @click="handleItemDelete(item.id)"
-                    data-testid="delete-item-button"
-                  />
-                </div>
-              </li>
-            </ul>
-          </UCard>
-        </div>
+                  </div>
+                </li>
+              </ul>
+            </UCard>
+          </div>
+        </Transition>
 
         <!-- View 2: Grouped by Category Only -->
-        <div v-if="viewModeType === 'category'" class="space-y-4">
-          <UCard
-            v-for="(items, category) in groupedByCategoryOnly"
-            :key="category"
-            :ui="{
-              header: { padding: 'px-4 py-1 sm:px-6' },
-              body: { padding: 'px-4 pt-0 pb-1 sm:px-6' },
-            }"
+        <Transition
+          name="view-transition"
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 transform scale-95"
+          enter-to-class="opacity-100 transform scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 transform scale-100"
+          leave-to-class="opacity-0 transform scale-95"
+          mode="out-in"
+        >
+          <div
+            v-if="viewModeType === 'category'"
+            key="category-view"
+            class="space-y-4"
           >
-            <template #header>
-              <h3
-                class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2"
-              >
-                <span class="text-lg">{{
-                  categoryEmojis[
-                    category as IngredientCategory | 'Other'
-                  ]
-                }}</span>
-                <span>{{
-                  categoryTranslations[
-                    category as IngredientCategory | 'Other'
-                  ]
-                }}</span>
-              </h3>
-            </template>
-
-            <ul class="py-2 divide-y divide-gray-100">
-              <li
-                v-for="item in items"
-                :key="item.id"
-                class="flex items-center justify-between gap-3 py-1.5 pl-1 transition-opacity"
-                :class="{ 'opacity-50': item.isChecked }"
-                data-testid="shopping-list-item-category-view"
-              >
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <UCheckbox
-                    :model-value="item.isChecked"
-                    @update:model-value="
-                      handleItemUpdate({ ...item, isChecked: $event })
-                    "
-                    :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
-                    data-testid="item-checkbox"
-                    :ui="{ base: 'flex-shrink-0 w-5 h-5' }"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <p
-                      class="text-sm font-medium text-gray-900 truncate"
-                      :class="{
-                        'line-through text-gray-500': item.isChecked,
-                      }"
-                      data-testid="item-name"
-                    >
-                      {{ item.ingredientName }}
-                    </p>
-                    <p class="text-xs text-gray-500">
-                      <span v-if="item.aggregatedQuantity">{{
-                        item.aggregatedQuantity
-                      }}</span>
-                      <span v-if="item.unit"> {{ item.unit }}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  class="flex items-center gap-2 flex-shrink-0"
-                  :class="{ 'opacity-50': item.isChecked }"
+            <UCard
+              v-for="(items, category) in groupedByCategoryOnly"
+              :key="category"
+              :ui="{
+                header: { padding: 'px-4 py-1 sm:px-6' },
+                body: { padding: 'px-4 pt-0 pb-1 sm:px-6' },
+              }"
+            >
+              <template #header>
+                <h3
+                  class="text-base font-semibold leading-6 text-gray-900 flex items-center gap-2"
                 >
-                  <UButton
-                    icon="i-heroicons-trash"
-                    size="xs"
-                    color="red"
-                    variant="ghost"
-                    :aria-label="`Verwijder ${item.ingredientName}`"
-                    @click="handleItemDelete(item.id)"
-                    data-testid="delete-item-button"
-                  />
-                </div>
-              </li>
-            </ul>
-          </UCard>
-        </div>
+                  <span class="text-lg">{{
+                    categoryEmojis[
+                      category as IngredientCategory | 'Other'
+                    ]
+                  }}</span>
+                  <span>{{
+                    categoryTranslations[
+                      category as IngredientCategory | 'Other'
+                    ]
+                  }}</span>
+                </h3>
+              </template>
+
+              <ul class="py-2 divide-y divide-gray-100">
+                <li
+                  v-for="item in items"
+                  :key="item.id"
+                  class="flex items-center justify-between gap-3 py-1.5 pl-1 transition-opacity"
+                  :class="{ 'opacity-50': item.isChecked }"
+                  data-testid="shopping-list-item-category-view"
+                >
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <UCheckbox
+                      :model-value="item.isChecked"
+                      @update:model-value="
+                        handleItemUpdate({
+                          ...item,
+                          isChecked: $event,
+                        })
+                      "
+                      :aria-label="`Mark ${item.ingredientName} as ${item.isChecked ? 'incomplete' : 'complete'}`"
+                      data-testid="item-checkbox"
+                      :ui="{ base: 'flex-shrink-0 w-5 h-5' }"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <p
+                        class="text-sm font-medium text-gray-900 truncate"
+                        :class="{
+                          'line-through text-gray-500':
+                            item.isChecked,
+                        }"
+                        data-testid="item-name"
+                      >
+                        {{ item.ingredientName }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        <span v-if="item.aggregatedQuantity">{{
+                          item.aggregatedQuantity
+                        }}</span>
+                        <span v-if="item.unit"> {{ item.unit }}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex items-center gap-2 flex-shrink-0"
+                    :class="{ 'opacity-50': item.isChecked }"
+                  >
+                    <UButton
+                      icon="i-heroicons-trash"
+                      size="xs"
+                      color="red"
+                      variant="ghost"
+                      :aria-label="`Verwijder ${item.ingredientName}`"
+                      @click="handleItemDelete(item.id)"
+                      data-testid="delete-item-button"
+                    />
+                  </div>
+                </li>
+              </ul>
+            </UCard>
+          </div>
+        </Transition>
       </div>
       <div v-else class="mt-6 text-center text-gray-500">
         Je boodschappenlijst is leeg. Voeg items toe vanuit een
