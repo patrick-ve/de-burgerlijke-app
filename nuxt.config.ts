@@ -67,6 +67,8 @@ export default defineNuxtConfig({
     manifest: {
       name: 'De Burgerlijke App',
       short_name: 'De Burgerlijke App',
+      description:
+        'De slimme assistent voor je boodschappen en huishoudelijke planning. Organiseer al je recepten overzichtelijk in één plek, plan maaltijden in voor het gezin en bespaar geld met boodschappen doen.',
       display: 'standalone',
       theme_color: '#40939a',
       orientation: 'portrait',
