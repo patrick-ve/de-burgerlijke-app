@@ -55,6 +55,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@vite-pwa/nuxt',
     '@nuxt/fonts',
+    'nuxt-umami',
   ],
 
   ssr: false,
@@ -148,5 +149,13 @@ export default defineNuxtConfig({
   ui: {
     global: true,
     // Icons are handled by @nuxt/icon module
+  },
+
+  umami: {
+    id: 'b5eb9afc-6894-4767-b990-f4e34ee4c89a',
+    host: 'https://cloud.umami.is/',
+    autoTrack: true,
+    ignoreLocalhost: true,
+    domains: ['burgerlijke.app'],
   },
 });
