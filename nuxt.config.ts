@@ -52,7 +52,7 @@ export default defineNuxtConfig({
       short_name: 'DeBurgerlijkeApp',
       display: 'standalone',
       theme_color: '#40939a',
-      orientation: 'landscape',
+      orientation: 'portrait',
       icons: [
         {
           src: 'pwa-192x192.png',
