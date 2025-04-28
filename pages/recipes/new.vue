@@ -113,6 +113,84 @@
         </p>
       </UFormGroup>
 
+      <!-- Webcam Input (for fridge-scan) -->
+      <UFormGroup
+        v-if="selectedInputType === 'fridge-scan'"
+        label="Maak een foto van je koelkast"
+        name="fridgeImage"
+      >
+        <div class="space-y-2">
+          <!-- Camera View Container -->
+          <div v-if="cameraInitialized">
+            <!-- Camera View -->
+            <div
+              v-if="isStreaming"
+              class="relative border border-gray-300 rounded overflow-hidden aspect-video bg-gray-100"
+            >
+              <video
+                ref="videoElementRef"
+                class="w-full h-full object-cover"
+                playsinline
+                muted
+                autoplay
+              ></video>
+              <!-- Hidden canvas for capturing -->
+              <canvas ref="canvasElementRef" class="hidden"></canvas>
+            </div>
+            <!-- Placeholder/Loading while starting stream -->
+            <div
+              v-else
+              class="relative border border-gray-300 rounded overflow-hidden aspect-video bg-gray-100 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-video-camera-solid"
+                class="w-10 h-10 text-gray-400 animate-pulse"
+              />
+              <!-- Ensure video/canvas elements are rendered but hidden if needed for refs -->
+              <video
+                ref="videoElementRef"
+                class="absolute w-0 h-0 opacity-0"
+              ></video>
+              <canvas
+                ref="canvasElementRef"
+                class="absolute w-0 h-0 opacity-0"
+              ></canvas>
+            </div>
+          </div>
+
+          <!-- Captured Image Preview -->
+          <div v-if="capturedImageDataUrl" class="mt-4 relative">
+            <img
+              :src="capturedImageDataUrl"
+              alt="Gemaakte foto van koelkast"
+              class="w-full h-auto object-cover rounded border border-gray-300"
+            />
+            <!-- Button to Retake Photo -->
+            <UButton
+              icon="i-heroicons-arrow-path"
+              size="sm"
+              color="gray"
+              variant="solid"
+              label="Opnieuw"
+              class="absolute top-2 right-2"
+              @click="retakePhoto"
+            />
+          </div>
+
+          <!-- Webcam Error Display -->
+          <UAlert
+            v-if="webcamError"
+            icon="i-heroicons-exclamation-triangle"
+            color="red"
+            variant="soft"
+            :title="webcamError"
+            :closeable="true"
+            @close="webcamError = null"
+            class="mt-2"
+          />
+        </div>
+      </UFormGroup>
+
       <!-- Explanation Alert -->
       <UAlert
         v-if="explanationText"
@@ -146,7 +224,7 @@
         block
         size="lg"
         class="font-bold"
-        @click="submitRecipeRequest"
+        @click="handleActionBarClick"
       >
         {{ submitButtonText }}
       </UButton>
@@ -167,7 +245,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  watch,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import {
   recipeSchema,
@@ -175,6 +260,7 @@ import {
 } from '~/server/utils/recipeSchema';
 import { useRecipes } from '@/composables/useRecipes';
 import { useHeaderState } from '@/composables/useHeaderState';
+import { useWebcam } from '@/composables/useWebcam';
 
 const router = useRouter();
 const { addRecipe } = useRecipes();
@@ -198,6 +284,11 @@ const inputTypes = [
     value: 'image',
     label: 'Foto uit een kookboek',
     icon: 'i-heroicons-photo',
+  },
+  {
+    value: 'fridge-scan',
+    label: 'Scan de inhoud van je koelkast',
+    icon: 'i-heroicons-camera',
   },
   {
     value: 'text',
@@ -225,6 +316,21 @@ const recipeText = ref(''); // State for pasted text
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
+// --- Webcam Composables --- (Only if webcam is selected)
+const cameraInitialized = ref(false); // New state variable
+const {
+  videoElementRef,
+  canvasElementRef,
+  isStreaming,
+  startCamera,
+  stopCamera,
+  captureSnapshot,
+  error: webcamError, // Renamed to avoid conflict
+  capturedImageDataUrl,
+} = useWebcam();
+
+// --- End Webcam Composables ---
+
 // Computed property for explanation text
 const explanationText = computed(() => {
   switch (selectedInputType.value) {
@@ -236,6 +342,8 @@ const explanationText = computed(() => {
       return 'Upload een duidelijke foto van het recept (bijv. uit een kookboek). Wij lezen de tekst op de foto uit en zetten deze om in een digitaal recept. Het is ook mogelijk om een foto te uploaden van een gerecht dat je hebt gemaakt.';
     case 'text':
       return 'Kopieer de volledige tekst van het recept (ingrediënten en bereidingswijze) en plak deze in het tekstvak hieronder. Wij proberen de structuur te herkennen en om te zetten.';
+    case 'fridge-scan':
+      return 'Maak een foto van de inhoud van je koelkast. Wij analyseren de ingrediënten en stellen een passend recept voor.';
     case 'url':
     default:
       return 'Plak de volledige URL van de webpagina met het recept (bijv. van ah.nl of een receptenblog). We proberen automatisch de ingrediënten en stappen van de pagina te halen.';
@@ -251,6 +359,8 @@ const placeholderText = computed(() => {
       return 'https://www.youtube.com/watch?v=...';
     case 'image':
       return ''; // No placeholder needed for file input
+    case 'fridge-scan':
+      return '';
     case 'text':
       return 'Plak hier de naam van het recept, de ingrediënten en de bereidingswijze...';
     case 'url':
@@ -266,10 +376,12 @@ const apiEndpoint = computed(() => {
       return '/api/recipe/youtube';
     case 'ai':
       return '/api/recipe/generate';
-    case 'image': // New API endpoint for image
+    case 'image':
       return '/api/recipe/image';
+    case 'fridge-scan':
+      return '/api/recipe/fridge';
     case 'text':
-      return '/api/recipe/text'; // New API endpoint for text
+      return '/api/recipe/text';
     case 'url':
     default:
       return '/api/recipe/url';
@@ -294,6 +406,56 @@ function onFileChange(files: FileList | null) {
     }
   }
 }
+
+// Handle webcam snapshot capture
+async function handleCapture() {
+  const file = await captureSnapshot();
+  if (file) {
+    imageFile.value = file; // Set the captured file for submission
+    imagePreviewUrl.value = capturedImageDataUrl.value; // Use composable's preview URL
+    stopCamera(); // Stop stream after capture
+  } else {
+    error.value = 'Kon geen foto maken.';
+  }
+}
+
+// New handler to initialize camera view before starting
+async function handleStartCameraClick() {
+  cameraInitialized.value = true;
+  error.value = null; // Clear general error
+  webcamError.value = null; // Clear webcam specific error
+  await nextTick(); // Wait for Vue to render the video/canvas elements
+  await startCamera(); // Now call the composable's start function
+}
+
+// Handle retaking photo
+function retakePhoto() {
+  capturedImageDataUrl.value = null;
+  imageFile.value = null;
+  imagePreviewUrl.value = null; // Clear old file input preview too
+  handleStartCameraClick(); // Re-initialize and start camera
+}
+
+// Watch for changes in selectedInputType to manage webcam
+watch(selectedInputType, (newType, oldType) => {
+  // Stop camera if switching away from fridge-scan
+  if (oldType === 'fridge-scan' && newType !== 'fridge-scan') {
+    stopCamera();
+    cameraInitialized.value = false; // Reset initialization state
+    // Clear any webcam-related state if needed
+    imageFile.value = null;
+    imagePreviewUrl.value = null;
+    capturedImageDataUrl.value = null; // Clear captured image
+    webcamError.value = null;
+  }
+  if (
+    newType === 'fridge-scan' &&
+    !cameraInitialized.value &&
+    !capturedImageDataUrl.value
+  ) {
+    handleStartCameraClick(); // Auto-start camera
+  }
+});
 
 // Validation logic based on input type
 function validateInput() {
@@ -324,6 +486,29 @@ function validateInput() {
   } else if (selectedInputType.value === 'text') {
     if (!recipeText.value.trim()) {
       error.value = 'Plak de recepttekst in het tekstvak.';
+      return false;
+    }
+  } else if (selectedInputType.value === 'fridge-scan') {
+    if (!imageFile.value) {
+      error.value = 'Selecteer een foto van je koelkast.';
+      return false;
+    }
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+    ];
+    if (!allowedTypes.includes(imageFile.value.type)) {
+      error.value =
+        'Ongeldig bestandstype. Selecteer een JPG, PNG, WebP of GIF afbeelding.';
+      return false;
+    }
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+    if (imageFile.value.size > maxSizeInBytes) {
+      error.value = `Bestand is te groot (max ${
+        maxSizeInBytes / 1024 / 1024
+      }MB).`;
       return false;
     }
   } else {
@@ -377,6 +562,13 @@ async function submitRecipeRequest() {
       formData.append('image', imageFile.value);
       requestBody = formData;
       // No 'Content-Type' header needed for FormData
+    } else if (selectedInputType.value === 'fridge-scan') {
+      const formData = new FormData();
+      if (!imageFile.value) {
+        throw new Error('Geen foto van koelkast geselecteerd.');
+      }
+      formData.append('image', imageFile.value);
+      requestBody = formData;
     } else if (selectedInputType.value === 'text') {
       requestBody = { text: recipeText.value };
     } else {
@@ -392,7 +584,9 @@ async function submitRecipeRequest() {
     fetchOptions.body =
       selectedInputType.value === 'image'
         ? requestBody // FormData
-        : JSON.stringify(requestBody); // Stringify for JSON
+        : selectedInputType.value === 'fridge-scan'
+          ? requestBody // FormData for fridge scan
+          : JSON.stringify(requestBody); // Stringify for JSON
 
     console.log(`Submitting ${selectedInputType.value} request...`);
 
@@ -425,6 +619,9 @@ async function submitRecipeRequest() {
           break;
         case 'ai':
           eventName = 'add_recipe_ai';
+          break;
+        case 'fridge-scan':
+          eventName = 'add_recipe_fridge';
           break;
       }
       umTrackEvent(eventName);
@@ -472,7 +669,9 @@ async function submitRecipeRequest() {
             ? 'Afbeelding verwerken'
             : originalInputType === 'text'
               ? 'Tekst verwerken'
-              : 'Verwerken' // Fallback generic term
+              : originalInputType === 'fridge-scan'
+                ? 'Koelkast scan verwerken'
+                : 'Verwerken' // Fallback generic term
       } mislukt. ${message}`;
     }
   } finally {
@@ -484,11 +683,19 @@ const submitButtonText = computed(() => {
   if (isLoading.value) {
     return 'Bezig met verwerken...';
   }
+  if (
+    selectedInputType.value === 'fridge-scan' &&
+    isStreaming.value
+  ) {
+    return 'Maak Foto';
+  }
   switch (selectedInputType.value) {
     case 'ai':
       return 'Genereer recept';
     case 'image':
       return 'Verwerk foto';
+    case 'fridge-scan':
+      return 'Scan koelkast & genereer recept';
     case 'youtube':
       return 'Haal YouTube recept op';
     case 'text':
@@ -502,6 +709,13 @@ const submitButtonText = computed(() => {
 const isSubmitDisabled = computed(() => {
   if (isLoading.value) return true;
 
+  if (
+    selectedInputType.value === 'fridge-scan' &&
+    isStreaming.value
+  ) {
+    return false;
+  }
+
   switch (selectedInputType.value) {
     case 'ai':
       return !recipePrompt.value.trim();
@@ -509,6 +723,8 @@ const isSubmitDisabled = computed(() => {
       return !imageFile.value;
     case 'text':
       return !recipeText.value.trim();
+    case 'fridge-scan':
+      return !imageFile.value;
     case 'url':
     case 'youtube':
     default:
@@ -516,6 +732,20 @@ const isSubmitDisabled = computed(() => {
       return !url.value.trim(); // || !url.value.includes('.');
   }
 });
+
+// Consolidated action bar click handler
+async function handleActionBarClick() {
+  if (
+    selectedInputType.value === 'fridge-scan' &&
+    isStreaming.value
+  ) {
+    // If scanning fridge and camera is streaming, capture photo
+    await handleCapture();
+  } else {
+    // Otherwise, submit the form (handles all other cases)
+    await submitRecipeRequest();
+  }
+}
 
 onMounted(async () => {
   await nextTick(); // Ensure DOM is ready
@@ -534,6 +764,8 @@ onUnmounted(() => {
   if (imagePreviewUrl.value) {
     URL.revokeObjectURL(imagePreviewUrl.value);
   }
+  // Stop camera stream if it was running
+  stopCamera();
 });
 
 useHead({
