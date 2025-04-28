@@ -249,6 +249,10 @@ async function addAllPlannedIngredientsToShoppingList() {
     // --- Call optimization AND price fetch AFTER adding ingredients ---
     // This now triggers both cleanup and price fetching
     await optimizeListAndShowFeedback();
+
+    // --- Umami Tracking ---
+    umTrackEvent('plan_add_to_shopping_list');
+    // --- End Umami Tracking ---
   } else if (mealsProcessedCount > 0) {
     toast.add({
       title: 'Niets toegevoegd',

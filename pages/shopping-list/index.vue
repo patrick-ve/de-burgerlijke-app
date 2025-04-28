@@ -297,6 +297,7 @@ const copyShoppingListToClipboard = () => {
         description: 'Boodschappenlijst gekopieerd naar klembord.',
         icon: 'i-heroicons-clipboard-document-check',
       });
+      umTrackEvent('shopping_list_copy_clipboard');
     })
     .catch((err) => {
       console.error('Failed to copy list:', err);
@@ -318,6 +319,11 @@ const handleAddItemsFromModal = async () => {
     // Clear textarea and close modal only if items were added
     addItemTextAreaValue.value = '';
     isAddItemModalOpen.value = false;
+
+    // --- Umami Tracking ---
+    umTrackEvent('shopping_list_add_manual');
+    // --- End Umami Tracking ---
+
     // Optionally trigger price fetch after adding items
     // fetchCheapestProducts(); // Consider if this should be automatic
   }

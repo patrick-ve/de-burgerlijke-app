@@ -179,6 +179,7 @@ import { useHeaderState } from '@/composables/useHeaderState';
 const router = useRouter();
 const { addRecipe } = useRecipes();
 const { headerState, setHeader, resetHeader } = useHeaderState();
+
 const isMounted = ref(false);
 
 // Input type selection
@@ -406,6 +407,29 @@ async function submitRecipeRequest() {
 
     if (parsed.success) {
       addRecipe(parsed.data);
+
+      // --- Umami Tracking ---
+      let eventName = 'add_recipe_unknown'; // Default
+      switch (selectedInputType.value) {
+        case 'url':
+          eventName = 'add_recipe_url';
+          break;
+        case 'youtube':
+          eventName = 'add_recipe_youtube';
+          break;
+        case 'image':
+          eventName = 'add_recipe_image';
+          break;
+        case 'text':
+          eventName = 'add_recipe_text';
+          break;
+        case 'ai':
+          eventName = 'add_recipe_ai';
+          break;
+      }
+      umTrackEvent(eventName);
+      // --- End Umami Tracking ---
+
       // Add query parameter to indicate success (optional)
       await router.push({
         path: '/recipes',
