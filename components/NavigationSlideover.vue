@@ -54,7 +54,7 @@ const navigationGroups = [
       {
         label: 'Vakantie',
         to: '/holiday',
-        icon: 'i-heroicons-briefcase',
+        icon: 'i-heroicons-globe-alt',
       },
       // {
       //   label: 'Baby',
