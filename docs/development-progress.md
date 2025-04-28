@@ -210,6 +210,9 @@ Development of the app follows a Test-Driven Development (TDD) approach:
   - [x] **Copy to Clipboard:**
     - [x] Added context menu to shopping list page header.
     - [x] Implemented "Kopieer lijst" button to copy unchecked items to clipboard.
+  - [x] **View Mode Toggle:**
+    - [x] Added `UToggle` to `pages/shopping-list/index.vue` to switch between views.
+    - [x] Implemented conditional rendering: group by supermarket/category (with prices) vs. group by category only (no prices).
 
 ## Groceries Pricing Insights (`groceries-pricing-insights-prd.md`)
 
@@ -444,3 +447,31 @@ Translated UI elements to Dutch.
   - [x] Added a modal to display the embedded PDF viewer.
 
 ## Other
+
+## Planning & Calendar
+
+- [x] **To-Do List (`/to-do`)**:
+  - [x] Create basic To-Do page (`pages/to-do.vue`).
+  - [x] Create `useToDos` composable for state management.
+  - [x] Implement adding, toggling, deleting todos.
+  - [x] Persist state using `useLocalStorage`.
+  - [x] Add context menu for clearing all todos.
+  - [x] Implement date picker for setting due dates (`v-calendar`).
+  - [x] Implement file attachments (storing file data in localStorage).
+  - [x] Implement PDF preview modal using `vue-pdf-embed`.
+  - [x] Sort pending todos by due date.
+- [ ] **Birthdays (`/birthdays`)**:
+  - [ ] Create page and basic UI.
+  - [ ] Create `useBirthdays` composable.
+  - [ ] Implement adding/editing/deleting birthdays.
+  - [ ] Persist state.
+  - [ ] Display upcoming birthdays.
+- [x] **Holiday Checklist (`/holiday`)**:
+  - [x] Create Holiday Checklist page (`pages/holiday/index.vue`).
+  - [x] Create `useHoliday` composable for state management with `useLocalStorage`.
+  - [x] Implement adding, toggling (checking), and deleting items.
+  - [x] Define default checklist items and categories.
+  - [x] Group items by category in the UI.
+  - [x] Add modal for creating new checklist items.
+  - [x] Add emojis to category definitions and display them in UI.
+  - [x] Add navigation link in `NavigationSlideover.vue`.
