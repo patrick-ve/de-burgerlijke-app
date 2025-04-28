@@ -1,7 +1,7 @@
 <template>
   <div>
     <NuxtPwaAssets />
-    <NuxtLoadingIndicator />
+    <NuxtLoadingIndicator :height="3" :color="'#40939a'" />
 
     <ion-app>
       <TheHeader :title="headerState.title">
