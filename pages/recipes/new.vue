@@ -419,23 +419,38 @@ async function submitRecipeRequest() {
     }
   } catch (err: any) {
     console.error('Error submitting request:', err);
-    let message = 'Er is een onbekende fout opgetreden.';
-    if (err.data && err.data.message) {
-      message = err.data.message;
-    } else if (err.data && err.data.statusMessage) {
-      message = err.data.statusMessage;
-    } else if (err.message) {
-      message = err.message;
+    const originalInputType = selectedInputType.value; // Store original type for message
+
+    // Check if the error occurred during URL or YouTube processing
+    if (
+      originalInputType === 'url' ||
+      originalInputType === 'youtube'
+    ) {
+      selectedInputType.value = 'text'; // Switch to text input
+      url.value = ''; // Clear the URL input
+      error.value =
+        'Het ophalen van het recept via de URL is mislukt. Probeer de recepttekst te kopiëren en plakken.';
+    } else {
+      // Handle other error types
+      let message = 'Er is een onbekende fout opgetreden.';
+      if (err.data && err.data.message) {
+        message = err.data.message;
+      } else if (err.data && err.data.statusMessage) {
+        message = err.data.statusMessage;
+      } else if (err.message) {
+        message = err.message;
+      }
+      // Generic error message based on the original input type
+      error.value = `${
+        originalInputType === 'ai'
+          ? 'Genereren'
+          : originalInputType === 'image'
+            ? 'Afbeelding verwerken'
+            : originalInputType === 'text'
+              ? 'Tekst verwerken'
+              : 'Verwerken' // Fallback generic term
+      } mislukt. ${message}`;
     }
-    error.value = `${
-      selectedInputType.value === 'ai'
-        ? 'Genereren'
-        : selectedInputType.value === 'image'
-          ? 'Afbeelding verwerken'
-          : selectedInputType.value === 'text'
-            ? 'Tekst verwerken'
-            : 'URL versturen'
-    } mislukt. ${message}`;
   } finally {
     isLoading.value = false;
   }
