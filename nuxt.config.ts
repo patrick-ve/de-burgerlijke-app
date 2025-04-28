@@ -24,6 +24,23 @@ export default defineNuxtConfig({
         { name: 'msapplication-tap-highlight', content: 'no' },
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'color-scheme', content: 'light dark' },
+        {
+          name: 'description',
+          content:
+            'De slimme assistent voor je boodschappen en huishoudelijke planning.',
+        },
+        { property: 'og:title', content: 'De Burgerlijke App' },
+        {
+          property: 'og:description',
+          content:
+            'De slimme assistent voor je boodschappen en huishoudelijke planning.',
+        },
+        { property: 'og:image', content: '/og-image.png' },
+        { property: 'og:url', content: 'https://burgerlijke.app' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'De Burgerlijke App' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: '/og-image.png' },
       ],
     },
   },

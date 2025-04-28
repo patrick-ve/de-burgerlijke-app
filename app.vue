@@ -34,21 +34,6 @@ import { useHeaderState } from '~/composables/useHeaderState';
 const { headerState } = useHeaderState();
 const { $pwa } = useNuxtApp();
 
-useSeoMeta({
-  ogImage: '/og-image.png',
-  title: 'De Burgerlijke App',
-  description:
-    'De slimme assistent voor je boodschappen en huishoudelijke planning.',
-  ogTitle: 'De Burgerlijke App',
-  ogDescription:
-    'De slimme assistent voor je boodschappen en huishoudelijke planning.',
-  ogUrl: 'https://burgerlijke.app',
-  ogType: 'website',
-  ogSiteName: 'De Burgerlijke App',
-  twitterCard: 'summary_large_image',
-  twitterImage: '/og-image.png',
-});
-
 onMounted(() => {
   if (import.meta.client) {
     localStorage.removeItem('nuxt-color-mode');
