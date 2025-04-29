@@ -21,7 +21,7 @@ export function useHeaderState() {
   const route = useRoute();
   const router = useRouter();
 
-  const defaultLeftAction = () => router.back();
+  const defaultLeftAction = () => router.push('/app');
 
   const setHeader = (config: Partial<HeaderState>) => {
     headerState.value = {

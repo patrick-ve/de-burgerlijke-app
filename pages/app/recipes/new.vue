@@ -629,7 +629,7 @@ async function submitRecipeRequest() {
 
       // Add query parameter to indicate success (optional)
       await router.push({
-        path: '/recipes',
+        path: 'app/recipes',
         query: { added: 'true' },
       });
     } else {

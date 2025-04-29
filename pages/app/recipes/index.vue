@@ -45,7 +45,7 @@
         aria-label="Voeg nieuw recept toe"
         label="Nieuw recept toevoegen"
         class="font-bold"
-        @click="router.push('/recipes/new')"
+        @click="router.push('app/recipes/new')"
       />
     </div>
 

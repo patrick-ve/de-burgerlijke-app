@@ -95,7 +95,7 @@ async function handleSubmit() {
 function handleSave(savedRecipe: Recipe) {
   url.value = '';
   recipe.value = null;
-  navigateTo('/recipes');
+  navigateTo('app/recipes');
 }
 
 function handleCancel() {

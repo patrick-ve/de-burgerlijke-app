@@ -23,7 +23,7 @@ const navigationGroups = [
     links: [
       {
         label: 'Recepten',
-        to: '/recipes',
+        to: 'app/recipes',
         icon: 'i-heroicons-book-open',
       },
       {
@@ -131,7 +131,7 @@ const installPWA = () => {
             v-for="link in group.links"
             :key="link.to"
             :disabled="link.to === '/baby'"
-            :to="link.to"
+            :to="`/app/${link.to}`"
             class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
             active-class="bg-white/50 text-primary-700 font-semibold"
           >

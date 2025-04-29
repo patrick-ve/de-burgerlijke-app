@@ -198,7 +198,7 @@ const openContextMenu = () => {
 };
 
 const goBackToRecipes = () => {
-  router.push('/recipes');
+  router.push('app/recipes');
 };
 
 // Function to open the confirmation modal
@@ -213,7 +213,7 @@ const confirmDelete = async () => {
     deleteRecipe(recipe.value.id!);
     isModalOpen.value = false;
     // Optional: Add a toast notification for success
-    // await navigateTo('/recipes'); // Navigate back to the list or another appropriate page
+    // await navigateTo('app/recipes'); // Navigate back to the list or another appropriate page
     router.back(); // Or simply go back
   }
 };

@@ -44,7 +44,7 @@ const totalTime = computed(() => {
 
 <template>
   <NuxtLink
-    :to="`/recipes/${recipe.id}`"
+    :to="`recipes/${recipe.id}`"
     class="recipe-card-link block group relative w-48"
     :aria-label="`View recipe: ${recipe.title}`"
   >
