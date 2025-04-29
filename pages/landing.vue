@@ -69,27 +69,30 @@ onUnmounted(() => {
         class="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:flex lg:items-center lg:gap-x-10 lg:px-8 lg:py-40"
       >
         <div class="mx-auto max-w-2xl lg:mx-0 lg:flex-auto">
+          <h2 class="font-caveat text-5xl text-primary-500">
+            De Burgerlijke App
+          </h2>
           <h1
-            class="mt-10 text-pretty text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl"
+            class="mt-10 text-pretty text-4xl font-semibold tracking-tight text-gray-900 sm:text-7xl"
           >
-            A better way to ship your projects
+            Organiseer <br />het huishouden slimmer, sneller en
+            goedkoper.
           </h1>
           <p
             class="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8"
           >
-            Anim aute id magna aliqua ad ad non deserunt sunt. Qui
-            irure qui lorem cupidatat commodo. Elit sunt amet fugiat
-            veniam occaecat fugiat aliqua. Anim aute id magna aliqua
-            ad ad non deserunt sunt.
+            De Burgerlijke App is een app die je helpt met het
+            verzamelen van recepten, het plannen van maaltijden en het
+            beheren van de wekelijkse boodschappen.
           </p>
           <div class="mt-10 flex items-center gap-x-6">
             <a
               href="#"
-              class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >Get started</a
+              class="rounded-md font-bold bg-primary-500 px-3.5 py-2.5 text-sm text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >Begin met geld besparen</a
             >
             <a href="#" class="text-sm/6 font-semibold text-gray-900"
-              >Learn more <span aria-hidden="true">→</span></a
+              >Meer informatie <span aria-hidden="true">→</span></a
             >
           </div>
         </div>
@@ -130,3 +133,9 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.font-caveat {
+  font-family: 'Caveat', cursive;
+}
+</style>
