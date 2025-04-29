@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import TheHeader from '~/components/TheHeader.vue';
 
 interface Feature {
   title: string;
@@ -84,6 +86,8 @@ const currentFeature = computed(
   () => features[selectedFeatureIndex.value]
 );
 
+const router = useRouter();
+
 const items = [
   {
     label: 'Is deze app veilig?',
@@ -115,6 +119,19 @@ const items = [
 </script>
 
 <template>
+  <TheHeader>
+    <template #right-action>
+      <UButton
+        color="primary"
+        variant="solid"
+        class="font-bold"
+        label="Bespaar geld"
+        aria-label="Open app"
+        @click="() => router.push('/app')"
+      />
+    </template>
+  </TheHeader>
+
   <div class="bg-white">
     <div class="relative isolate pt-4 md:pt-14">
       <svg
@@ -152,11 +169,6 @@ const items = [
           <div
             class="mx-auto max-w-2xl lg:mx-0 lg:flex-auto lg:py-40"
           >
-            <h2
-              class="font-caveat font-semibold text-3xl text-primary-500 md:text-5xl"
-            >
-              De Burgerlijke App
-            </h2>
             <h1
               class="mt-10 text-pretty text-4xl font-semibold tracking-tight text-gray-900 sm:text-7xl"
             >

@@ -1,6 +1,28 @@
 <template>
+  <TheHeader :title="recipe?.title || 'Laden...'">
+    <template #left-action>
+      <UButton
+        icon="i-heroicons-arrow-left"
+        variant="ghost"
+        color="gray"
+        aria-label="Back"
+        @click="goBackToRecipes"
+      />
+    </template>
+    <template #right-action>
+      <UButton
+        v-if="recipe"
+        ref="contextMenuTriggerRef"
+        icon="i-heroicons-ellipsis-vertical"
+        variant="ghost"
+        color="gray"
+        aria-label="Options"
+        @click="openContextMenu"
+      />
+    </template>
+  </TheHeader>
+
   <div>
-    <!-- Fetch recipe data based on route params -->
     <div v-if="pending">Loading...</div>
 
     <div v-else-if="error || !recipe">
@@ -9,32 +31,8 @@
 
     <RecipeDetailView v-else :recipe="recipe" />
 
-    <!-- Teleport Back button to the header -->
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showLeftAction"
-        icon="i-heroicons-arrow-left"
-        variant="ghost"
-        color="gray"
-        aria-label="Back"
-        @click="triggerLeftAction"
-      />
-    </Teleport>
+    <!-- Removed Teleports -->
 
-    <!-- Teleport Context Menu Trigger to the header -->
-    <Teleport to="#header-right-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showRightAction"
-        ref="contextMenuTriggerRef"
-        icon="i-heroicons-ellipsis-vertical"
-        variant="ghost"
-        color="gray"
-        aria-label="Options"
-        @click="triggerRightAction"
-      />
-    </Teleport>
-
-    <!-- Teleport Context Menu to the body to avoid stacking context issues -->
     <Teleport to="body">
       <UContextMenu
         v-model="isContextMenuOpen"
@@ -125,15 +123,11 @@ import {
 } from 'vue';
 import { useMouse, useWindowScroll } from '@vueuse/core'; // Import mouse/scroll utils
 import type { Recipe } from '~/types/recipe'; // Assuming Recipe type exists
-import { useHeaderState } from '~/composables/useHeaderState';
 import { useRecipes } from '~/composables/useRecipes'; // Import the composable
 import type { VirtualElement } from '@popperjs/core'; // Import type for virtualElement
 
 const route = useRoute();
 const router = useRouter(); // Import router
-const { headerState, setHeader, resetHeader, defaultLeftAction } =
-  useHeaderState();
-const isMounted = ref(false);
 const recipeId = computed(() => route.params.id as string);
 const { findRecipeById, deleteRecipe } = useRecipes(); // Get functions
 
@@ -161,23 +155,8 @@ const virtualElement = ref<VirtualElement>({
 // Modal State
 const isModalOpen = ref(false);
 
-// Handler to trigger the action stored in state
-const triggerLeftAction = () => {
-  if (headerState.value.leftActionHandler) {
-    headerState.value.leftActionHandler();
-  }
-};
-
-// Handler to trigger the right action (open context menu)
-const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
-};
-
 // Function to open the context menu using mouse coordinates
 const openContextMenu = () => {
-  // Use mouse coordinates instead of button ref
   const top = unref(y) - unref(windowY);
   const left = unref(x);
 
@@ -186,7 +165,6 @@ const openContextMenu = () => {
     height: 0,
     top,
     left,
-    // Keep other properties for type correctness
     right: left,
     bottom: top,
     x: left,
@@ -198,7 +176,7 @@ const openContextMenu = () => {
 };
 
 const goBackToRecipes = () => {
-  router.push('app/recipes');
+  router.push('/app/recipes');
 };
 
 // Function to open the confirmation modal
@@ -212,8 +190,6 @@ const confirmDelete = async () => {
   if (recipe.value) {
     deleteRecipe(recipe.value.id!);
     isModalOpen.value = false;
-    // Optional: Add a toast notification for success
-    // await navigateTo('app/recipes'); // Navigate back to the list or another appropriate page
     router.back(); // Or simply go back
   }
 };
@@ -234,41 +210,6 @@ const {
     watch: [recipeId],
   }
 );
-
-onMounted(async () => {
-  await nextTick();
-  isMounted.value = true;
-
-  // Initial header setup
-  setHeader({
-    title: recipe.value?.title || 'Loading Recipe...',
-    showLeftAction: true,
-    showRightAction: true, // Show the right action button
-    leftActionHandler: goBackToRecipes,
-    rightActionHandler: openContextMenu, // Set handler to open context menu
-  });
-});
-
-// Watch for recipe data changes to update the header title
-watch(
-  recipe,
-  (newRecipe) => {
-    if (newRecipe) {
-      setHeader({ title: newRecipe.title, showRightAction: true }); // Ensure right action is shown
-    } else if (!pending.value) {
-      setHeader({
-        title: 'Recipe Not Found',
-        showRightAction: false,
-      }); // Hide if no recipe
-    }
-  },
-  { immediate: true }
-);
-
-onUnmounted(() => {
-  resetHeader();
-  isMounted.value = false;
-});
 
 useHead({
   title: computed(() =>

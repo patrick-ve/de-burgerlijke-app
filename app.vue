@@ -4,17 +4,6 @@
     <NuxtLoadingIndicator :height="3" :color="'#40939a'" />
 
     <ion-app>
-      <TheHeader :title="headerState.title">
-        <template #left-action>
-          <!-- Content for this slot will be provided by the page -->
-          <div id="header-left-action"></div>
-        </template>
-        <template #right-action>
-          <!-- Content for this slot will be provided by the page -->
-          <div id="header-right-action"></div>
-        </template>
-      </TheHeader>
-
       <ion-content class="ion-padding">
         <NuxtPage />
       </ion-content>
@@ -30,10 +19,8 @@
 
 <script setup lang="ts">
 import { consola } from 'consola';
-import { useHeaderState } from '~/composables/useHeaderState';
 import { useDisableDevTools } from '~/composables/useDisableDevTools';
 
-const { headerState } = useHeaderState();
 const { $pwa } = useNuxtApp();
 const router = useRouter();
 
@@ -61,7 +48,8 @@ onMounted(() => {
 }
 
 ion-content {
-  padding-top: var(--padding-top) !important;
+  /* Remove header padding adjustment */
+  /* padding-top: var(--padding-top) !important; */
 }
 
 * {

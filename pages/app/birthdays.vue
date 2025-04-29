@@ -2,15 +2,11 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useBirthdays } from '~/composables/useBirthdays';
 import type { Birthday } from '~/composables/useBirthdays';
-import { useHeaderState } from '~/composables/useHeaderState';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale'; // Import Dutch locale if needed
 
 const { sortedBirthdays, addBirthday, deleteBirthday } =
   useBirthdays();
-const { headerState, setHeader, resetHeader, defaultLeftAction } =
-  useHeaderState();
-const isMounted = ref(false);
 const router = useRouter();
 
 // Add Birthday Modal State
@@ -38,19 +34,6 @@ const monthOptions = computed(() => {
     value: i,
   }));
 });
-
-// --- Header Action Handlers ---
-const triggerLeftAction = () => {
-  if (headerState.value.leftActionHandler) {
-    headerState.value.leftActionHandler();
-  }
-};
-
-const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
-};
 
 // --- Modal Actions ---
 const openAddModal = () => {
@@ -144,24 +127,25 @@ const calculateUpcomingAge = (birthday: Birthday): number | null => {
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
-  isMounted.value = true;
-  setHeader({
-    title: 'Verjaardagen',
-    showLeftAction: true,
-    showRightAction: false, // Disable right header action
-    leftActionHandler: defaultLeftAction, // Use default back action
-    // rightActionHandler: openAddModal, // Remove handler
-  });
 });
 
 useHead({ title: 'Verjaardagen' }); // Set page title
 </script>
 
 <template>
-  <div class="pb-24 pt-4">
-    <!-- Increased pb to 24 -->
-    <!-- Add padding-bottom to prevent overlap -->
+  <TheHeader title="Verjaardagen">
+    <template #left-action>
+      <UButton
+        icon="i-heroicons-arrow-left"
+        variant="ghost"
+        color="gray"
+        aria-label="Back"
+        @click="router.push('/app')"
+      />
+    </template>
+  </TheHeader>
 
+  <div class="pb-24 pt-4">
     <!-- Birthday List -->
     <div v-if="sortedBirthdays.length > 0" class="px-4">
       <TransitionGroup
@@ -241,31 +225,6 @@ useHead({ title: 'Verjaardagen' }); // Set page title
         </div>
       </div>
     </Transition>
-
-    <!-- Teleport Back button to the header -->
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showLeftAction"
-        icon="i-heroicons-arrow-left"
-        variant="ghost"
-        color="gray"
-        aria-label="Back"
-        @click="triggerLeftAction"
-      />
-    </Teleport>
-
-    <!-- Teleport Add Button Trigger to the header -->
-    <!-- <Teleport to="#header-right-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showRightAction"
-        icon="i-heroicons-plus-circle"
-        variant="ghost"
-        color="gray"
-        aria-label="Add Birthday"
-        @click="triggerRightAction"
-      />
-    </Teleport> -->
-    <!-- Remove teleport for right action -->
 
     <!-- Add Birthday Modal -->
     <UModal

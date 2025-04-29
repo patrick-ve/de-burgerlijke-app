@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useShoppingList } from '~/composables/useShoppingList';
 import type { ShoppingListItem } from '~/types/shopping-list';
-import { useHeaderState } from '~/composables/useHeaderState';
 import { useOnboardingSettings } from '~/composables/useOnboardingSettings';
 import { consola } from 'consola';
 import { ingredientCategories } from '~/types/recipe';
@@ -174,11 +173,10 @@ const {
   addItemsFromText,
   isStandardizingItems,
 } = useShoppingList();
-const { headerState, setHeader } = useHeaderState();
 const { selectedSupermarketIds } = useOnboardingSettings();
-const isMounted = ref(false);
 const isClearConfirmationModalOpen = ref(false);
 const toast = useToast();
+const router = useRouter();
 
 // --- State for Add Items Modal ---
 const isAddItemModalOpen = ref(false);
@@ -224,13 +222,6 @@ const handleItemUpdate = (item: ShoppingListItem) => {
 // Handle item deletion
 const handleItemDelete = (itemId: string) => {
   deleteItem(itemId);
-};
-
-// Handler to trigger the action stored in state
-const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
 };
 
 const confirmClearList = () => {
@@ -469,21 +460,6 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-onMounted(async () => {
-  await nextTick();
-  isMounted.value = true;
-
-  setHeader({
-    title: 'Boodschappenlijst',
-    showLeftAction: true,
-    showRightAction: true,
-    leftActionHandler: () => router.push('/'),
-    rightActionHandler: openContextMenu,
-  });
-});
-
-const router = useRouter();
-
 const showActionBar = ref(false);
 onMounted(() => {
   showActionBar.value = true;
@@ -491,6 +467,28 @@ onMounted(() => {
 </script>
 
 <template>
+  <TheHeader title="Boodschappenlijst">
+    <template #left-action>
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/app')"
+      />
+    </template>
+    <template #right-action>
+      <UButton
+        v-if="shoppingListItems.length > 0"
+        icon="i-heroicons-ellipsis-vertical"
+        color="gray"
+        variant="ghost"
+        aria-label="Opties"
+        @click="openContextMenu"
+      />
+    </template>
+  </TheHeader>
+
   <div class="relative pb-20">
     <UContainer class="py-4">
       <div
@@ -857,29 +855,6 @@ onMounted(() => {
         recept!
       </div>
     </UContainer>
-
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-arrow-left"
-        aria-label="Ga terug naar home"
-        @click="router.push('/')"
-      />
-    </Teleport>
-
-    <Teleport to="#header-right-action" v-if="isMounted">
-      <UButton
-        v-if="
-          headerState.showRightAction && shoppingListItems.length > 0
-        "
-        icon="i-heroicons-ellipsis-vertical"
-        color="gray"
-        variant="ghost"
-        aria-label="Opties"
-        @click="triggerRightAction"
-      />
-    </Teleport>
 
     <Teleport to="body">
       <UContextMenu

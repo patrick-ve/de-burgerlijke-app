@@ -49,6 +49,19 @@ useHead({ title: 'Paklijst vakantie' });
 </script>
 
 <template>
+  <TheHeader title="Paklijst vakantie">
+    <template #left-action>
+      <UButton
+        icon="i-heroicons-arrow-left"
+        variant="ghost"
+        color="gray"
+        aria-label="Terug"
+        @click="router.push('/app')"
+      />
+    </template>
+    <!-- No right action needed -->
+  </TheHeader>
+
   <div class="pb-24">
     <UContainer class="py-4">
       <div v-if="items.length > 0" class="space-y-6">
@@ -191,19 +204,6 @@ useHead({ title: 'Paklijst vakantie' });
         </template>
       </UCard>
     </UModal>
-
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        v-if="
-          headerState.showLeftAction && headerState.leftActionHandler
-        "
-        icon="i-heroicons-arrow-left"
-        variant="ghost"
-        color="gray"
-        aria-label="Terug"
-        @click="headerState.leftActionHandler"
-      />
-    </Teleport>
   </div>
 </template>
 

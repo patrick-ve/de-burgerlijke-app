@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRecipes } from '~/composables/useRecipes';
 import { useMealPlanner } from '~/composables/useMealPlanner';
-import { useHeaderState } from '~/composables/useHeaderState';
 import PortionSelector from '~/components/PortionSelector.vue';
 import type { Recipe } from '~/types/recipe';
 // --- Remove type import that's no longer needed directly here ---
@@ -11,7 +10,6 @@ import type { Ingredient } from '~/types/recipe'; // Import Ingredient type
 import { consola } from 'consola'; // Added for debugging optimization
 import type { ShoppingListItem } from '~/types/shopping-list'; // Added for optimizedList type
 
-const { setHeader } = useHeaderState();
 const { recipes } = useRecipes();
 const { getMealsForDate, addMeal, removeMeal, getDateString } =
   useMealPlanner();
@@ -22,29 +20,12 @@ const {
   isOptimizingList,
 } = useShoppingList(); // Replace replaceList with optimizeAndFetchPrices, expose isOptimizingList
 const toast = useToast(); // For user feedback
+const router = useRouter(); // Added router import
 
-// Set header title
-onMounted(async () => {
-  await nextTick();
-
-  setHeader({
-    title: 'Maaltijdplanner',
-    showLeftAction: true,
-    showRightAction: false,
-  });
-
-  // Set initial state for action bar visibility after mount & tick
-  showActionBar.value = hasPlannedMeals.value;
-});
-
-// Prepare recipes for select menu (value: id, label: title)
-const recipeOptions = computed(
-  () => recipes.value.map((r) => ({ label: r.title, value: r.id! })) // id guaranteed string by useRecipes
+// Prepare recipes for select menu (Keep early)
+const recipeOptions = computed(() =>
+  recipes.value.map((r) => ({ label: r.title, value: r.id! }))
 );
-
-// --- Remove old state related to inline select ---
-// const selectedRecipeId = ref<Record<string, string>>({});
-// const selectedPortions = ref<Record<string, number>>({});
 
 // --- Add state for modal ---
 const isModalOpen = ref(false);
@@ -123,6 +104,26 @@ const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
 
 // --- Remove old handleAddRecipe function ---
 // function handleAddRecipe(date: Date) { ... }
+
+// --- Computed property to check if any meals are planned --- (Moved up)
+const hasPlannedMeals = computed(() => {
+  return daysOfWeek.some((day) => day.meals.value.length > 0);
+});
+
+// --- State to control the action bar visibility --- (Moved up)
+const showActionBar = ref(false);
+
+// --- Watch for subsequent changes to keep the action bar visibility synced --- (Moved up)
+watch(hasPlannedMeals, (newValue) => {
+  showActionBar.value = newValue;
+});
+
+// --- Keep onMounted here ---
+onMounted(async () => {
+  await nextTick();
+  // Set initial state for action bar visibility after mount & tick
+  showActionBar.value = hasPlannedMeals.value;
+});
 
 // --- Add new handler for planning from the modal ---
 function planMealFromModal() {
@@ -265,19 +266,6 @@ async function addAllPlannedIngredientsToShoppingList() {
   // No need for an "else" here
 }
 
-// Computed property to check if any meals are planned in the week
-const hasPlannedMeals = computed(() => {
-  return daysOfWeek.some((day) => day.meals.value.length > 0);
-});
-
-// State to control the action bar visibility for animation
-const showActionBar = ref(false);
-
-// Watch for subsequent changes to keep the action bar visibility synced
-watch(hasPlannedMeals, (newValue) => {
-  showActionBar.value = newValue;
-});
-
 // Function to remove a meal (Keep as is)
 function handleRemoveMeal(mealId: string, date: Date) {
   removeMeal(mealId, date);
@@ -292,8 +280,6 @@ const formattedModalDate = computed(() => {
     day: 'numeric',
   });
 });
-
-const router = useRouter();
 
 // Helper function to get the ISO week number
 function getISOWeekNumber(date: Date): number {
@@ -319,12 +305,25 @@ const currentWeekNumber = computed(() =>
 </script>
 
 <template>
+  <TheHeader title="Maaltijdplanner">
+    <template #left-action>
+      <!-- Move back button here -->
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/app')"
+      />
+    </template>
+    <!-- No right action needed -->
+  </TheHeader>
+
   <UContainer class="pb-24">
     <!-- Week Number Display -->
     <div class="text-center text-xl font-semibold my-4">
       Week {{ currentWeekNumber }}
     </div>
-    <!-- Header is handled by TheHeader component using useHeaderState -->
     <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mt-4">
       <div
         v-for="day in daysOfWeek"
@@ -425,16 +424,6 @@ const currentWeekNumber = computed(() =>
         </div>
       </div>
     </div>
-
-    <Teleport to="#header-left-action">
-      <UButton
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-arrow-left"
-        aria-label="Ga terug naar home"
-        @click="router.push('/')"
-      />
-    </Teleport>
 
     <!-- Meal Planner Modal -->
     <UModal

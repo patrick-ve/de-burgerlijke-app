@@ -9,7 +9,6 @@ import {
 } from 'vue';
 import { useToDos } from '~/composables/useToDos';
 import type { ToDo } from '~/composables/useToDos';
-import { useHeaderState } from '~/composables/useHeaderState';
 import { useMouse, useWindowScroll } from '@vueuse/core';
 import type { VirtualElement } from '@popperjs/core';
 import DatePicker from '~/components/DatePicker.vue';
@@ -28,9 +27,6 @@ const {
   attachFileToToDo,
   removeAttachment,
 } = useToDos();
-const { headerState, setHeader, resetHeader, defaultLeftAction } =
-  useHeaderState();
-const isMounted = ref(false);
 const router = useRouter();
 
 const newTodoText = ref('');
@@ -73,19 +69,6 @@ const pdfPreviewTitle = ref<string | null>(null);
 const handleAddToDo = () => {
   addToDo(newTodoText.value);
   newTodoText.value = ''; // Clear input after adding
-};
-
-// --- Header Action Handlers ---
-const triggerLeftAction = () => {
-  if (headerState.value.leftActionHandler) {
-    headerState.value.leftActionHandler();
-  }
-};
-
-const triggerRightAction = () => {
-  if (headerState.value.rightActionHandler) {
-    headerState.value.rightActionHandler();
-  }
 };
 
 const openContextMenu = () => {
@@ -197,20 +180,33 @@ const closePdfPreviewModal = () => {
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
-  isMounted.value = true;
-  setHeader({
-    title: 'Takenlijst',
-    showLeftAction: true,
-    showRightAction: true,
-    leftActionHandler: defaultLeftAction, // Use default back action
-    rightActionHandler: openContextMenu, // Open context menu
-  });
 });
 
 useHead({ title: 'Mijn Taken' }); // Set page title
 </script>
 
 <template>
+  <TheHeader title="Takenlijst">
+    <template #left-action>
+      <UButton
+        icon="i-heroicons-arrow-left"
+        variant="ghost"
+        color="gray"
+        aria-label="Back"
+        @click="router.push('/app')"
+      />
+    </template>
+    <template #right-action>
+      <UButton
+        icon="i-heroicons-ellipsis-vertical"
+        variant="ghost"
+        color="gray"
+        aria-label="Options"
+        @click="openContextMenu"
+      />
+    </template>
+  </TheHeader>
+
   <div class="pb-24">
     <!-- Add padding-bottom to prevent overlap with action bar -->
 
@@ -463,30 +459,6 @@ useHead({ title: 'Mijn Taken' }); // Set page title
         </form>
       </div>
     </Transition>
-
-    <!-- Teleport Back button to the header -->
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showLeftAction"
-        icon="i-heroicons-arrow-left"
-        variant="ghost"
-        color="gray"
-        aria-label="Back"
-        @click="triggerLeftAction"
-      />
-    </Teleport>
-
-    <!-- Teleport Context Menu Trigger to the header -->
-    <Teleport to="#header-right-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showRightAction"
-        icon="i-heroicons-ellipsis-vertical"
-        variant="ghost"
-        color="gray"
-        aria-label="Options"
-        @click="triggerRightAction"
-      />
-    </Teleport>
 
     <!-- Teleport Context Menu to the body -->
     <Teleport to="body">

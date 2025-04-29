@@ -11,12 +11,12 @@
       ]"
     >
       <div v-if="!isOnHomePage">
-        <!-- Target for the left action teleport -->
-        <div id="header-left-action"></div>
+        <!-- Removed ID -->
+        <div></div>
         <slot name="left-action" />
       </div>
       <h1
-        v-if="!isOnHomePage"
+        v-if="!isOnHomePage && title"
         class="text-xl font-semibold truncate my-auto"
       >
         {{ title }}
@@ -27,8 +27,8 @@
         </h1>
       </div>
       <div class="flex justify-end">
-        <!-- Target for the right action teleport -->
-        <div id="header-right-action"></div>
+        <!-- Removed ID -->
+        <div></div>
         <slot name="right-action" />
       </div>
     </div>
@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 interface Props {
-  title: string;
+  title?: string; // Made title optional
 }
 
 defineProps<Props>();
@@ -47,12 +47,7 @@ const isOnHomePage = computed(() => route.path === '/');
 </script>
 
 <style scoped>
-/* Add any specific header styles if needed */
-/* Ensure the teleport targets don't interfere with layout if empty */
-#header-left-action:empty,
-#header-right-action:empty {
-  display: none;
-}
+/* Removed styles for IDs */
 
 .font-caveat {
   font-family: 'Caveat', cursive;

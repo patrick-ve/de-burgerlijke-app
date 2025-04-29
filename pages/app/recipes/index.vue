@@ -1,4 +1,25 @@
 <template>
+  <TheHeader title="Recepten">
+    <template #left-action>
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar home"
+        @click="router.push('/app')"
+      />
+    </template>
+    <template #right-action>
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-magnifying-glass-20-solid"
+        aria-label="Zoek recepten"
+        @click="toggleSearch"
+      />
+    </template>
+  </TheHeader>
+
   <div
     class="p-4 px-0 pb-20 transition-padding duration-300 ease-in-out"
     :class="containerPaddingTop"
@@ -11,28 +32,6 @@
         key="recipe-list"
       />
     </TransitionGroup>
-
-    <Teleport to="#header-left-action">
-      <UButton
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-arrow-left"
-        aria-label="Ga terug naar home"
-        @click="router.push('/')"
-      />
-    </Teleport>
-
-    <!-- Search Icon Button in Header -->
-    <Teleport to="#header-right-action">
-      <UButton
-        v-if="headerState.showRightAction"
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-magnifying-glass-20-solid"
-        aria-label="Zoek recepten"
-        @click="toggleSearch"
-      />
-    </Teleport>
 
     <!-- Fixed Bottom Action Bar -->
     <div
@@ -74,15 +73,12 @@ import {
 } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { AIRecipeDTO } from '@/server/utils/recipeSchema'; // Import DTO type
-import { useHeaderState } from '@/composables/useHeaderState';
 import { useRecipes } from '@/composables/useRecipes'; // Import the new composable
 import RecipeSearchBar from '@/components/RecipeSearchBar.vue'; // Import the search bar component
 import RecipeList from '@/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
 
 const router = useRouter();
 const route = useRoute(); // Get the route object
-const { headerState, setHeader, resetHeader } = useHeaderState();
-const isMounted = ref(false);
 const { recipes, addRecipe } = useRecipes(); // Get recipes and addRecipe from the composable
 const isSearchActive = ref(false); // State for search bar visibility
 const searchTerm = ref(''); // State for the search term
@@ -133,22 +129,6 @@ const containerPaddingTop = computed(() => {
   // Total offset needed is 4rem (header) + 4rem (search bar) = 8rem = pt-32? Let's try pt-28 (7rem) to be safe.
   // We need to check the actual rendered height
   return isSearchActive.value ? 'pt-20' : 'pt-4'; // Adjusted padding calculation
-});
-
-onMounted(async () => {
-  await nextTick();
-  isMounted.value = true;
-
-  setHeader({
-    title: 'Recepten',
-    showLeftAction: true,
-    showRightAction: true,
-    // Removed rightActionHandler as it's now for search
-  });
-});
-
-onUnmounted(() => {
-  isMounted.value = false;
 });
 
 useHead({

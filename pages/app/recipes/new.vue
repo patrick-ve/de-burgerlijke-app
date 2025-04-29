@@ -1,6 +1,18 @@
 <template>
+  <TheHeader title="Nieuw recept toevoegen">
+    <template #left-action>
+      <UButton
+        color="gray"
+        variant="ghost"
+        icon="i-heroicons-arrow-left"
+        aria-label="Ga terug naar recepten"
+        @click="router.back()"
+      />
+    </template>
+    <!-- No right action needed -->
+  </TheHeader>
+
   <div class="p-4 pb-24">
-    <!-- Added padding -->
     <!-- Input Type Selection -->
     <UFormGroup label="Waar komt het recept vandaan?" class="mb-4">
       <USelectMenu
@@ -229,18 +241,6 @@
         {{ submitButtonText }}
       </UButton>
     </div>
-
-    <!-- Teleport Back Button -->
-    <Teleport to="#header-left-action" v-if="isMounted">
-      <UButton
-        v-if="headerState.showLeftAction"
-        color="gray"
-        variant="ghost"
-        icon="i-heroicons-arrow-left"
-        aria-label="Ga terug naar recepten"
-        @click="router.back()"
-      />
-    </Teleport>
   </div>
 </template>
 
@@ -259,14 +259,10 @@ import {
   type AIRecipeDTO,
 } from '~/server/utils/recipeSchema';
 import { useRecipes } from '@/composables/useRecipes';
-import { useHeaderState } from '@/composables/useHeaderState';
 import { useWebcam } from '@/composables/useWebcam';
 
 const router = useRouter();
 const { addRecipe } = useRecipes();
-const { headerState, setHeader, resetHeader } = useHeaderState();
-
-const isMounted = ref(false);
 
 // Input type selection
 const inputTypes = [
@@ -747,19 +743,7 @@ async function handleActionBarClick() {
   }
 }
 
-onMounted(async () => {
-  await nextTick(); // Ensure DOM is ready
-  isMounted.value = true;
-  setHeader({
-    title: 'Nieuw recept toevoegen',
-    showLeftAction: true,
-    showRightAction: false, // No save button in header for this form
-  });
-});
-
 onUnmounted(() => {
-  resetHeader();
-  isMounted.value = false;
   // Revoke the object URL to free up memory
   if (imagePreviewUrl.value) {
     URL.revokeObjectURL(imagePreviewUrl.value);

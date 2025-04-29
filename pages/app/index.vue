@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { consola } from 'consola';
 import type { Supermarket } from '~/types/shopping-list';
-import { useHeaderState } from '~/composables/useHeaderState';
 import { useNavigationState } from '~/composables/useNavigationState';
 
 const { $pwa } = useNuxtApp();
@@ -10,7 +9,6 @@ useHead({
   title: 'Home - De Burgerlijke App',
 });
 
-const { headerState, setHeader } = useHeaderState();
 const { openNav } = useNavigationState();
 
 const availableSupermarkets = ref<Supermarket[]>([]);
@@ -30,44 +28,31 @@ const installPWA = async () => {
     consola.error('PWA installation failed:', error);
   }
 };
-
-onMounted(() => {
-  setHeader({
-    title: 'De Burgerlijke App',
-    showLeftAction: true,
-    leftActionHandler: toggleHamburgerMenu,
-    showRightAction: true, // Keep this true so the Teleport target exists
-    // Right action handler is now handled by the conditional button below
-    // rightActionHandler: installPWA,
-  });
-});
 </script>
 
 <template>
-  <Teleport to="#header-left-action">
-    <UButton
-      v-if="headerState.showLeftAction"
-      color="gray"
-      variant="ghost"
-      aria-label="Open navigatie menu"
-      icon="i-heroicons-bars-3"
-      size="md"
-      @click="toggleHamburgerMenu"
-    />
-  </Teleport>
-
-  <Teleport to="#header-right-action">
-    <!-- Conditionally render install button only when the prompt is available -->
-    <UButton
-      v-if="$pwa?.showInstallPrompt"
-      color="primary"
-      variant="solid"
-      label="Installeer"
-      class="font-bold"
-      @click="installPWA"
-    />
-  </Teleport>
-
+  <TheHeader title="De Burgerlijke App">
+    <template #left-action>
+      <UButton
+        color="gray"
+        variant="ghost"
+        aria-label="Open navigatie menu"
+        icon="i-heroicons-bars-3"
+        size="md"
+        @click="toggleHamburgerMenu"
+      />
+    </template>
+    <template #right-action>
+      <UButton
+        v-if="$pwa?.showInstallPrompt"
+        color="primary"
+        variant="solid"
+        label="Installeer"
+        class="font-bold"
+        @click="installPWA"
+      />
+    </template>
+  </TheHeader>
   <div
     class="flex flex-col gap-8 px-4 py-6 bg-gradient-to-b from-pink-50 via-blue-50 to-green-50 min-h-screen"
   >

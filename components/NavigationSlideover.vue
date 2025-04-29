@@ -28,12 +28,12 @@ const navigationGroups = [
       },
       {
         label: 'Maaltijdenplanner',
-        to: '/planner',
+        to: 'app/planner',
         icon: 'i-heroicons-calendar-days',
       },
       {
         label: 'Boodschappenlijst',
-        to: '/shopping-list',
+        to: 'app/shopping-list',
         icon: 'i-heroicons-shopping-cart',
       },
     ],
@@ -43,17 +43,17 @@ const navigationGroups = [
     links: [
       {
         label: 'Takenlijst',
-        to: '/to-do',
+        to: 'app/to-do',
         icon: 'i-heroicons-check-circle',
       },
       {
         label: 'Verjaardagen',
-        to: '/birthdays',
+        to: 'app/birthdays',
         icon: 'i-heroicons-cake',
       },
       {
         label: 'Vakantie',
-        to: '/holiday',
+        to: 'app/holiday',
         icon: 'i-heroicons-globe-alt',
       },
       // {
@@ -131,7 +131,7 @@ const installPWA = () => {
             v-for="link in group.links"
             :key="link.to"
             :disabled="link.to === '/baby'"
-            :to="`/app/${link.to}`"
+            :to="`${link.to}`"
             class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
             active-class="bg-white/50 text-primary-700 font-semibold"
           >
