@@ -225,7 +225,7 @@ const scrollToFeatures = () => {
             <div
               class="mt-16 hidden h-[45rem] lg:flex lg:items-center"
             >
-              <div class="space-y-8">
+              <div class="space-y-8 relative">
                 <!-- Dynamic title and description -->
                 <div>
                   <h3
@@ -260,6 +260,20 @@ const scrollToFeatures = () => {
                     "
                     size="lg"
                   />
+                </div>
+                <!-- Arrow pointing to buttons (Desktop only) -->
+                <div
+                  class="mt-4 hidden lg:flex items-center absolute -bottom-24 -left-12 justify-center"
+                >
+                  <img
+                    src="/arrow.svg"
+                    alt="Pijl die naar boven wijst"
+                    class="size-28 text-gray-500 transform -rotate-270"
+                  />
+                  <span
+                    class="ml-2 text-2xl text-primary-500 font-bold font-caveat absolute -left-28 top-4 -rotate-12"
+                    >Klik voor uitleg</span
+                  >
                 </div>
               </div>
             </div>
