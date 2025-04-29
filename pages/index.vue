@@ -164,7 +164,7 @@ const items = [
         />
       </svg>
 
-      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="mx-auto max-w-7xl px-4 lg:px-8">
         <div class="lg:flex lg:items-start lg:gap-x-10">
           <div
             class="mx-auto max-w-2xl lg:mx-0 lg:flex-auto lg:py-40"

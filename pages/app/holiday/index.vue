@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref } from 'vue';
 import {
   useHoliday,
   type HolidayCategoryName,
   type HolidayCategoryDefinition,
 } from '~/composables/useHoliday';
-import { useHeaderState } from '~/composables/useHeaderState';
 
 const {
   items,
@@ -18,10 +17,8 @@ const {
   getCategoryDefinition,
   categoryNames,
 } = useHoliday();
-const { headerState, setHeader } = useHeaderState();
 const router = useRouter();
 
-const isMounted = ref(false);
 const isAddItemModalOpen = ref(false);
 const newItemText = ref('');
 const newItemCategory = ref<HolidayCategoryName>(categoryNames[0]);
@@ -32,18 +29,6 @@ const handleAddItem = () => {
   newItemCategory.value = categoryNames[0];
   isAddItemModalOpen.value = false;
 };
-
-// Header setup
-onMounted(async () => {
-  await nextTick();
-  isMounted.value = true;
-  setHeader({
-    title: 'Paklijst vakantie',
-    showLeftAction: true,
-    showRightAction: false,
-    leftActionHandler: () => router.push('/'),
-  });
-});
 
 useHead({ title: 'Paklijst vakantie' });
 </script>
