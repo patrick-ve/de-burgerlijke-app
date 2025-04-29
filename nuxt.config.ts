@@ -154,6 +154,19 @@ export default defineNuxtConfig({
     // Icons are handled by @nuxt/icon module
   },
 
+  vite: {
+    esbuild: {
+      legalComments: 'none',
+    },
+    build: {
+      terserOptions: {
+        format: {
+          comments: false,
+        },
+      },
+    },
+  },
+
   umami: {
     id: 'b5eb9afc-6894-4767-b990-f4e34ee4c89a',
     host: 'https://cloud.umami.is/',

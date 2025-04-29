@@ -116,6 +116,27 @@ const items = [
       'Een PWA (Progressive Web App) is een website die zich gedraagt als een mobiele app. Je kunt de app direct vanuit je browser installeren zonder een app store te gebruiken. Ze zijn vaak goedkoper en sneller te ontwikkelen dan native apps. Een PWA is net zo veilig als een native app of website.',
   },
 ];
+
+const scrollToFeatures = () => {
+  // Check if the large screen feature section is visible (indicates desktop view)
+  const largeScreenFeaturesVisible =
+    document.getElementById('scroll-demo')?.offsetParent !== null;
+
+  const targetElementId = largeScreenFeaturesVisible
+    ? 'start-saving-button' // Desktop target
+    : 'phone-mockup-container'; // Mobile target
+
+  const targetElement = document.getElementById(targetElementId);
+
+  if (targetElement) {
+    requestAnimationFrame(() => {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+};
 </script>
 
 <template>
@@ -164,7 +185,7 @@ const items = [
         />
       </svg>
 
-      <div class="mx-auto max-w-7xl px-4 lg:px-8">
+      <div class="mx-auto max-w-7xl px-4 lg:px-0">
         <div class="lg:flex lg:items-start lg:gap-x-10">
           <div
             class="mx-auto max-w-2xl lg:mx-0 lg:flex-auto lg:py-40"
@@ -183,29 +204,33 @@ const items = [
               het beheren van de wekelijkse boodschappen.
             </p>
             <div class="mt-10 flex items-center gap-x-6">
-              <a
-                href="#scroll-demo"
+              <nuxt-link
+                id="start-saving-button"
+                to="/app"
                 class="rounded-md bg-primary-500 px-3.5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >Begin met geld besparen</a
+                >Begin met geld besparen</nuxt-link
               >
-              <a
-                href="#scroll-demo"
-                class="text-sm/6 font-semibold text-gray-900"
-                >Meer informatie <span aria-hidden="true">→</span></a
+              <UButton
+                variant="link"
+                color="gray"
+                class="text-sm/6 font-semibold"
+                @click="scrollToFeatures"
               >
+                Meer informatie <span aria-hidden="true">→</span>
+              </UButton>
             </div>
 
             <!-- Optional: Placeholder for content that scrolls past the sticky phone -->
             <!-- Hide on mobile, show on large screens -->
             <div
               class="mt-16 hidden h-[45rem] lg:flex lg:items-center"
-              id="scroll-demo"
             >
               <div class="space-y-8">
                 <!-- Dynamic title and description -->
                 <div>
                   <h3
                     class="text-7xl font-semibold text-primary-500 mb-6 font-caveat"
+                    id="scroll-demo"
                   >
                     {{ currentFeature.title }}
                   </h3>
@@ -240,14 +265,15 @@ const items = [
             </div>
           </div>
 
-          <!-- Right Column (Phone Mockup) -->
+          <!-- Right Column (Phone Mockup) - Adjusted for mobile -->
           <div
-            class="mt-16 h-auto sm:mt-24 lg:sticky lg:top-20 lg:mt-0 lg:h-fit lg:shrink-0 lg:grow lg:pb-40 lg:pt-20"
+            id="phone-mockup-container"
+            class="relative mt-16 h-auto sm:mt-24 lg:sticky lg:top-20 lg:mt-0 lg:h-fit lg:shrink-0 lg:grow lg:pb-40 lg:pt-20"
           >
             <svg
               viewBox="0 0 366 729"
               role="img"
-              class="mx-auto w-[22.875rem] max-w-full drop-shadow-xl"
+              class="mx-auto w-[22.875rem] max-w-full"
             >
               <title>App screenshot</title>
               <defs>
@@ -279,52 +305,55 @@ const items = [
                 </Transition>
               </foreignObject>
             </svg>
-          </div>
-        </div>
-        <!-- End lg:flex -->
 
-        <!-- Mobile Features Section -->
-        <div class="mt-16 block lg:hidden">
-          <div class="mx-auto max-w-2xl text-center">
-            <!-- Feature content -->
-            <div class="space-y-8">
-              <!-- Dynamic title and description -->
-              <div>
-                <h3
-                  class="text-4xl font-semibold text-primary-500 mb-4 font-caveat"
-                >
-                  {{ currentFeature.title }}
-                </h3>
-                <p class="mt-2 text-gray-800 min-h-[5rem]">
-                  {{ currentFeature.description }}
-                </p>
-              </div>
-              <!-- Buttons for features -->
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <UButton
-                  v-for="(feature, index) in features"
-                  :key="feature.title"
-                  :label="feature.title"
-                  @click="selectFeature(index)"
-                  :variant="
-                    selectedFeatureIndex === index
-                      ? 'outline'
-                      : 'solid'
-                  "
-                  :icon="feature.icon"
-                  color="primary"
-                  class="w-full h-auto justify-start text-left p-2"
-                  :class="
-                    selectedFeatureIndex === index
-                      ? 'font-black'
-                      : 'font-bold'
-                  "
-                  size="md"
-                />
+            <!-- Mobile Features Section - Overlapping phone -->
+            <div
+              id="mobile-feature-display"
+              class="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-white via-white via-70% to-transparent pt-24 lg:hidden"
+            >
+              <div class="mx-auto max-w-2xl px-0 md:px-4 text-center">
+                <!-- Feature content -->
+                <div class="space-y-8">
+                  <div>
+                    <h3
+                      class="text-4xl font-semibold text-primary-500 mb-4 font-caveat"
+                    >
+                      {{ currentFeature.title }}
+                    </h3>
+                    <p class="mt-2 text-gray-800 min-h-[5rem]">
+                      {{ currentFeature.description }}
+                    </p>
+                  </div>
+                  <div
+                    class="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-8"
+                  >
+                    <UButton
+                      v-for="(feature, index) in features"
+                      :key="feature.title"
+                      :label="feature.title"
+                      @click="selectFeature(index)"
+                      :variant="
+                        selectedFeatureIndex === index
+                          ? 'outline'
+                          : 'solid'
+                      "
+                      :icon="feature.icon"
+                      color="primary"
+                      class="w-full h-auto justify-start text-left text-xs md:text-base p-2"
+                      :class="
+                        selectedFeatureIndex === index
+                          ? 'font-black'
+                          : 'font-bold'
+                      "
+                      size="md"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <!-- End lg:flex -->
 
         <ULandingFAQ :items="items" multiple class="mt-16" />
       </div>
