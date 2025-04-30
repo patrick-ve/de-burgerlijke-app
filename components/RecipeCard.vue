@@ -101,7 +101,7 @@ const totalTime = computed(() => {
           class="absolute bottom-2 right-2 z-10 bg-gray-100/80 backdrop-blur-sm text-gray-700 text-xs font-medium px-1.5 py-0.5 rounded"
           aria-label="Recipe author"
         >
-          Door {{ recipe.authorName }}
+          {{ recipe.authorName }}
         </span>
       </div>
 
