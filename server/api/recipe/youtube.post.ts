@@ -421,6 +421,8 @@ You must:
 10. Extract the number of 'portions' if mentioned. Default to 1 if not specified.
 11. Infer 'prepTime' and 'cookTime' in minutes if mentioned or implied.
 12. Try to identify the 'cuisine' type if mentioned.
+13. Extract the author name from the recipe if it is present. If it is not present, set the authorName field to null.
+14. Determine if the recipe is vegetarian. If it is, set the isVegetarian field to true. If it is not, set the isVegetarian field to false.
 
 Focus solely on the recipe information within the transcript. Ignore conversational filler, introductions, or unrelated content unless it directly describes the recipe.
 

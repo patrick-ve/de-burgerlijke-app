@@ -155,6 +155,18 @@ export const recipeSchema = z
       .nullable()
       .optional()
       .describe('Optional image URL for the recipe'),
+    isVegetarian: z
+      .boolean()
+      .nullable()
+      .optional()
+      .describe(
+        'Optional flag indicating if the recipe is vegetarian'
+      ),
+    authorName: z
+      .string()
+      .nullable()
+      .optional()
+      .describe('Optional name of the recipe author or source'),
   })
   .describe(
     'Main schema for a complete recipe, aligned with types/recipe.ts'

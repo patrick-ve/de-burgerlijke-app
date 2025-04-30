@@ -195,6 +195,8 @@ export const useRecipes = () => {
       portions: parsePortions(aiRecipe.portions) ?? 1, // Default to 1 if null
       // Assign the pre-calculated ID
       youtubeVideoId, // Use the variable directly
+      isVegetarian: aiRecipe.isVegetarian ?? false, // Use undefined as default
+      authorName: aiRecipe.authorName ?? null, // Add authorName, default to null
       ingredients: (aiRecipe.ingredients ?? []).map((ing) => ({
         id: uuidv4(), // Generate unique ingredient ID
         name: ing.name,
@@ -202,6 +204,7 @@ export const useRecipes = () => {
         unit: ing.unit ?? null,
         notes: ing.notes ?? null,
         category: ing.category ?? null,
+        isInStock: false,
       })),
       steps: (aiRecipe.steps ?? [])
         .map((step, index) => ({

@@ -36,7 +36,10 @@ You must:
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), 
   make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.
-8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.`;
+8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.
+9. Extract the author name from the recipe if it is present. If it is not present, set the authorName field to null.
+10. Determine if the recipe is vegetarian. If it is, set the isVegetarian field to true. If it is not, set the isVegetarian field to false.
+`;
 
   if (ogTitle) {
     prompt += `\n9. The metadata suggests the title might be "${ogTitle}". Consider using this as the primary source for the recipe's 'title'.`;

@@ -66,6 +66,7 @@ export interface Ingredient {
   name: string;
   notes?: string | null;
   category?: IngredientCategory | null; // Use the single, simplified category type
+  isInStock?: boolean; // Added to indicate if the ingredient is in stock
 }
 
 export interface Step {
@@ -93,8 +94,10 @@ export interface Recipe {
   steps: Step[];
   utensils?: Utensil[]; // Made optional and kept as Utensil[]
   isFavorite?: boolean;
+  isVegetarian?: boolean; // Added to indicate if the recipe is vegetarian
   userId?: string | null;
   householdId?: string | null;
+  authorName?: string | null;
   sourceUrl?: string | null;
   youtubeUrl?: string | null;
   youtubeVideoId?: string | null; // Added for storing extracted ID
