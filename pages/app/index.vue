@@ -10,6 +10,7 @@ useHead({
 });
 
 const { openNav } = useNavigationState();
+const { isIos } = useDevice();
 
 const availableSupermarkets = ref<Supermarket[]>([]);
 const showIosInstallModal = ref(false);
@@ -52,10 +53,20 @@ const installPWA = async () => {
     </template>
     <template #right-action>
       <UButton
-        v-if="$pwa?.showInstallPrompt"
+        v-if="isIos"
+        color="primary"
+        variant="solid"
+        aria-label="Installeer op iOS"
+        class="font-bold"
+        label="Installeer"
+        @click="installPWA"
+      />
+      <UButton
+        v-else-if="$pwa?.showInstallPrompt"
         color="primary"
         variant="solid"
         label="Installeer"
+        aria-label="Installeer de app"
         class="font-bold"
         @click="installPWA"
       />
@@ -67,7 +78,14 @@ const installPWA = async () => {
   >
     <OnboardingModal :supermarkets="availableSupermarkets" />
 
-    <UModal v-model="showIosInstallModal">
+    <UModal
+      v-model="showIosInstallModal"
+      :ui="{
+        overlay: {
+          background: 'bg-black/40 backdrop-blur-sm',
+        },
+      }"
+    >
       <UCard
         :ui="{
           ring: '',
@@ -98,7 +116,6 @@ const installPWA = async () => {
           <UButton
             label="Sluiten"
             color="gray"
-            variant="ghost"
             @click="showIosInstallModal = false"
           />
         </template>
