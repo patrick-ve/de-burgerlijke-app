@@ -75,7 +75,7 @@ export default defineNuxtConfig({
       display: 'standalone',
       theme_color: '#40939a',
       orientation: 'portrait',
-      start_url: '/app',
+      start_url: '/app/',
       icons: [
         {
           src: 'pwa-192x192.png',
