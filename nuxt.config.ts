@@ -49,16 +49,7 @@ export default defineNuxtConfig({
 
   extends: ['@nuxt/ui-pro'],
 
-  modules: [
-    '@nuxtjs/ionic',
-    '@nuxt/ui',
-    '@nuxt/icon',
-    '@nuxt/image',
-    '@vueuse/nuxt',
-    '@vite-pwa/nuxt',
-    '@nuxt/fonts',
-    'nuxt-umami',
-  ],
+  modules: ['@nuxtjs/ionic', '@nuxt/ui', '@nuxt/icon', '@nuxt/image', '@vueuse/nuxt', '@vite-pwa/nuxt', '@nuxt/fonts', 'nuxt-umami', '@nuxtjs/device'],
 
   ssr: false,
 
