@@ -13,7 +13,7 @@ const navigationGroups = [
     links: [
       {
         label: 'Home',
-        to: '/',
+        to: '/app',
         icon: 'i-heroicons-home',
       },
     ],

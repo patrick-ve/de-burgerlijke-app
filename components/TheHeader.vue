@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 h-16 z-40 bg-white border-b border-gray-200 p-4 items-center gap-4 w-full"
+    class="sticky top-0 h-16 z-50 bg-white border-b border-gray-200 p-4 items-center gap-4 w-full"
   >
     <div
       class="max-w-7xl mx-auto"
@@ -11,8 +11,6 @@
       ]"
     >
       <div v-if="!isOnHomePage">
-        <!-- Removed ID -->
-        <div></div>
         <slot name="left-action" />
       </div>
       <h1
@@ -27,8 +25,6 @@
         </h1>
       </div>
       <div class="flex justify-end">
-        <!-- Removed ID -->
-        <div></div>
         <slot name="right-action" />
       </div>
     </div>
