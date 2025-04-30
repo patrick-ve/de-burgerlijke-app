@@ -94,7 +94,7 @@ const installPWA = () => {
     v-model="isNavOpen"
     side="left"
     :ui="{
-      width: 'max-w-[66vw]',
+      width: 'max-w-[66vw] md:max-w-[20vw]',
       overlay: {
         background: 'bg-black/40 backdrop-blur-sm',
       },

@@ -145,7 +145,7 @@ useHead({ title: 'Verjaardagen' }); // Set page title
     </template>
   </TheHeader>
 
-  <div class="pb-24 pt-4">
+  <div class="pb-24 pt-4 max-w-7xl mx-auto">
     <!-- Birthday List -->
     <div v-if="sortedBirthdays.length > 0" class="px-4">
       <TransitionGroup
@@ -213,7 +213,7 @@ useHead({ title: 'Verjaardagen' }); // Set page title
       enter-to-class="opacity-100 translate-y-0"
     >
       <div
-        class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200"
+        class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
       >
         <div class="flex justify-center max-w-md mx-auto">
           <UButton

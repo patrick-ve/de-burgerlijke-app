@@ -12,7 +12,7 @@
     <!-- No right action needed -->
   </TheHeader>
 
-  <div class="p-4 pb-24">
+  <div class="p-4 pb-24 max-w-7xl mx-auto">
     <!-- Input Type Selection -->
     <UFormGroup label="Waar komt het recept vandaan?" class="mb-4">
       <USelectMenu
@@ -227,7 +227,7 @@
 
     <!-- Fixed Action Bar -->
     <div
-      class="fixed inset-x-0 bottom-0 p-4 bg-white border-t border-gray-200 shadow-md"
+      class="fixed inset-x-0 bottom-0 p-4 bg-white border-t border-gray-200 shadow-md max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
     >
       <UButton
         type="submit"

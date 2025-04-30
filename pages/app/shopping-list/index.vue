@@ -943,7 +943,7 @@ onMounted(() => {
     >
       <div
         v-if="showActionBar"
-        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10"
+        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-10 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
       >
         <UButton
           block

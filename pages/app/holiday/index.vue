@@ -47,7 +47,7 @@ useHead({ title: 'Paklijst vakantie' });
     <!-- No right action needed -->
   </TheHeader>
 
-  <div class="pb-24">
+  <div class="pb-24 max-w-7xl mx-auto">
     <UContainer class="py-4">
       <div v-if="items.length > 0" class="space-y-6">
         <div
@@ -116,7 +116,7 @@ useHead({ title: 'Paklijst vakantie' });
     </UContainer>
 
     <div
-      class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200"
+      class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
     >
       <UButton
         block

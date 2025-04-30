@@ -207,7 +207,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
     </template>
   </TheHeader>
 
-  <div class="pb-24">
+  <div class="pb-24 max-w-7xl mx-auto">
     <!-- Add padding-bottom to prevent overlap with action bar -->
 
     <!-- Hidden File Input -->
@@ -431,7 +431,7 @@ useHead({ title: 'Mijn Taken' }); // Set page title
       enter-to-class="opacity-100 translate-y-0"
     >
       <div
-        class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200"
+        class="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white border-t border-gray-200 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
         data-testid="todo-action-bar"
       >
         <form

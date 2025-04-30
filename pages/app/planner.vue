@@ -319,20 +319,21 @@ const currentWeekNumber = computed(() =>
     <!-- No right action needed -->
   </TheHeader>
 
-  <UContainer class="pb-24">
+  <UContainer class="pb-24 max-w-7xl mx-auto">
     <!-- Week Number Display -->
     <div class="text-center text-xl font-semibold my-4">
       Week {{ currentWeekNumber }}
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 mt-4">
+    <!-- Changed grid layout to always be single column -->
+    <div class="grid grid-cols-1 gap-4 mt-4">
       <div
         v-for="day in daysOfWeek"
         :key="day.dateString"
-        class="border border-gray-200 shadow-sm rounded-xl"
+        class="border border-gray-200 shadow-sm rounded-xl overflow-hidden"
         :class="{
           'bg-black/50': day.meals.value.length > 0, // From UCard background
           'bg-white': day.meals.value.length === 0, // Default background
-          relative: day.meals.value.length > 0, // Added conditional 'relative'
+          relative: true, // Always relative for background and button positioning
         }"
         :style="
           day.meals.value.length > 0 && day.meals.value[0].imageUrl
@@ -345,7 +346,7 @@ const currentWeekNumber = computed(() =>
             : {}
         "
       >
-        <!-- Add Remove Button -->
+        <!-- Remove Button (Stays absolute) -->
         <UButton
           v-if="day.meals.value.length > 0"
           icon="i-heroicons-x-mark"
@@ -357,15 +358,13 @@ const currentWeekNumber = computed(() =>
           @click="handleRemoveMeal(day.meals.value[0].id, day.date)"
         />
 
-        <!-- Day/Date Info and Add Button Section -->
+        <!-- Adjusted card content layout: p-4, flex-col then sm:flex-row, items-start -->
         <div
-          class="relative z-10 p-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2"
-          :class="{
-            'text-white border-b-0': day.meals.value.length > 0,
-          }"
+          class="relative z-10 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 min-h-[80px] md:h-[8rem]"
+          :class="{ 'text-white': day.meals.value.length > 0 }"
         >
-          <!-- Left side: Day/Date -->
-          <div :class="{ 'text-white': day.meals.value.length > 0 }">
+          <!-- Left side: Day/Date Info (takes available space) -->
+          <div class="flex-grow">
             <div class="font-semibold capitalize">
               {{ day.name }}
             </div>
@@ -380,48 +379,49 @@ const currentWeekNumber = computed(() =>
             </div>
           </div>
 
-          <!-- Right side: Plan Meal Button (only if no meal planned) -->
-          <div
-            v-if="day.meals.value.length === 0"
-            class="mt-1 sm:mt-0"
-          >
-            <UButton
-              v-if="recipeOptions.length > 0"
-              size="xs"
-              @click="openPlannerModal(day.date)"
-            >
-              Plan maaltijd
-            </UButton>
-            <!-- Optional: Message if no recipes exist -->
-            <span v-else class="text-xs text-gray-400 italic"
-              >Voeg recepten toe</span
-            >
+          <!-- Right side: Meal Info or Plan Button (takes content width, aligned top-right on sm+) -->
+          <div class="flex-shrink-0 mt-1 sm:mt-0 sm:text-right">
+            <!-- If NO meal is planned -->
+            <template v-if="day.meals.value.length === 0">
+              <UButton
+                v-if="recipeOptions.length > 0"
+                size="sm"
+                @click="openPlannerModal(day.date)"
+              >
+                Plan maaltijd
+              </UButton>
+              <span v-else class="text-xs text-gray-400 italic"
+                >Voeg recepten toe</span
+              >
+            </template>
+
+            <!-- If a meal IS planned -->
+            <template v-else>
+              <div
+                class="text-lg font-semibold"
+                :class="{ 'text-white': day.meals.value.length > 0 }"
+              >
+                {{ day.meals.value[0].recipeTitle }}
+              </div>
+              <div
+                class="text-sm"
+                :class="{
+                  'text-gray-200': day.meals.value.length > 0,
+                  'text-gray-500': day.meals.value.length === 0, // Should not happen here, but keep for consistency
+                }"
+              >
+                ({{ day.meals.value[0].portions }}
+                {{
+                  day.meals.value[0].portions > 1
+                    ? 'porties'
+                    : 'portie'
+                }})
+              </div>
+            </template>
           </div>
         </div>
 
-        <!-- Conditionally render the lower section (placeholder or planned meal title) -->
-        <div
-          v-if="day.meals.value.length > 0"
-          class="relative z-10"
-          :class="{
-            'min-h-[100px] flex items-center justify-center p-4':
-              day.meals.value.length === 0, // Keep placeholder space when empty
-            'absolute bottom-2 right-2 p-2 text-white text-right':
-              day.meals.value.length > 0, // Position title when meal exists
-          }"
-        >
-          <!-- Planned Meal Title: Positioned bottom-right when meal exists -->
-          <span
-            v-if="day.meals.value.length > 0"
-            class="text-lg font-semibold"
-            >{{ day.meals.value[0].recipeTitle }} ({{
-              day.meals.value[0].portions
-            }}
-            {{
-              day.meals.value[0].portions > 1 ? 'porties' : 'portie'
-            }})</span
-          >
-        </div>
+        <!-- Removed the old conditional lower section -->
       </div>
     </div>
 
@@ -503,7 +503,7 @@ const currentWeekNumber = computed(() =>
     >
       <div
         v-if="showActionBar"
-        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-30"
+        class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-30 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
       >
         <UButton
           block
