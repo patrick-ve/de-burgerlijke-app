@@ -24,6 +24,7 @@ const installPWA = async () => {
   try {
     if (isIos) {
       showIosInstallModal.value = true;
+      umTrackEvent('show_ios_install_modal');
       return;
     }
 
@@ -33,6 +34,7 @@ const installPWA = async () => {
     }
 
     await $pwa.install();
+    umTrackEvent('install_pwa');
   } catch (error) {
     consola.error('PWA installation failed:', error);
   }
