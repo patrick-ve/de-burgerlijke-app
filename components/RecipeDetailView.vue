@@ -134,6 +134,13 @@ const handleAddPortionsToShoppingList = () => {
   // TODO: Add user feedback (e.g., Toast notification)
   isPortionSlideoverOpen.value = false; // Close slideover after action
 };
+
+// --- Computed Property for Total Time ---
+const totalTime = computed(() => {
+  const prep = props.recipe.prepTime ?? 0;
+  const cook = props.recipe.cookTime ?? 0;
+  return prep + cook > 0 ? prep + cook : null;
+});
 </script>
 
 <template>
@@ -177,48 +184,76 @@ const handleAddPortionsToShoppingList = () => {
 
     <!-- Recipe metadata card with themed icons -->
     <div
-      class="grid grid-cols-3 items-center p-3 text-xs border-b border-gray-200"
+      class="grid items-center p-3 text-xs border-b border-gray-200"
+      :class="{
+        'grid-cols-1': !totalTime && !recipe.sourceUrl, // Only portions
+        'grid-cols-2':
+          (totalTime && !recipe.sourceUrl) ||
+          (!totalTime && recipe.sourceUrl), // Portions + one other
+        'grid-cols-3': totalTime && recipe.sourceUrl, // All three
+      }"
+      data-testid="recipe-metadata"
     >
+      <!-- Total Time Section -->
       <div
-        v-if="recipe.prepTime"
-        class="flex items-center justify-center gap-2 border-r border-gray-200"
-      >
-        <UIcon
-          name="i-heroicons-book-open"
-          class="w-5 h-5 text-primary-500 flex-shrink-0"
-        />
-        <div class="flex flex-col">
-          <span class="text-gray-700 font-bold"
-            >{{ recipe.prepTime }} minuten</span
-          >
-          <span class="text-gray-500">Voorbereiding</span>
-        </div>
-      </div>
-      <div
-        v-if="recipe.cookTime"
-        class="flex items-center justify-center gap-2 border-r border-gray-200"
+        v-if="totalTime"
+        class="flex items-center justify-center gap-2"
+        :class="{
+          'border-r border-gray-200':
+            recipe.sourceUrl || !recipe.sourceUrl,
+        }"
+        data-testid="total-time-section"
       >
         <UIcon
           name="i-heroicons-clock"
           class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
         <div class="flex flex-col">
-          <span class="text-gray-700 font-bold"
-            >{{ recipe.cookTime }} minuten</span
+          <span class="text-primary-600 font-bold"
+            >{{ totalTime }} minuten</span
           >
-          <span class="text-gray-500">Kooktijd</span>
         </div>
       </div>
-      <div class="flex items-center justify-center gap-2">
+
+      <!-- Portions Section (Always Visible) -->
+      <div
+        class="flex items-center justify-center gap-2"
+        :class="{
+          'border-r border-gray-200': totalTime && recipe.sourceUrl,
+        }"
+        data-testid="portions-section"
+      >
         <UIcon
           name="i-heroicons-users"
           class="w-5 h-5 text-primary-500 flex-shrink-0"
         />
         <div class="flex flex-col">
-          <span class="text-gray-700 font-bold">{{
-            recipe.portions
-          }}</span>
-          <span class="text-gray-500">Porties</span>
+          <span class="text-primary-600 font-bold"
+            >{{ recipe.portions }} porties</span
+          >
+        </div>
+      </div>
+
+      <!-- Source URL Section -->
+      <div
+        v-if="recipe.sourceUrl"
+        class="flex items-center justify-center gap-2"
+        data-testid="source-url-section"
+      >
+        <UIcon
+          name="i-heroicons-globe-alt"
+          class="w-5 h-5 text-primary-500 flex-shrink-0"
+        />
+        <div class="flex flex-col">
+          <a
+            :href="recipe.sourceUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary-600 hover:underline font-bold truncate"
+            style="max-width: 100px"
+          >
+            Website
+          </a>
         </div>
       </div>
     </div>
