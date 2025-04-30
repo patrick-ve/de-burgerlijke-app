@@ -15,8 +15,6 @@ const searchQuery = ref('');
 const selectedCuisine = ref<string | undefined>();
 const showFavoritesOnly = ref(false);
 // currentPage and itemsPerPage are removed
-// Sort state - only title sort is needed now
-const sortDirection = ref<'asc' | 'desc'>('asc');
 const isFilterSlideoverOpen = ref(false); // State to control slideover visibility
 
 // Time filter options and state - UPDATED for specific ranges
@@ -66,20 +64,6 @@ const cuisineFilterOptions = computed(() => {
     })),
   ];
 });
-
-// Options for Sort USelectMenu - ADDED ICONS
-const sortOptions = [
-  {
-    label: 'Oplopend (A-Z)',
-    value: 'asc',
-    icon: 'i-heroicons-bars-arrow-up',
-  },
-  {
-    label: 'Aflopend (Z-A)',
-    value: 'desc',
-    icon: 'i-heroicons-bars-arrow-down',
-  },
-];
 
 // Filtered recipes based on search query, cuisine, favorites, and time checkbox
 // --- REMOVED SORTING FROM HERE ---
@@ -155,14 +139,6 @@ const groupedRecipes = computed(() => {
     groups[cuisine].push(recipe);
   });
 
-  // Sort recipes within each group
-  for (const cuisine in groups) {
-    groups[cuisine].sort((a, b) => {
-      const comparison = a.title.localeCompare(b.title);
-      return sortDirection.value === 'asc' ? comparison : -comparison;
-    });
-  }
-
   // Optionally sort the groups by cuisine name (alphabetically)
   const sortedGroupKeys = Object.keys(groups).sort((a, b) =>
     a.localeCompare(b)
@@ -180,8 +156,6 @@ const resetFilters = () => {
   searchQuery.value = '';
   selectedCuisine.value = undefined;
   showFavoritesOnly.value = false;
-  // currentPage.value = 1; // Removed
-  sortDirection.value = 'asc';
   selectedTimeFilter.value = undefined; // Reset time filter select
 };
 
@@ -252,23 +226,6 @@ const activeFilters = computed(() => {
     filters.push({ key: 'favorites', label: 'Favorieten' });
   }
 
-  // Check if sorting is non-default (asc)
-  if (sortDirection.value !== 'asc') {
-    const sortLabel = sortOptions.find(
-      (o) => o.value === sortDirection.value
-    )?.label;
-    if (sortLabel) {
-      // Shorten label for badge
-      const shortSortLabel = sortLabel.includes('Oplopend')
-        ? 'A-Z'
-        : 'Z-A';
-      filters.push({
-        key: 'sort',
-        label: `Sortering: ${shortSortLabel}`,
-      });
-    }
-  }
-
   return filters;
 });
 
@@ -327,7 +284,7 @@ defineExpose({
     <!-- Active Filters Display -->
     <div
       v-if="activeFilters.length > 0"
-      class="flex flex-wrap items-center gap-2 mb-4 pt-4"
+      class="flex flex-wrap items-center gap-2 mb-4 px-4"
       data-testid="active-filters-display"
     >
       <UBadge
@@ -343,7 +300,7 @@ defineExpose({
       <UButton
         label="Reset filters"
         color="gray"
-        size="2xs"
+        size="xs"
         icon="i-heroicons-x-circle"
         @click="resetFilters"
         data-testid="reset-filters-button"
@@ -431,7 +388,7 @@ defineExpose({
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold leading-6 text-gray-900">
-              Filteren & Sorteren
+              Filteren
             </h3>
             <UButton
               color="gray"
@@ -448,19 +405,6 @@ defineExpose({
         <div class="space-y-4">
           <!-- Search Input (Moved inside slideover for better mobile UX) -->
           <!-- Removed from here, kept in bottom bar -->
-
-          <!-- Sort by Title -->
-          <UFormGroup label="Sorteren op titel">
-            <USelectMenu
-              v-model="sortDirection"
-              :options="sortOptions"
-              value-attribute="value"
-              option-attribute="label"
-              size="md"
-              class="w-full"
-              data-testid="sort-select-slideover"
-            />
-          </UFormGroup>
 
           <!-- Quick Recipes -->
           <UFormGroup label="Max. kooktijd">
@@ -510,27 +454,10 @@ defineExpose({
               Geen keukens beschikbaar om te filteren.
             </p>
           </UFormGroup>
-
-          <!-- Toggle Favorites -->
-          <UFormGroup label="Alleen favorieten">
-            <UToggle
-              v-model="showFavoritesOnly"
-              data-testid="favorites-toggle-slideover"
-            />
-          </UFormGroup>
         </div>
 
         <template #footer>
           <div class="flex justify-between gap-4">
-            <UButton
-              variant="ghost"
-              color="gray"
-              @click="resetFilters"
-              data-testid="reset-filters-slideover"
-              size="lg"
-            >
-              Reset
-            </UButton>
             <UButton
               @click="isFilterSlideoverOpen = false"
               data-testid="apply-filters-slideover"
