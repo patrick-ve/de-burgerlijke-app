@@ -621,12 +621,9 @@ async function submitRecipeRequest() {
           break;
       }
       umTrackEvent(eventName);
-      // --- End Umami Tracking ---
 
-      // Add query parameter to indicate success (optional)
       await router.push({
-        path: 'app/recipes',
-        query: { added: 'true' },
+        path: '/app/recipes',
       });
     } else {
       console.error('Zod validation failed:', parsed.error.errors);
@@ -756,7 +753,3 @@ useHead({
   title: 'Nieuw recept toeevoegen - De Burgerlijke App',
 });
 </script>
-
-<style scoped>
-/* Add any page-specific styles if needed */
-</style>

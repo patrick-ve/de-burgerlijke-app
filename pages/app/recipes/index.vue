@@ -63,23 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onUnmounted,
-  nextTick,
-  watch,
-  computed,
-} from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import type { AIRecipeDTO } from '@/server/utils/recipeSchema'; // Import DTO type
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useRecipes } from '@/composables/useRecipes'; // Import the new composable
 import RecipeSearchBar from '@/components/RecipeSearchBar.vue'; // Import the search bar component
 import RecipeList from '@/components/RecipeList.vue'; // Ensure RecipeList is imported if not auto-imported
 
 const router = useRouter();
-const route = useRoute(); // Get the route object
-const { recipes, addRecipe } = useRecipes(); // Get recipes and addRecipe from the composable
+const { recipes } = useRecipes(); // Get recipes and addRecipe from the composable
 const isSearchActive = ref(false); // State for search bar visibility
 const searchTerm = ref(''); // State for the search term
 
