@@ -166,7 +166,7 @@ const handleAddPortionsToShoppingList = () => {
       <NuxtImg
         :src="recipe.imageUrl"
         :alt="recipe.title"
-        class="w-full h-auto object-cover mock-nuxt-img"
+        class="w-full h-full object-cover mock-nuxt-img"
         width="400"
         height="300"
         fit="cover"
