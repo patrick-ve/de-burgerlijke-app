@@ -69,7 +69,7 @@ const totalTime = computed(() => {
       class="recipe-card bg-white rounded-xl border-[1px] border-gray-200 overflow-hidden flex flex-col h-64 transition-shadow duration-200 ease-in-out w-full"
     >
       <!-- Image Section (Top 75%) -->
-      <div class="flex-shrink-0 h-[75%] overflow-hidden">
+      <div class="flex-shrink-0 h-[75%] overflow-hidden relative">
         <div
           v-if="recipe.imageUrl"
           class="w-full h-full overflow-hidden"
@@ -95,6 +95,14 @@ const totalTime = computed(() => {
             class="w-10 h-10 text-gray-400"
           />
         </div>
+        <!-- Author Badge (Absolute Position within Image) -->
+        <span
+          v-if="recipe.authorName"
+          class="absolute bottom-2 right-2 z-10 bg-gray-100/80 backdrop-blur-sm text-gray-700 text-xs font-medium px-1.5 py-0.5 rounded"
+          aria-label="Recipe author"
+        >
+          Door {{ recipe.authorName }}
+        </span>
       </div>
 
       <!-- Text Content Section (Bottom 25%) -->
