@@ -12,17 +12,25 @@ useHead({
 const { openNav } = useNavigationState();
 
 const availableSupermarkets = ref<Supermarket[]>([]);
+const showIosInstallModal = ref(false);
 
 const toggleHamburgerMenu = () => {
   openNav();
 };
 
 const installPWA = async () => {
+  const { isIos } = useDevice();
   try {
+    if (isIos) {
+      showIosInstallModal.value = true;
+      return;
+    }
+
     if (!$pwa?.showInstallPrompt) {
       consola.warn('Install prompt not available.');
       return;
     }
+
     await $pwa.install();
   } catch (error) {
     consola.error('PWA installation failed:', error);
@@ -58,6 +66,44 @@ const installPWA = async () => {
     class="flex flex-col gap-8 px-4 py-6 bg-gradient-to-b from-pink-50 via-blue-50 to-green-50 min-h-screen"
   >
     <OnboardingModal :supermarkets="availableSupermarkets" />
+
+    <UModal v-model="showIosInstallModal">
+      <UCard
+        :ui="{
+          ring: '',
+          divide: 'divide-y divide-gray-100',
+        }"
+      >
+        <template #header>
+          <h3 class="text-base font-semibold leading-6 text-gray-900">
+            Installeren op iOS of iPadOS
+          </h3>
+        </template>
+        <div class="space-y-2 text-sm text-gray-700">
+          <p>Om deze app op je iPhone of iPad te installeren:</p>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>
+              Tik op de <strong>Deel knop</strong> (<UIcon
+                name="i-heroicons-share"
+              />) in de Safari-werkbalk.
+            </li>
+            <li>
+              Scroll naar beneden en tik op
+              <strong>'Zet op beginscherm'</strong>.
+            </li>
+            <li>Tik op <strong>'Voeg toe'</strong>.</li>
+          </ol>
+        </div>
+        <template #footer>
+          <UButton
+            label="Sluiten"
+            color="gray"
+            variant="ghost"
+            @click="showIosInstallModal = false"
+          />
+        </template>
+      </UCard>
+    </UModal>
 
     <!-- Modern Hero Section -->
     <section
