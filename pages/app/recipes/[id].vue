@@ -1,5 +1,5 @@
 <template>
-  <TheHeader :title="recipe?.title || 'Laden...'">
+  <TheHeader :title="recipe?.title || 'Geen recept gevonden'">
     <template #left-action>
       <UButton
         icon="i-heroicons-arrow-left"
@@ -23,10 +23,17 @@
   </TheHeader>
 
   <div>
-    <div v-if="pending">Loading...</div>
+    <div class="p-4" v-if="pending">Laden...</div>
 
-    <div v-else-if="error || !recipe">
-      Error loading recipe or recipe not found.
+    <div v-else-if="fetchError || !recipe" class="p-4 space-y-4">
+      <!-- Dit bericht wordt mogelijk niet vaak getoond als fetchError de foutpagina activeert -->
+      <p>
+        Fout bij het laden van het recept of recept niet gevonden.
+      </p>
+
+      <UButton class="font-bold" @click="goBackToRecipes"
+        >Ga terug naar alle recepten</UButton
+      >
     </div>
 
     <RecipeDetailView v-else :recipe="recipe" />
@@ -198,18 +205,37 @@ const confirmDelete = async () => {
 const {
   data: recipe,
   pending,
-  error,
+  error: fetchError, // Rename error to avoid conflict with createError
 } = await useAsyncData<Recipe | undefined>(
   `recipe-${recipeId.value}`,
   async () => {
     console.log(`Fetching recipe with ID: ${recipeId.value}`);
     const foundRecipe = findRecipeById(recipeId.value);
+
+    // Check if the recipe was found
+    if (!foundRecipe) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Recept niet gevonden',
+        fatal: true, // Ensure it shows the error page
+      });
+    }
+
     return foundRecipe;
   },
   {
     watch: [recipeId],
   }
 );
+
+// Handle potential fetch errors that are not 404s (e.g., network issues)
+// The error page will handle fatal errors thrown by createError
+if (fetchError.value && !recipe.value) {
+  // Log the error or handle it differently if needed
+  console.error('Error fetching recipe:', fetchError.value);
+  // Optionally, you could show a generic error message here without using the full error page,
+  // but since we made the 404 fatal, other fetch errors might as well be fatal.
+}
 
 useHead({
   title: computed(() =>

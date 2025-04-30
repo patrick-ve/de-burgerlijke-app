@@ -100,14 +100,14 @@ const hasResults = computed(() => {
     </div>
 
     <div v-if="isLoading" class="text-center">
-      <p>Loading...</p>
-      <!-- Or use a USkeleton -->
+      <p>Laden...</p>
+      <!-- Of gebruik een USkeleton -->
     </div>
     <div v-else-if="error" class="text-red-500 text-center">
-      <p>Error loading results: {{ error.message }}</p>
+      <p>Fout bij het laden van resultaten: {{ error.message }}</p>
     </div>
     <div v-else-if="noResultsFound" class="text-center text-gray-500">
-      <p>No products found matching "{{ searchQuery }}".</p>
+      <p>Geen producten gevonden voor "{{ searchQuery }}".</p>
     </div>
     <div v-else-if="hasResults" class="space-y-6">
       <div
