@@ -36,7 +36,7 @@ You must:
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), 
   make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.
-8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.
+8. For each ingredient, assign a category from the following list: <options>${categoryList}</options>. If no specific category fits, use 'Other'. Do not create a new category, use the existing ones provided.
 9. Extract the author name from the recipe if it is present. If it is not present, set the authorName field to null.
 10. Determine if the recipe is vegetarian. If it is, set the isVegetarian field to true. If it is not, set the isVegetarian field to false.
 `;
@@ -149,6 +149,7 @@ export default defineEventHandler(async (event) => {
     const { object: recipe } = await generateObject({
       model: openai('gpt-4.1-nano-2025-04-14'),
       schema: recipeSchema,
+      temperature: 0,
       prompt: `${systemPrompt}\n\nRecipe content (Markdown):\n${recipeContent.markdown}`, // Pass only markdown now
     });
 

@@ -416,8 +416,8 @@ You must:
 5. Translate all values of the schema to Dutch.
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Identify any steps mentioning timers (e.g., "cook for 10 minutes") and include the duration in milliseconds in the 'timer' property of the step. 1 minute = 60000 milliseconds.
-8. For each ingredient, assign a category from the following list: ${categoryList}. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.
-9. Extract the recipe's 'title' from the transcript. Omit words like "Recept" or "Recipe".
+8. For each ingredient, assign a category from the following list: <options>${categoryList}</options>. If no specific category fits, use 'Other'. Set the category field to null if it cannot be determined.
+9. Extract the recipe's 'title' from the transcript. Omit words like "Recept" or "Recipe". Translate the title to Dutch. Keep it simple and concise. "De allerlekkerste Pasta Carbonara ooit" should become "Pasta Carbonara".
 10. Extract the number of 'portions' if mentioned. Default to 1 if not specified.
 11. Infer 'prepTime' and 'cookTime' in minutes if mentioned or implied.
 12. Try to identify the 'cuisine' type if mentioned.
@@ -431,7 +431,7 @@ Keep the response concise and clear.
 Respond with a valid JSON object that matches this TypeScript interface:
 
 interface Recipe {
-  // Title of the recipe, omit the word "Recept" or "Recipe" in this field.
+  // Title of the recipe, omit the word "Recept" or "Recipe" in this field. Translate the title to Dutch.
   title: string
 
   // Optional description of the recipe (can be null)
@@ -550,10 +550,11 @@ export default defineEventHandler(async (event) => {
     const { object: recipe } = await generateObject({
       model: openai('gpt-4.1-mini-2025-04-14'), // Use the same model as url.post.ts
       schema: recipeSchema,
+      temperature: 0,
       prompt: `${systemPrompt}
 
-Transcript:
-${transcript}`,
+      Transcript:
+      ${transcript}`,
     });
 
     consola.info('Recipe extraction successful.');
