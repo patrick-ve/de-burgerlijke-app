@@ -8,7 +8,7 @@ const { onboardingState } = useOnboardingSettings();
     <div class="flex items-center gap-2 mb-4">
       <UIcon name="i-heroicons-bolt" class="text-blue-400 w-7 h-7" />
       <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">
-        Snel aan de slag {{ onboardingState }}
+        Snel aan de slag
       </h2>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
