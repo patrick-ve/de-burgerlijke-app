@@ -135,7 +135,7 @@ const installPWA = () => {
             class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
             active-class="bg-white/50 text-primary-700 font-semibold"
           >
-            <UIcon :name="link.icon" class="w-5 h-5" />
+            <UIcon :name="link.icon" class="w-5 h-5 flex-shrink-0" />
             <span>{{ link.label }}</span>
           </NuxtLink>
         </div>
@@ -148,7 +148,10 @@ const installPWA = () => {
           class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
           active-class="bg-white/50 text-primary-700 font-semibold"
         >
-          <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
+          <UIcon
+            name="i-heroicons-cog-6-tooth"
+            class="w-5 h-5 flex-shrink-0"
+          />
           <span>Instellingen</span>
         </NuxtLink>
       </div>
