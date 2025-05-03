@@ -144,7 +144,7 @@ const installPWA = () => {
       <!-- Settings Link -->
       <div class="mt-auto pt-4 border-t border-gray-200">
         <NuxtLink
-          to="/settings"
+          to="/app/settings"
           class="flex items-center gap-3 px-3 py-1.5 text-base rounded-lg text-gray-900 hover:bg-white/30 transition-colors duration-150"
           active-class="bg-white/50 text-primary-700 font-semibold"
         >
