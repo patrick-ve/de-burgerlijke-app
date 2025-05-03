@@ -2,6 +2,7 @@
 import { consola } from 'consola';
 import type { Supermarket } from '~/types/shopping-list';
 import { useNavigationState } from '~/composables/useNavigationState';
+import { computed } from 'vue';
 
 const { $pwa } = useNuxtApp();
 
@@ -14,6 +15,13 @@ const { isIos } = useDevice();
 
 const availableSupermarkets = ref<Supermarket[]>([]);
 const showIosInstallModal = ref(false);
+
+const isStandalone = computed(() => {
+  if (typeof window !== 'undefined') {
+    return window.matchMedia('(display-mode: standalone)').matches;
+  }
+  return false;
+});
 
 const toggleHamburgerMenu = () => {
   openNav();
@@ -55,7 +63,7 @@ const installPWA = async () => {
     </template>
     <template #right-action>
       <UButton
-        v-if="isIos"
+        v-if="isIos && !isStandalone"
         color="primary"
         variant="solid"
         aria-label="Installeer op iOS"
@@ -104,7 +112,7 @@ const installPWA = async () => {
           <ol class="list-decimal list-inside space-y-1">
             <li>
               Tik op de <strong>Deel knop</strong> (<UIcon
-                name="i-heroicons-share"
+                name="i-heroicons-arrow-up-on-square"
               />) in de Safari-werkbalk.
             </li>
             <li>
