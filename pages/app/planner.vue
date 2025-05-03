@@ -2,14 +2,9 @@
 import { useRecipes } from '~/composables/useRecipes';
 import { useMealPlanner } from '~/composables/useMealPlanner';
 import PortionSelector from '~/components/PortionSelector.vue';
-import type { Recipe } from '~/types/recipe';
-// --- Remove type import that's no longer needed directly here ---
-// import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import from composable
 import { useShoppingList } from '~/composables/useShoppingList'; // Import useShoppingList
 import { useOnboardingSettings } from '~/composables/useOnboardingSettings'; // Import onboarding settings
 import type { Ingredient } from '~/types/recipe'; // Import Ingredient type
-import { consola } from 'consola'; // Added for debugging optimization
-import type { ShoppingListItem } from '~/types/shopping-list'; // Added for optimizedList type
 
 const { recipes } = useRecipes();
 const { getMealsForDate, addMeal, removeMeal, getDateString } =
@@ -23,6 +18,9 @@ const {
 const { completeAddToShoppingList } = useOnboardingSettings(); // Destructure the new function
 const toast = useToast(); // For user feedback
 const router = useRouter(); // Added router import
+
+// --- Add week offset state ---
+const weekOffset = ref(0);
 
 // Prepare recipes for select menu (Keep early)
 const recipeOptions = computed(
@@ -65,54 +63,51 @@ function openPlannerModal(date: Date) {
   isModalOpen.value = true;
 }
 
-// Generate days of the week starting from the next Monday
-const today = new Date();
-const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-// --- Correct day calculation to start from *today* if it's Monday ---
-// const daysUntilNextMonday =
-//   currentDay === 1 ? 0 : (8 - currentDay) % 7;
-const daysFromToday = Array.from({ length: 7 }).map((_, i) => {
-  const date = new Date(today);
-  date.setDate(today.getDate() + i); // Start from today
+// --- Helper function to check if a date is in the past ---
+function isDateInPast(date: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+  const comparisonDate = new Date(date);
+  comparisonDate.setHours(0, 0, 0, 0); // Normalize the comparison date
+  return comparisonDate < today;
+}
+
+// --- Make startDisplayDate computed based on weekOffset ---
+const startDisplayDate = computed(() => {
+  const date = new Date(); // Start with today
+  const currentDayOfWeek = date.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  // Calculate days needed to get to the Monday of the *current* week
+  const daysToMonday =
+    currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+  // Apply the offset to get to the target week's Monday
+  date.setDate(date.getDate() + daysToMonday + weekOffset.value * 7);
+  date.setHours(0, 0, 0, 0); // Normalize time
   return date;
 });
 
-// Start from the *next* Monday for the display week if needed
-const startDisplayDate = new Date(today);
-if (currentDay !== 1) {
-  // If today is not Monday
-  const daysUntilNextMonday = (8 - currentDay) % 7;
-  startDisplayDate.setDate(today.getDate() + daysUntilNextMonday);
-}
-
-const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
-  const date = new Date(startDisplayDate); // Use the calculated start date
-  date.setDate(startDisplayDate.getDate() + i);
-  const dateString = getDateString(date);
-  // --- Remove initialization of old state ---
-  // selectedRecipeId.value[dateString] = '';
-  // selectedPortions.value[dateString] = 1;
-  return {
-    date,
-    dateString,
-    name: date.toLocaleDateString('nl-NL', { weekday: 'long' }), // Dutch weekday
-    shortDate: date.toLocaleDateString('nl-NL', {
-      month: 'long',
-      day: 'numeric',
-    }), // Dutch date format
-    meals: getMealsForDate(date), // Get reactive meals ref from composable
-  };
+// --- daysOfWeek now automatically reacts to startDisplayDate changes ---
+const daysOfWeek = computed(() => {
+  return Array.from({ length: 7 }).map((_, i) => {
+    const date = new Date(startDisplayDate.value); // Use the computed start date
+    date.setDate(startDisplayDate.value.getDate() + i);
+    const dateString = getDateString(date);
+    return {
+      date,
+      dateString,
+      name: date.toLocaleDateString('nl-NL', { weekday: 'long' }),
+      shortDate: date.toLocaleDateString('nl-NL', {
+        month: 'long',
+        day: 'numeric',
+      }),
+      meals: getMealsForDate(date), // Get reactive meals ref from composable
+    };
+  });
 });
-
-// --- Remove watcher for old selectedRecipeId ---
-// watch(selectedRecipeId, ..., { deep: true });
-
-// --- Remove old handleAddRecipe function ---
-// function handleAddRecipe(date: Date) { ... }
 
 // --- Computed property to check if any meals are planned --- (Moved up)
 const hasPlannedMeals = computed(() => {
-  return daysOfWeek.some((day) => day.meals.value.length > 0);
+  // Use the computed daysOfWeek value
+  return daysOfWeek.value.some((day) => day.meals.value.length > 0);
 });
 
 // --- State to control the action bar visibility --- (Moved up)
@@ -132,6 +127,19 @@ onMounted(async () => {
 
 // --- Add new handler for planning from the modal ---
 function planMealFromModal() {
+  // --- Add check if the target date is in the past ---
+  if (modalTargetDate.value && isDateInPast(modalTargetDate.value)) {
+    toast.add({
+      id: 'plan-past-date-error',
+      title: 'Kan niet plannen',
+      description:
+        'Je kunt geen maaltijden plannen voor dagen in het verleden.',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'orange',
+    });
+    return; // Stop execution
+  }
+
   if (modalTargetDate.value && modalSelectedRecipeId.value) {
     const recipeToAdd = recipes.value.find(
       (r) => r.id === modalSelectedRecipeId.value
@@ -145,13 +153,21 @@ function planMealFromModal() {
       isModalOpen.value = false; // Close modal on success
     } else {
       console.error('Selected recipe not found in modal');
-      // Maybe show a toast notification here
+      toast.add({
+        title: 'Fout',
+        description: 'Geselecteerd recept niet gevonden.',
+        color: 'red',
+      });
     }
   } else {
     console.error(
       'Target date or recipe ID missing for modal planning.'
     );
-    // Maybe show a toast notification here
+    toast.add({
+      title: 'Fout',
+      description: 'Selecteer een recept en datum.',
+      color: 'red',
+    });
   }
 }
 
@@ -204,7 +220,8 @@ async function addAllPlannedIngredientsToShoppingList() {
   let ingredientsAddedCount = 0;
   let mealsProcessedCount = 0;
 
-  daysOfWeek.forEach((day) => {
+  // Use computed daysOfWeek value
+  daysOfWeek.value.forEach((day) => {
     day.meals.value.forEach((meal) => {
       const recipe = recipes.value.find(
         (r) => r.id === meal.recipeId
@@ -276,7 +293,23 @@ async function addAllPlannedIngredientsToShoppingList() {
 
 // Function to remove a meal (Keep as is)
 function handleRemoveMeal(mealId: string, date: Date) {
+  // --- Add check if the date is in the past before allowing removal ---
+  if (isDateInPast(date)) {
+    toast.add({
+      id: 'remove-past-date-error',
+      title: 'Kan niet verwijderen',
+      description:
+        'Je kunt geen maaltijden uit het verleden verwijderen.',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'orange',
+    });
+    return; // Stop execution
+  }
   removeMeal(mealId, date);
+  // Hide action bar if this was the last meal
+  if (!hasPlannedMeals.value) {
+    showActionBar.value = false;
+  }
 }
 
 // Helper to format date for modal title
@@ -287,6 +320,19 @@ const formattedModalDate = computed(() => {
     month: 'long',
     day: 'numeric',
   });
+});
+
+// --- Computed property to check if the modal's target date is in the past ---
+const isModalDateInPast = computed(() => {
+  return modalTargetDate.value
+    ? isDateInPast(modalTargetDate.value)
+    : false;
+});
+
+// --- Computed property to check if the entire displayed week is in the past ---
+const isCurrentWeekInPast = computed(() => {
+  // We only need to check the start date of the week
+  return isDateInPast(startDisplayDate.value);
 });
 
 // Helper function to get the ISO week number
@@ -308,8 +354,39 @@ function getISOWeekNumber(date: Date): number {
 }
 
 const currentWeekNumber = computed(() =>
-  getISOWeekNumber(startDisplayDate)
+  getISOWeekNumber(startDisplayDate.value)
 );
+
+// --- Computed property for week date range ---
+const currentWeekDateRange = computed(() => {
+  const startDate = startDisplayDate.value;
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6); // Sunday of the week
+
+  const startDay = startDate.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+  });
+  const startMonth = startDate.toLocaleDateString('nl-NL', {
+    month: 'long',
+  });
+  const endDay = endDate.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+  });
+  const endMonth = endDate.toLocaleDateString('nl-NL', {
+    month: 'long',
+  });
+
+  if (startMonth === endMonth) {
+    return `${startDay} - ${endDay} ${startMonth}`;
+  } else {
+    return `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
+  }
+});
+
+// --- Function to change the week ---
+const changeWeek = (offset: number) => {
+  weekOffset.value += offset;
+};
 </script>
 
 <template>
@@ -328,9 +405,27 @@ const currentWeekNumber = computed(() =>
   </TheHeader>
 
   <UContainer class="pb-24 max-w-7xl mx-auto">
-    <!-- Week Number Display -->
-    <div class="text-center text-xl font-semibold my-4">
-      Week {{ currentWeekNumber }}
+    <!-- Week Number Display with Pagination -->
+    <div class="flex items-center justify-center space-x-4 my-4">
+      <UButton
+        icon="i-heroicons-chevron-left"
+        @click="changeWeek(-1)"
+        aria-label="Vorige week"
+        color="gray"
+        variant="ghost"
+        size="xl"
+      />
+      <div class="text-center text-xl font-semibold">
+        {{ currentWeekDateRange }}
+      </div>
+      <UButton
+        icon="i-heroicons-chevron-right"
+        @click="changeWeek(1)"
+        aria-label="Volgende week"
+        color="gray"
+        variant="ghost"
+        size="xl"
+      />
     </div>
     <!-- Changed grid layout to always be single column -->
     <div class="grid grid-cols-1 gap-4 mt-4">
@@ -354,7 +449,7 @@ const currentWeekNumber = computed(() =>
             : {}
         "
       >
-        <!-- Remove Button (Stays absolute) -->
+        <!-- Remove Button (Conditionally disable if in the past) -->
         <UButton
           v-if="day.meals.value.length > 0"
           icon="i-heroicons-x-mark"
@@ -364,6 +459,7 @@ const currentWeekNumber = computed(() =>
           aria-label="Verwijder maaltijd"
           class="absolute top-2 right-2 z-20"
           @click="handleRemoveMeal(day.meals.value[0].id, day.date)"
+          :disabled="isDateInPast(day.date)"
         />
 
         <!-- Adjusted card content layout: p-4, flex-col then sm:flex-row, items-start -->
@@ -391,16 +487,25 @@ const currentWeekNumber = computed(() =>
           <div class="flex-shrink-0 mt-1 sm:mt-0 sm:text-right">
             <!-- If NO meal is planned -->
             <template v-if="day.meals.value.length === 0">
+              <!-- Disable "Plan maaltijd" if the day is in the past -->
               <UButton
                 v-if="recipeOptions.length > 0"
                 size="sm"
                 @click="openPlannerModal(day.date)"
+                :disabled="isDateInPast(day.date)"
               >
                 Plan maaltijd
               </UButton>
               <span v-else class="text-xs text-gray-400 italic"
                 >Voeg recepten toe</span
               >
+              <!-- Add visual indication that planning is disabled for past dates -->
+              <span
+                v-if="isDateInPast(day.date)"
+                class="text-xs text-gray-400 italic ml-2"
+              >
+                (Verleden)
+              </span>
             </template>
 
             <!-- If a meal IS planned -->
@@ -454,6 +559,12 @@ const currentWeekNumber = computed(() =>
               class="text-base font-semibold leading-6 text-gray-900"
             >
               Plan maaltijd voor {{ formattedModalDate }}
+              <!-- Add visual indicator if date is past -->
+              <span
+                v-if="isModalDateInPast"
+                class="text-sm text-gray-500 font-normal ml-1"
+                >(Verleden)</span
+              >
             </h3>
             <UButton
               color="gray"
@@ -473,11 +584,16 @@ const currentWeekNumber = computed(() =>
               placeholder="Kies een recept"
               value-attribute="value"
               option-attribute="label"
+              :disabled="isModalDateInPast"
             />
           </UFormGroup>
 
           <UFormGroup label="Aantal porties" name="portions">
-            <PortionSelector v-model="modalSelectedPortions" />
+            <!-- Disable portion selection if date is in the past -->
+            <PortionSelector
+              v-model="modalSelectedPortions"
+              :disabled="isModalDateInPast"
+            />
           </UFormGroup>
         </div>
 
@@ -491,7 +607,7 @@ const currentWeekNumber = computed(() =>
             >
             <UButton
               label="Plan"
-              :disabled="!modalSelectedRecipeId"
+              :disabled="!modalSelectedRecipeId || isModalDateInPast"
               @click="planMealFromModal"
             />
           </div>
@@ -509,7 +625,7 @@ const currentWeekNumber = computed(() =>
       leave-to-class="transform translate-y-full"
     >
       <div
-        v-if="showActionBar"
+        v-if="showActionBar || isCurrentWeekInPast"
         class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 z-30 max-w-7xl mx-auto md:border-[1px] md:border-r-[1px]"
       >
         <UButton
@@ -520,7 +636,7 @@ const currentWeekNumber = computed(() =>
           @click="addAllPlannedIngredientsToShoppingList"
           class="font-bold"
           :loading="isOptimizingList"
-          :disabled="isOptimizingList"
+          :disabled="isOptimizingList || isCurrentWeekInPast"
         />
       </div>
     </Transition>
