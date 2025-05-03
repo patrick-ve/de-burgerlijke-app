@@ -241,6 +241,40 @@ export const useRecipes = () => {
   };
 
   /**
+   * Updates an existing recipe in the persistent list.
+   *
+   * @param {string} id The ID of the recipe to update.
+   * @param {Recipe} updatedRecipeData The new data for the recipe.
+   * @returns {Recipe | undefined} The updated recipe if found and updated, otherwise undefined.
+   */
+  const updateRecipe = (
+    id: string,
+    updatedRecipeData: Recipe
+  ): Recipe | undefined => {
+    const recipeIndex = storedRecipes.value.findIndex(
+      (recipe) => recipe.id === id
+    );
+
+    if (recipeIndex === -1) {
+      console.warn(`Recipe with ID: ${id} not found for update.`);
+      return undefined;
+    }
+
+    // Ensure updatedAt is set
+    const recipeToUpdate = {
+      ...updatedRecipeData,
+      id: id, // Ensure the original ID is kept
+      updatedAt: new Date(),
+    };
+
+    // Replace the recipe in the array
+    storedRecipes.value.splice(recipeIndex, 1, recipeToUpdate);
+
+    console.log(`Updated recipe with ID: ${id}`, recipeToUpdate);
+    return recipeToUpdate;
+  };
+
+  /**
    * Deletes a recipe by its ID from the persistent list.
    */
   const deleteRecipe = (id: string): void => {
@@ -268,6 +302,7 @@ export const useRecipes = () => {
     recipes: recipesWithValidIds,
     findRecipeById,
     addRecipe, // Expose the new function
+    updateRecipe, // Expose the update function
     deleteRecipe, // Expose the delete function
   };
 };

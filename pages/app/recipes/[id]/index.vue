@@ -47,7 +47,16 @@
         :popper="{ placement: 'bottom-end' }"
         :ui="{ container: 'z-50 group' }"
       >
-        <div class="p-1">
+        <div class="p-1 space-y-1">
+          <UButton
+            v-if="isDev"
+            label="Bewerk recept"
+            color="gray"
+            variant="ghost"
+            icon="i-heroicons-pencil-square"
+            @click="navigateToEdit"
+          />
+          <UDivider />
           <UButton
             label="Verwijder recept"
             color="red"
@@ -201,6 +210,13 @@ const confirmDelete = async () => {
   }
 };
 
+const navigateToEdit = () => {
+  if (recipeId.value) {
+    isContextMenuOpen.value = false; // Close context menu
+    router.push(`/app/recipes/${recipeId.value}/edit`);
+  }
+};
+
 // Fetching the specific recipe data
 const {
   data: recipe,
@@ -236,6 +252,8 @@ if (fetchError.value && !recipe.value) {
   // Optionally, you could show a generic error message here without using the full error page,
   // but since we made the 404 fatal, other fetch errors might as well be fatal.
 }
+
+const isDev = import.meta.dev;
 
 useHead({
   title: computed(() =>
