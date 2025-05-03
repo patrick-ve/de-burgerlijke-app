@@ -6,6 +6,7 @@ import type { Recipe } from '~/types/recipe';
 // --- Remove type import that's no longer needed directly here ---
 // import type { ScheduledMeal } from '~/composables/useMealPlanner'; // Import from composable
 import { useShoppingList } from '~/composables/useShoppingList'; // Import useShoppingList
+import { useOnboardingSettings } from '~/composables/useOnboardingSettings'; // Import onboarding settings
 import type { Ingredient } from '~/types/recipe'; // Import Ingredient type
 import { consola } from 'consola'; // Added for debugging optimization
 import type { ShoppingListItem } from '~/types/shopping-list'; // Added for optimizedList type
@@ -19,12 +20,16 @@ const {
   optimizeAndFetchPrices,
   isOptimizingList,
 } = useShoppingList(); // Replace replaceList with optimizeAndFetchPrices, expose isOptimizingList
+const { completeAddToShoppingList } = useOnboardingSettings(); // Destructure the new function
 const toast = useToast(); // For user feedback
 const router = useRouter(); // Added router import
 
 // Prepare recipes for select menu (Keep early)
-const recipeOptions = computed(() =>
-  recipes.value.map((r) => ({ label: r.title, value: r.id! }))
+const recipeOptions = computed(
+  () =>
+    recipes.value
+      .map((r) => ({ label: r.title, value: r.id! }))
+      .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically by label
 );
 
 // --- Add state for modal ---
@@ -251,6 +256,9 @@ async function addAllPlannedIngredientsToShoppingList() {
     // This now triggers both cleanup and price fetching
     await optimizeListAndShowFeedback();
 
+    // --- Set onboarding passed ---
+    // completeAddToShoppingList();
+
     // --- Umami Tracking ---
     umTrackEvent('plan_add_to_shopping_list');
     // --- End Umami Tracking ---
@@ -465,7 +473,6 @@ const currentWeekNumber = computed(() =>
               placeholder="Kies een recept"
               value-attribute="value"
               option-attribute="label"
-              searchable
             />
           </UFormGroup>
 
