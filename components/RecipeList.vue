@@ -332,6 +332,11 @@ defineExpose({
             class="w-64 flex-shrink-0 snap-start pl-4"
             data-testid="recipe-card-in-group"
           />
+          <!-- Empty spacer div for scroll snapping -->
+          <div
+            class="w-64 flex-shrink-0 snap-start pl-4"
+            aria-hidden="true"
+          ></div>
         </div>
       </div>
     </div>
