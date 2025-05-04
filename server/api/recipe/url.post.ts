@@ -20,7 +20,8 @@ const inputSchema = z
 // Function to generate the system prompt dynamically
 function createSystemPrompt(
   ogTitle?: string | null,
-  ogVideo?: string | null
+  ogVideo?: string | null,
+  author?: string | null
 ): string {
   const categoryList = ingredientCategories.join(', '); // Use RENAMED (simplified) list
   const cuisineList = cuisineCategories.join(', '); // Use RENAMED (simplified) list
@@ -32,7 +33,7 @@ You must:
 2. Structure it according to the specified schema.
 3. Convert measurements to Dutch standard units.
 4. Ensure all numeric values are actual numbers.
-5. Translate all values of the schema to Dutch.
+5. Translate all values of the schema to Dutch, such as ingredients, steps, recipe name, description, etc.
 6. Use Dutch measurement units (ml, l, el, tl, kop, g, kg, stuk, teen, snuf, mespunt, plak, bol, takje, blaadje, scheut, handvol). Allow null for unit if not applicable.
 7. Whenever a step from the recipe requires setting a timer (for example, cooking pasta), 
   make sure to include the timer in the response. This is the timer property in the schema. Ensure that the timer is in milliseconds, i.e. 1 minute = 60000 milliseconds.
@@ -51,6 +52,10 @@ You must:
     prompt += `\n10. The metadata includes a video URL: "${ogVideo}". Use this for the 'youtubeUrl' field if it's a valid video related to the recipe.`;
   } else {
     prompt += `\n10. Check the content for any YouTube video links to use for the 'youtubeUrl' field.`;
+  }
+
+  if (author) {
+    prompt += `\n11. The recipe is written by ${author}.`;
   }
 
   prompt += `
@@ -141,10 +146,11 @@ export default defineEventHandler(async (event) => {
       | FirecrawlDocumentMetadata
       | undefined;
     const ogTitle = metadata?.ogTitle;
-    const ogVideo = metadata?.ogVideo; // Assuming ogVideo maps to youtubeUrl
+    const ogVideo = metadata?.ogVideo;
+    const author = metadata?.author;
 
     // Generate the prompt dynamically
-    const systemPrompt = createSystemPrompt(ogTitle, ogVideo);
+    const systemPrompt = createSystemPrompt(ogTitle, ogVideo, author);
 
     const { object: recipe } = await generateObject({
       model: openai('gpt-4.1-nano-2025-04-14'),
