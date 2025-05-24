@@ -63,6 +63,16 @@ const navigationGroups = [
       // },
     ],
   },
+  {
+    title: 'Hulpmiddelen',
+    links: [
+      {
+        label: 'Vertalen',
+        to: '/app/translate',
+        icon: 'i-heroicons-language',
+      },
+    ],
+  },
   // {
   //   title: 'Instellingen',
   //   links: [
