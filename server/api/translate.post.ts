@@ -2,26 +2,24 @@ import { consola } from 'consola';
 import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 
-// Get OpenAI API key from runtime config
-const runtimeConfig = useRuntimeConfig();
+const systemPrompt = `
+  You are a helpful assistant specialized in extracting and translating text from images. 
 
-// Define the system prompt for text extraction and translation
-const systemPrompt = `You are a helpful assistant specialized in extracting and translating text from images. 
+  Your task is to:
+  1. Analyze the provided image and extract ALL visible text from it
+  2. Translate the extracted text to Dutch
+  3. Preserve the original formatting and structure as much as possible
+  4. If no text is found, respond with "Geen tekst gevonden in de afbeelding"
+  5. If the text is already in Dutch, simply return the text as is
+  6. Respond ONLY with the translated Dutch text, no additional explanations or comments
 
-Your task is to:
-1. Analyze the provided image and extract ALL visible text from it
-2. Translate the extracted text to Dutch
-3. Preserve the original formatting and structure as much as possible
-4. If no text is found, respond with "Geen tekst gevonden in de afbeelding"
-5. If the text is already in Dutch, simply return the text as is
-6. Respond ONLY with the translated Dutch text, no additional explanations or comments
-
-Rules:
-- Always translate to Dutch
-- Maintain line breaks and structure where logical
-- If there are multiple separate text elements, separate them clearly
-- Be accurate and natural in your Dutch translation
-- Do not add any explanations about what you're doing`;
+  Rules:
+  - Always translate to Dutch
+  - Maintain line breaks and structure where logical
+  - If there are multiple separate text elements, separate them clearly
+  - Be accurate and natural in your Dutch translation
+  - Do not add any explanations about what you're doing
+`;
 
 export default defineEventHandler(async (event) => {
   try {
@@ -69,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
     // Use generateText to get the translation
     const { text: translation } = await generateText({
-      model: openai('gpt-4.1-mini'), // Using gpt-4o-mini as requested
+      model: openai('gpt-4.1'), // Using gpt-4o-mini as requested
       messages: [{ role: 'user', content: userMessageContent }],
       system: systemPrompt,
     });
