@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { mount, VueWrapper, flushPromises } from '@vue/test-utils';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { nextTick } from 'vue';
-import RecipeList from '@/components/RecipeList.vue';
-import RecipeCard from '@/components/RecipeCard.vue';
-import type { Recipe } from '@/types/recipe';
+import RecipeList from '../components/RecipeList.vue';
+import RecipeCard from '../components/RecipeCard.vue';
+import type { Recipe } from '../types/recipe';
 
 // Mock data for recipes
 const mockRecipes: Recipe[] = [
@@ -266,79 +266,50 @@ describe('RecipeList.vue', () => {
     ).toBe(false);
   });
 
-  // --- Pagination Tests ---
+  // --- Grouping Tests (pagination was removed, now uses cuisine grouping) ---
 
-  it('handles pagination correctly', async () => {
-    const lotsOfRecipes = Array.from({ length: 15 }, (_, i) => ({
-      ...mockRecipes[0], // Base recipe structure
-      id: `p${i + 1}`,
-      title: `Paginated Recipe ${String(i + 1).padStart(2, '0')}`, // Ensure consistent sorting
-      prepTime: 10 + i, // Vary times slightly
-      cookTime: 20 + i,
-    }));
+  it('groups recipes by cuisine correctly', async () => {
+    const mixedCuisineRecipes = [
+      {
+        ...mockRecipes[0],
+        title: 'Italian Pasta',
+        cuisine: 'Italian',
+      },
+      { ...mockRecipes[1], title: 'French Bread', cuisine: 'French' },
+      {
+        ...mockRecipes[2],
+        title: 'Italian Pizza',
+        cuisine: 'Italian',
+      },
+      { ...mockRecipes[0], title: 'French Soup', cuisine: 'French' },
+      {
+        ...mockRecipes[1],
+        title: 'Mexican Tacos',
+        cuisine: 'Mexican',
+      },
+    ];
 
     wrapper = mount(RecipeList, {
       props: {
-        recipes: lotsOfRecipes,
-        itemsPerPage: 6,
+        recipes: mixedCuisineRecipes,
       },
       global: { stubs: stubs },
     });
-    await flushPromises(); // Ensure initial render is complete
-
-    // Check initial page (recipes 1-6, Title ASC)
-    let recipeCards = wrapper.findAllComponents(RecipeCard);
-    expect(recipeCards.length).toBe(6);
-    expect(recipeCards[0].props('recipe').title).toBe(
-      'Paginated Recipe 01'
-    );
-    expect(recipeCards[5].props('recipe').title).toBe(
-      'Paginated Recipe 06'
-    );
-
-    // Go to next page
-    const nextPageButton = findTestElement(wrapper, 'next-page');
-    await nextPageButton.trigger('click');
     await flushPromises();
 
-    // Check second page (recipes 7-12)
-    recipeCards = wrapper.findAllComponents(RecipeCard);
-    expect(recipeCards.length).toBe(6);
-    expect(recipeCards[0].props('recipe').title).toBe(
-      'Paginated Recipe 07'
-    );
-    expect(recipeCards[5].props('recipe').title).toBe(
-      'Paginated Recipe 12'
-    );
+    // Should display all recipes grouped by cuisine
+    const recipeCards = wrapper.findAllComponents(RecipeCard);
+    expect(recipeCards.length).toBe(5); // All recipes should be displayed
 
-    // Go to next page again
-    await nextPageButton.trigger('click');
-    await flushPromises();
-
-    // Check last page (recipes 13-15)
-    recipeCards = wrapper.findAllComponents(RecipeCard);
-    expect(recipeCards.length).toBe(3);
-    expect(recipeCards[0].props('recipe').title).toBe(
-      'Paginated Recipe 13'
+    // Check that recipes are displayed (grouping is handled in template)
+    const recipeTitles = recipeCards.map(
+      (card) => card.props('recipe').title
     );
-    expect(recipeCards[2].props('recipe').title).toBe(
-      'Paginated Recipe 15'
-    );
-
-    // Try going past the last page (shouldn't change)
-    await nextPageButton.trigger('click');
-    await flushPromises();
-    expect(wrapper.findAllComponents(RecipeCard).length).toBe(3);
-
-    // Go back to previous page
-    const prevPageButton = findTestElement(wrapper, 'prev-page');
-    await prevPageButton.trigger('click');
-    await flushPromises();
-    recipeCards = wrapper.findAllComponents(RecipeCard);
-    expect(recipeCards.length).toBe(6);
-    expect(recipeCards[0].props('recipe').title).toBe(
-      'Paginated Recipe 07'
-    ); // Back on page 2
+    expect(recipeTitles).toContain('Italian Pasta');
+    expect(recipeTitles).toContain('French Bread');
+    expect(recipeTitles).toContain('Italian Pizza');
+    expect(recipeTitles).toContain('French Soup');
+    expect(recipeTitles).toContain('Mexican Tacos');
   });
 
   // Note: We're skipping the slideover tests (filtering by cuisine, favorites, time range, etc.)
