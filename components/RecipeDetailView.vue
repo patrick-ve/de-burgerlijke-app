@@ -4,6 +4,8 @@ import { useShoppingList } from '~/composables/useShoppingList';
 import { useYoutubeEmbed } from '~/composables/useYoutubeEmbed';
 import PortionSelector from '~/components/PortionSelector.vue';
 import { ref, computed } from 'vue';
+import { Recipe as DomainRecipe } from '~/src/domain/entities/Recipe';
+import { RecipeMapper } from '~/src/application/mappers/RecipeMapper';
 
 // --- Interface for Local Step (Simpler) ---
 interface LocalStep extends Step {
@@ -13,6 +15,16 @@ interface LocalStep extends Step {
 const props = defineProps<{
   recipe: Recipe;
 }>();
+
+// Convert to domain model
+const domainRecipe = computed(() => {
+  try {
+    return RecipeMapper.toDomain(props.recipe);
+  } catch (error) {
+    console.error('Failed to convert recipe to domain model:', error);
+    return null;
+  }
+});
 
 // --- YouTube Embed ---
 const { embedUrl, isValidYoutubeUrl } = useYoutubeEmbed(
@@ -90,6 +102,24 @@ const formatQuantity = (
 
 // Calculate scaled ingredients based on adjusted portions
 const scaledIngredients = computed(() => {
+  if (domainRecipe.value && adjustedPortions.value !== originalPortions.value) {
+    // Clone the domain recipe and update servings
+    const clonedRecipe = Object.create(
+      Object.getPrototypeOf(domainRecipe.value),
+      Object.getOwnPropertyDescriptors(domainRecipe.value)
+    );
+    clonedRecipe.updateServings(adjustedPortions.value);
+    
+    // Convert back to UI format to get scaled ingredients
+    const scaledUIRecipe = RecipeMapper.toUI(clonedRecipe);
+    return scaledUIRecipe.ingredients.map((ingredient) => ({
+      ...ingredient,
+      scaledQuantity: ingredient.quantity,
+      displayQuantity: formatQuantity(ingredient.quantity),
+    }));
+  }
+  
+  // Fallback to original logic
   if (!props.recipe?.ingredients) return [];
   const scaleFactor = adjustedPortions.value / originalPortions.value;
   return props.recipe.ingredients.map((ingredient) => {
@@ -137,6 +167,11 @@ const handleAddPortionsToShoppingList = () => {
 
 // --- Computed Property for Total Time ---
 const totalTime = computed(() => {
+  if (domainRecipe.value) {
+    const total = domainRecipe.value.totalTime.minutes;
+    return total > 0 ? total : null;
+  }
+  // Fallback to original logic
   const prep = props.recipe.prepTime ?? 0;
   const cook = props.recipe.cookTime ?? 0;
   return prep + cook > 0 ? prep + cook : null;
