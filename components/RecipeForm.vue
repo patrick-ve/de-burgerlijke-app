@@ -11,6 +11,11 @@ import type {
 } from '~/types/recipe';
 import { useFieldArray } from '~/composables/useFieldArray'; // Import the composable
 import { ingredientCategories } from '~/types/recipe'; // Import categories list
+import { Recipe as DomainRecipe } from '~/src/domain/entities/Recipe';
+import { RecipeMapper } from '~/src/application/mappers/RecipeMapper';
+import { RecipeIngredient } from '~/src/domain/value-objects/RecipeIngredient';
+import { Quantity } from '~/src/domain/value-objects/Quantity';
+import { Duration } from '~/src/domain/value-objects/Duration';
 
 const props = defineProps({
   initialRecipe: {
@@ -241,12 +246,54 @@ const handleSubmit = () => {
     userId: props.initialRecipe?.userId ?? baseFormData.userId,
   };
 
-  emit('submit', finalRecipe);
+  // Validate using domain model
+  try {
+    const domainRecipe = RecipeMapper.toDomain(finalRecipe);
+    domainRecipe.validate();
+    emit('submit', finalRecipe);
+  } catch (error) {
+    console.error('Recipe validation failed:', error);
+    // You could show an error message to the user here
+    alert(`Recipe validation failed: ${error.message}`);
+  }
 };
 
 const handleCancel = () => {
   emit('cancel');
 };
+
+// --- Form Validation State ---
+const validationErrors = reactive({
+  title: '',
+  ingredients: '',
+  instructions: '',
+  servings: ''
+});
+
+// Real-time validation using domain model
+watch(() => baseFormData.title, (newTitle) => {
+  try {
+    if (!newTitle || newTitle.trim().length === 0) {
+      validationErrors.title = 'Recipe must have a title';
+    } else {
+      validationErrors.title = '';
+    }
+  } catch (error) {
+    validationErrors.title = error.message;
+  }
+});
+
+watch(() => baseFormData.portions, (newPortions) => {
+  try {
+    if (newPortions <= 0) {
+      validationErrors.servings = 'Recipe must have positive number of servings';
+    } else {
+      validationErrors.servings = '';
+    }
+  } catch (error) {
+    validationErrors.servings = error.message;
+  }
+});
 
 const formTitle = computed(() =>
   props.initialRecipe?.id ? 'Edit Recipe' : 'Create New Recipe'
