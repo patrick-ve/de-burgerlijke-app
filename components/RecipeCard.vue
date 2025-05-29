@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Recipe } from '../types/recipe';
+import { Recipe as DomainRecipe } from '../src/domain/entities/Recipe';
+import { RecipeMapper } from '../src/application/mappers/RecipeMapper';
 
 const props = defineProps<{
   recipe: Recipe;
 }>();
+
+// Convert UI recipe to domain model
+const domainRecipe = computed(() => {
+  try {
+    return RecipeMapper.toDomain(props.recipe);
+  } catch (error) {
+    console.error('Failed to convert recipe to domain model:', error);
+    return null;
+  }
+});
 
 // Restore favorite functionality
 const emit = defineEmits<{
@@ -18,33 +30,30 @@ function handleToggleFavorite(event: MouseEvent) {
   emit('toggle-favorite', props.recipe.id);
 }
 
-// Helper to parse time strings like "30 minuten" or just a number
-function parseTime(
-  timeString: string | number | null | undefined
-): number {
-  if (typeof timeString === 'number') {
-    return timeString;
-  }
-  if (typeof timeString === 'string') {
-    const match = timeString.match(/\d+/);
-    return match ? parseInt(match[0], 10) : 0;
-  }
-  // Handles null or undefined by returning 0
-  return 0;
-}
-
-// Compute total time
+// Compute total time using domain model
 const totalTime = computed(() => {
-  const prepMinutes = parseTime(props.recipe.prepTime);
-  const cookMinutes = parseTime(props.recipe.cookTime);
-  const total = prepMinutes + cookMinutes;
+  if (!domainRecipe.value) {
+    // Fallback to original logic if domain conversion fails
+    const prepMinutes =
+      typeof props.recipe.prepTime === 'number'
+        ? props.recipe.prepTime
+        : 0;
+    const cookMinutes =
+      typeof props.recipe.cookTime === 'number'
+        ? props.recipe.cookTime
+        : 0;
+    const total = prepMinutes + cookMinutes;
+    return total > 0 ? total : null;
+  }
+
+  const total = domainRecipe.value.totalTime.minutes;
   return total > 0 ? total : null;
 });
 </script>
 
 <template>
   <NuxtLink
-    :to="`recipes/${recipe.id}`"
+    :to="`/recipes/${recipe.id}`"
     class="recipe-card-link block group relative w-48"
     :aria-label="`View recipe: ${recipe.title}`"
   >
@@ -62,7 +71,6 @@ const totalTime = computed(() => {
       class="favorite-button absolute top-2 right-2 z-10"
       aria-label="Toggle Favorite"
       @click.stop.prevent="handleToggleFavorite"
-      v-if="false"
     />
 
     <div
@@ -121,13 +129,17 @@ const totalTime = computed(() => {
           class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 metadata-info"
         >
           <span
-            v-if="recipe.portions"
+            v-if="domainRecipe?.servings || recipe.portions"
             class="recipe-portions flex items-center"
             title="Portions"
           >
             <UIcon name="i-heroicons-users" class="mr-1 h-3 w-3" />
-            {{ recipe.portions }}
-            {{ recipe.portions > 1 ? 'porties' : 'portie' }}
+            {{ domainRecipe?.servings || recipe.portions }}
+            {{
+              (domainRecipe?.servings || recipe.portions) > 1
+                ? 'porties'
+                : 'portie'
+            }}
           </span>
           <!-- Merged Prep and Cook Time -->
           <span
