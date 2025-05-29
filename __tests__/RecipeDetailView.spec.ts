@@ -151,16 +151,17 @@ describe('RecipeDetailView.vue', () => {
   });
 
   it('renders the metadata (prep time, cook time, portions) correctly', () => {
-    const metadataDiv = wrapper.find('div.grid.grid-cols-3'); // Find the metadata container
+    // Use the correct selector for the metadata container - it has data-testid="recipe-metadata"
+    const metadataDiv = wrapper.find(
+      '[data-testid="recipe-metadata"]'
+    );
     expect(metadataDiv.exists()).toBe(true);
     const metadataText = metadataDiv.text();
 
-    expect(metadataText).toContain(`${mockRecipe.prepTime} minuten`);
-    expect(metadataText).toContain('Voorbereiding');
-    expect(metadataText).toContain(`${mockRecipe.cookTime} minuten`);
-    expect(metadataText).toContain('Kooktijd');
-    expect(metadataText).toContain(`${mockRecipe.portions}`);
-    expect(metadataText).toContain('Porties');
+    expect(metadataText).toContain(
+      `${mockRecipe.prepTime + mockRecipe.cookTime} minuten`
+    );
+    expect(metadataText).toContain(`${mockRecipe.portions} porties`);
   });
 
   it('renders the ingredients list correctly', () => {
@@ -247,18 +248,22 @@ describe('RecipeDetailView.vue', () => {
       props: { recipe: recipeWithoutOptionalMeta },
       global: { components: { UTabs, UIcon, UCheckbox, NuxtImg } }, // Use the improved UTabs mock
     });
-    const metadataDiv = localWrapper.find('div.grid.grid-cols-3');
-    const metadataText = metadataDiv.text(); // Get all text content
+    const metadataDiv = localWrapper.find(
+      '[data-testid="recipe-metadata"]'
+    );
+    expect(metadataDiv.exists()).toBe(true); // Metadata div should still exist
 
-    // Check that the specific labels are NOT present in the overall text
-    expect(metadataText).not.toContain('Voorbereiding');
-    expect(metadataText).not.toContain('Kooktijd');
-    expect(metadataText).not.toContain('minuten'); // Units should also be absent
+    // Check that there's no total time section when both prep and cook times are null/undefined
+    const totalTimeSection = localWrapper.find(
+      '[data-testid="total-time-section"]'
+    );
+    expect(totalTimeSection.exists()).toBe(false); // This section should not exist
 
-    // Optionally, verify the specific icon elements are not rendered
-    // Note: Adjust the icon class if the mock changes
-    expect(metadataDiv.html()).not.toContain('i-heroicons-book-open'); // Prep time icon class from component
-    expect(metadataDiv.html()).not.toContain('i-heroicons-clock'); // Cook time icon class from component
+    // But portions section should still exist
+    const portionsSection = localWrapper.find(
+      '[data-testid="portions-section"]'
+    );
+    expect(portionsSection.exists()).toBe(true);
   });
 
   it('does not render utensils section content if not provided or empty', () => {
