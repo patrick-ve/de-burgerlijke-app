@@ -3,6 +3,9 @@ import { computed } from 'vue';
 import type { ShoppingListItem } from '~/types/shopping-list';
 import { ingredientCategories } from '~/types/recipe';
 import type { IngredientCategory } from '~/types/recipe';
+import { ShoppingList as DomainShoppingList } from '~/src/domain/entities/ShoppingList';
+import { ShoppingItem as DomainShoppingItem } from '~/src/domain/entities/ShoppingItem';
+import { ShoppingListMapper, ShoppingItemMapper } from '~/src/application/mappers/ShoppingListMapper';
 
 // --- Emoji mapping for categories ---
 const categoryEmojis: Record<IngredientCategory | 'Other', string> = {
