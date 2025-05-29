@@ -2,6 +2,8 @@
 import type { Recipe } from '@/types/recipe';
 import RecipeCard from '@/components/RecipeCard.vue';
 import { ref, computed, watch, defineExpose } from 'vue';
+import { RecipeMapper } from '@/src/application/mappers/RecipeMapper';
+import { Recipe as DomainRecipe } from '@/src/domain/entities/Recipe';
 
 interface Props {
   recipes: Recipe[];
@@ -104,19 +106,36 @@ const filteredRecipes = computed(() => {
   // Apply time range filter (from USelectMenu) - UPDATED logic for ranges
   if (selectedTimeFilter.value !== undefined) {
     results = results.filter((recipe) => {
-      const totalTime =
-        (recipe.prepTime || 0) + (recipe.cookTime || 0);
-      if (totalTime <= 0) return false; // Exclude recipes with no time unless 'Any Time' is selected
+      try {
+        const domainRecipe = RecipeMapper.toDomain(recipe);
+        const totalTime = domainRecipe.totalTime.minutes;
+        if (totalTime <= 0) return false; // Exclude recipes with no time unless 'Any Time' is selected
 
-      switch (selectedTimeFilter.value) {
-        case 'under_20':
-          return totalTime < 20;
-        case '20_to_45':
-          return totalTime >= 20 && totalTime <= 45;
-        case 'over_45':
-          return totalTime > 45;
-        default:
-          return true; // Should not happen if value is not null, but good fallback
+        switch (selectedTimeFilter.value) {
+          case 'under_20':
+            return totalTime < 20;
+          case '20_to_45':
+            return totalTime >= 20 && totalTime <= 45;
+          case 'over_45':
+            return totalTime > 45;
+          default:
+            return true; // Should not happen if value is not null, but good fallback
+        }
+      } catch (error) {
+        // If domain conversion fails, fallback to original logic
+        const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+        if (totalTime <= 0) return false;
+
+        switch (selectedTimeFilter.value) {
+          case 'under_20':
+            return totalTime < 20;
+          case '20_to_45':
+            return totalTime >= 20 && totalTime <= 45;
+          case 'over_45':
+            return totalTime > 45;
+          default:
+            return true;
+        }
       }
     });
   }
