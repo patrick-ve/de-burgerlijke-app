@@ -60,3 +60,27 @@ export interface ShoppingList {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Simple shopping item for domain model mapping
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity?: number;
+  unit?: string;
+  category?: string;
+  notes?: string;
+  checked?: boolean;
+  recipeId?: string | null;
+  price?: number;
+  supermarket?: string;
+  imageUrl?: string | null;
+}
+
+// Simplified shopping list for domain model
+export interface ShoppingListSimple {
+  id: string;
+  name?: string;
+  items: ShoppingItem[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
