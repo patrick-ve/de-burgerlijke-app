@@ -1,6 +1,24 @@
 import { mount } from '@vue/test-utils';
 import ToDo from '../components/ToDo.vue'; // Adjusted import path
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+
+// Mock Nuxt UI composables to prevent configuration errors
+vi.mock('@nuxt/ui', () => ({
+  useUI: () => ({}),
+}));
+
+// Ensure appConfig is available globally for this test
+beforeAll(() => {
+  if (!(global as any).appConfig) {
+    (global as any).appConfig = {
+      ui: {
+        primary: 'brand',
+        gray: 'cool',
+        tailwindMerge: true,
+      },
+    };
+  }
+});
 
 // Define a common interface for ToDo props for type safety in tests
 interface ToDoProps {
@@ -12,6 +30,16 @@ interface ToDoProps {
 const createWrapper = (props: ToDoProps) => {
   return mount(ToDo, {
     props,
+    global: {
+      stubs: {
+        UCheckbox: {
+          template:
+            '<input type="checkbox" :id="id" :checked="modelValue" :aria-label="ariaLabel" @change="$emit(\'update:modelValue\', $event.target.checked)" />',
+          props: ['modelValue', 'id', 'ariaLabel', 'label'],
+          emits: ['update:modelValue'],
+        },
+      },
+    },
   });
 };
 
@@ -102,14 +130,19 @@ describe('ToDo.vue', () => {
       ...mockTodo,
       completed: false,
     });
-    const labelUncompleted = wrapperUncompleted.find('label');
+    // Find the label that has the conditional classes (the one with cursor-pointer class)
+    const labelUncompleted = wrapperUncompleted.find(
+      'label.cursor-pointer'
+    );
     expect(labelUncompleted.classes()).not.toContain('line-through');
 
     const wrapperCompleted = createWrapper({
       ...mockTodo,
       completed: true,
     });
-    const labelCompleted = wrapperCompleted.find('label');
+    const labelCompleted = wrapperCompleted.find(
+      'label.cursor-pointer'
+    );
     expect(labelCompleted.classes()).toContain('line-through');
     expect(labelCompleted.classes()).toContain('text-gray-500');
 
