@@ -45,16 +45,17 @@ export async function searchProducts(
 
   const productsCollection =
     client.collections.get<WeaviateProductProperties>(
-      'Products' // Assuming collection name is 'Products'
+      'Groceries' // Assuming collection name is 'Products'
     );
 
   // Define properties to return explicitly as string[]
   const returnProperties: string[] = [
-    'name',
+    'originalName',
     'price',
     'link',
     'amount',
     'supermarketName',
+    'standardizedName',
     'standardizedPricePerUnit',
     'standardizedUnit',
     // Add 'id' explicitly if needed by find-cheapest.post.ts

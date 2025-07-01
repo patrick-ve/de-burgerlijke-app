@@ -30,12 +30,16 @@ export interface ShoppingListItem {
   cheapestPrice?: number;
   cheapestSupermarket?: string;
   cheapestAmount?: string | null;
+  cheapestUrl?: string; // Add URL field
+  cheapestStandardizedPricePerUnit?: number | null; // Add standardized price per unit
+  cheapestStandardizedUnit?: string | null; // Add standardized unit
 }
 
 // --- Add Product interface definition ---
 export interface Product {
   id: string;
   name: string;
+  url: string; // Add url field
   price: number;
   amount: string | null;
   distance?: number; // Optional distance/similarity score

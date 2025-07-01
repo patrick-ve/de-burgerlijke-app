@@ -161,5 +161,7 @@ const installPWA = async () => {
     </section>
 
     <OnboardingSteps />
+
+    <HomeDashboard />
   </div>
 </template>

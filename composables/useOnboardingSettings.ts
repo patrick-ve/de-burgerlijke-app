@@ -100,12 +100,35 @@ export function useOnboardingSettings() {
       mode: currentMode,
       selectedSupermarketIds:
         currentMode === 'overview' ? currentSelectedIds : [],
-      hasCompletedOnboarding: true,
+      hasCompletedOnboarding: false,
       showModal: false,
     };
     console.log(
       '[useOnboardingSettings] State after completion:',
       onboardingState.value
+    );
+  };
+
+  const completeAddToShoppingList = () => {
+    console.log('Executing completeAddToShoppingList');
+    const currentMode = onboardingState.value.mode;
+    const currentSelectedIds =
+      onboardingState.value.selectedSupermarketIds;
+
+    onboardingState.value = {
+      mode: currentMode,
+      selectedSupermarketIds:
+        currentMode === 'overview' ? currentSelectedIds : [],
+      hasCompletedOnboarding: true,
+      showModal: false,
+    };
+    console.log(
+      '[useOnboardingSettings] State immediately after completeAddToShoppingList:',
+      JSON.stringify(onboardingState.value)
+    );
+    console.log(
+      '[useOnboardingSettings] Computed value immediately after:',
+      hasCompletedOnboarding.value
     );
   };
 
@@ -125,6 +148,7 @@ export function useOnboardingSettings() {
     mode,
     selectedSupermarketIds,
     hasCompletedOnboarding,
+    completeAddToShoppingList,
     // Expose functions to modify state
     setMode,
     setSelectedSupermarketIds,

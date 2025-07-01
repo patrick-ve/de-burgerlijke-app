@@ -17,7 +17,8 @@ interface RequestBody {
 
 interface ProductResult {
   id: string;
-  name: string;
+  standardizedName: string;
+  url: string | null;
   price: number;
   amount: string | null;
   distance: number; // Renamed from similarity for consistency with Weaviate term
@@ -172,7 +173,10 @@ export default defineEventHandler(
         const transformedProducts: ProductResult[] =
           similarProductsRaw.map((rawProduct) => ({
             id: rawProduct.uuid,
-            name: rawProduct.properties.name ?? 'Unknown Name',
+            standardizedName:
+              rawProduct.properties.standardizedName ??
+              'Unknown Name',
+            url: rawProduct.properties.link ?? null,
             price: rawProduct.properties.price ?? 0,
             amount: rawProduct.properties.amount ?? null,
             supermarketName:

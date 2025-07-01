@@ -254,6 +254,11 @@ export function useShoppingList() {
                 cheapestPrice: cheapestProduct.price,
                 cheapestSupermarket: cheapestProduct.supermarketName,
                 cheapestAmount: cheapestProduct.amount,
+                cheapestUrl: cheapestProduct.url,
+                cheapestStandardizedPricePerUnit:
+                  cheapestProduct.standardized_price_per_unit,
+                cheapestStandardizedUnit:
+                  cheapestProduct.standardized_unit,
               });
               updateCount++;
             }

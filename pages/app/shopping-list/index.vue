@@ -676,8 +676,7 @@ onMounted(() => {
                             supermarket !== 'Nog geen prijs gevonden'
                           "
                         >
-                          - {{ item.cheapestAmount }}</span
-                        >
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -686,8 +685,10 @@ onMounted(() => {
                     class="flex items-center gap-2 flex-shrink-0"
                     :class="{ 'opacity-50': item.isChecked }"
                   >
-                    <span
+                    <nuxt-link
                       v-if="item.cheapestPrice != null"
+                      :to="item.cheapestUrl"
+                      target="_blank"
                       class="text-sm font-medium text-gray-900"
                       :class="{
                         'line-through text-gray-500': item.isChecked,
@@ -695,7 +696,7 @@ onMounted(() => {
                       data-testid="item-price"
                     >
                       {{ formatCurrency(item.cheapestPrice) }}
-                    </span>
+                    </nuxt-link>
                     <span
                       v-else-if="
                         !item.isChecked &&

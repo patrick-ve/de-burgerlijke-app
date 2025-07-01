@@ -177,6 +177,18 @@ const closePdfPreviewModal = () => {
   pdfPreviewTitle.value = null;
 };
 
+// --- Download Attachment Handler ---
+const downloadAttachment = (attachment: ToDo['attachment']) => {
+  if (!attachment) return;
+
+  const link = document.createElement('a');
+  link.href = attachment.data;
+  link.download = attachment.name;
+  document.body.appendChild(link); // Required for Firefox
+  link.click();
+  document.body.removeChild(link);
+};
+
 // --- Lifecycle Hooks ---
 onMounted(async () => {
   await nextTick();
@@ -265,15 +277,21 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                   class="h-4 w-4 flex-shrink-0"
                 />
                 <a
-                  :href="todo.attachment.data"
-                  :download="todo.attachment.name"
-                  target="_blank"
-                  class="hover:underline truncate"
+                  href="#"
+                  @click.prevent="
+                    todo.attachment &&
+                    todo.attachment.type === 'application/pdf'
+                      ? openPdfPreviewModal(todo.attachment)
+                      : null
+                  "
+                  class="hover:underline truncate cursor-pointer"
                   :title="`${todo.attachment.name} (${formatFileSize(todo.attachment.size)})`"
                 >
-                  {{ todo.attachment.name }} ({{
-                    formatFileSize(todo.attachment.size)
-                  }})
+                  {{
+                    todo.attachment.name.length > 15
+                      ? todo.attachment.name.substring(0, 20) + '...'
+                      : todo.attachment.name
+                  }}
                 </a>
                 <!-- PDF Preview Button -->
                 <UButton
@@ -285,6 +303,17 @@ useHead({ title: 'Mijn Taken' }); // Set page title
                   :padded="false"
                   @click="openPdfPreviewModal(todo.attachment)"
                   aria-label="Preview PDF"
+                  class="ml-1 flex-shrink-0"
+                />
+                <!-- Download Button -->
+                <UButton
+                  icon="i-heroicons-arrow-down-tray"
+                  size="2xs"
+                  color="gray"
+                  variant="link"
+                  :padded="false"
+                  @click="downloadAttachment(todo.attachment)"
+                  aria-label="Download Attachment"
                   class="ml-1 flex-shrink-0"
                 />
                 <UButton
