@@ -1,14 +1,14 @@
-# De Burgerlijke App
+# 🍽️ De Burgerlijke App
 
 *Making meal planning and grocery shopping effortless for couples*
 
-## What's De Burgerlijke App?
+## 🤔 What's De Burgerlijke App?
 
 De Burgerlijke App is your smart cooking companion that takes the hassle out of meal planning and grocery shopping! Simply paste a recipe URL, and my AI-powered parser will automatically extract ingredients, instructions, and even suggest helpful tips and substitutions. Perfect for couples who want to cook together without the stress of planning!
 
 Built with love using **Clean Architecture** principles to ensure maintainable, testable, and scalable code.
 
-## Features
+## ✨ Features
 
 ### Smart Recipe Management
 *Turn any recipe URL into your personal cooking guide*
@@ -53,7 +53,7 @@ Built with love using **Clean Architecture** principles to ensure maintainable, 
 - **Smart Notifications** - Stay updated on shared activities and meal reminders
 - **Offline Mode** - Access saved recipes and lists even without internet
 
-## Tech Stack & Architecture
+## 🏗️ Tech Stack & Architecture
 
 I've built De Burgerlijke App using modern, battle-tested technologies:
 
@@ -98,7 +98,7 @@ I've implemented **Clean Architecture** to ensure my app is:
 - **Mobile-First Design** - Optimized for touch interactions and offline use
 - **Type Safety** - End-to-end TypeScript for fewer runtime errors
 
-## Why Clean Architecture?
+## 🏛️ Why Clean Architecture?
 
 I chose **Clean Architecture** because I believe in building software that lasts. Here's why it matters:
 
@@ -123,7 +123,7 @@ I chose **Clean Architecture** because I believe in building software that lasts
 *"It's not about being perfect from day one, it's about being able to evolve gracefully."*
 
 
-## System Requirements
+## 📱 System Requirements
 
 ### Mobile Support
 - **iOS 14+** - Optimized for modern iPhones and iPads
@@ -135,7 +135,7 @@ I chose **Clean Architecture** because I believe in building software that lasts
 - **Internet**: Required for recipe parsing and real-time sync
 - **Camera**: Optional, for barcode scanning and recipe photos
 
-## Getting Started
+## 🚀 Getting Started
 
 Want to contribute or run the app locally? Here's everything you need!
 
@@ -204,21 +204,23 @@ npx jiti lib/ingest-weaviate.ts
 
 ### Development Commands
 ```bash
-# Run tests
-npm run test
+# Development
+npm run dev                # Start development server with host binding
+npm run build              # Build the application for production
+npm run generate           # Generate static site
+npm run preview            # Preview the production build
+npm run postinstall        # Prepare Nuxt (runs automatically after install)
 
-# Type checking
-npm run type-check
-
-# Lint code
-npm run lint
-
-# Mobile development
-npm run build:mobile
-npm run dev:mobile
+# Testing
+npm run unit               # Run unit tests with Vitest
+npm run unit:ui            # Run unit tests with Vitest UI
+npm run unit:coverage      # Run unit tests with coverage report
+npm run e2e                # Run end-to-end tests with Playwright
+npm run e2e:ui             # Run E2E tests with Playwright UI
+npm run e2e:update         # Update Playwright snapshots
 ```
 
-## Contributing
+## 🤝 Contributing
 
 ### Development Guidelines
 - **Clean Architecture** - Follow my established layer patterns
