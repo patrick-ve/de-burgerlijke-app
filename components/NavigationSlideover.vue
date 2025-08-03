@@ -56,11 +56,11 @@ const navigationGroups = [
         to: '/app/holiday',
         icon: 'i-heroicons-globe-alt',
       },
-      // {
-      //   label: 'Baby',
-      //   to: '/baby',
-      //   icon: 'i-heroicons-user',
-      // },
+      {
+        label: 'Baby',
+        to: '/app/baby',
+        icon: 'i-heroicons-heart',
+      },
     ],
   },
   {
