@@ -295,13 +295,42 @@ useHead({ title: 'Baby' });
             :key="entry.id"
             class="bg-white border border-gray-200 rounded-lg p-3"
           >
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-1.5">
-                <UIcon name="i-heroicons-clock" class="w-3.5 h-3.5 text-gray-400" />
-                <span class="text-sm font-medium text-gray-900">
-                  {{ formatTime(entry.time) }}
-                </span>
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="flex items-center space-x-1.5">
+                  <UIcon name="i-heroicons-clock" class="w-3.5 h-3.5 text-gray-400" />
+                  <span class="text-sm font-bold text-gray-900">
+                    {{ formatTime(entry.time) }}
+                  </span>
+                </div>
+                
+                <!-- Amount Badge -->
+                <UBadge
+                  :label="`${entry.amount} mL`"
+                  color="blue"
+                  variant="subtle"
+                  size="sm"
+                />
+
+                <!-- Additional Info -->
+                <div class="flex gap-2">
+                  <UBadge
+                    v-if="entry.spitUp || entry.urinated || entry.defecated"
+                    :label="getActivityLabel(entry)"
+                    color="amber"
+                    variant="subtle"
+                    size="xs"
+                  />
+                  <UBadge
+                    v-if="entry.temperature"
+                    :label="`${entry.temperature}°C`"
+                    color="red"
+                    variant="subtle"
+                    size="xs"
+                  />
+                </div>
               </div>
+              
               <UButton
                 icon="i-heroicons-trash"
                 size="xs"
@@ -309,34 +338,6 @@ useHead({ title: 'Baby' });
                 variant="ghost"
                 @click="deleteMilkEntry(entry.id)"
                 aria-label="Delete Entry"
-              />
-            </div>
-            
-            <!-- Amount Badge -->
-            <div class="mb-2">
-              <UBadge
-                :label="`${entry.amount} mL gedronken`"
-                color="blue"
-                variant="subtle"
-                size="sm"
-              />
-            </div>
-
-            <!-- Additional Info -->
-            <div class="flex flex-wrap gap-2">
-              <UBadge
-                v-if="entry.spitUp || entry.urinated || entry.defecated"
-                :label="getActivityLabel(entry)"
-                color="amber"
-                variant="subtle"
-                size="xs"
-              />
-              <UBadge
-                v-if="entry.temperature"
-                :label="`${entry.temperature}°C`"
-                color="red"
-                variant="subtle"
-                size="xs"
               />
             </div>
           </div>
