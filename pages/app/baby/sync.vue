@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { format } from 'date-fns';
 import { useWebRTCSync } from '~/composables/useWebRTCSync';
-import { useQRCode } from '~/composables/useQRCode';
+import { useConnectionCode } from '~/composables/useConnectionCode';
 import { useBaby } from '~/composables/useBaby';
 import type { ConnectionOffer, ConnectionAnswer } from '~/composables/useWebRTCSync';
 
@@ -25,24 +25,26 @@ const {
 } = useWebRTCSync();
 
 const { 
-  generateQRCode, 
-  startScanning, 
-  stopScanning, 
-  isScanning, 
-  scanError, 
-  canScan 
-} = useQRCode();
+  generatedCode, 
+  codeError, 
+  isCodeValid,
+  generateConnectionCode, 
+  getOfferFromCode, 
+  validateCodeFormat,
+  formatCodeForDisplay,
+  clearCode 
+} = useConnectionCode();
 
 const { exportSyncData, hasUnsyncedChanges } = useBaby();
 
 // UI State
 const currentStep = ref<'menu' | 'host' | 'join' | 'connecting' | 'connected'>('menu');
-const qrCodeDataURL = ref<string>('');
+const connectionCode = ref<string>('');
+const inputCode = ref<string>('');
 const connectionOffer = ref<ConnectionOffer | null>(null);
 const syncStatus = ref<string>('');
-const showQRCode = ref(false);
-const showScanner = ref(false);
-const videoElement = ref<HTMLVideoElement>();
+const showConnectionCode = ref(false);
+const showCodeInput = ref(false);
 
 // Computed
 const statusColor = computed(() => {
@@ -67,6 +69,10 @@ const canStartSync = computed(() => {
   return isConnected.value && hasUnsyncedChanges();
 });
 
+const formattedInputCode = computed(() => {
+  return formatCodeForDisplay(inputCode.value);
+});
+
 // Host functions
 const startAsHost = async () => {
   try {
@@ -74,8 +80,8 @@ const startAsHost = async () => {
     syncStatus.value = 'Verbinding voorbereiden...';
     
     connectionOffer.value = await createOffer();
-    qrCodeDataURL.value = await generateQRCode(connectionOffer.value);
-    showQRCode.value = true;
+    connectionCode.value = generateConnectionCode(connectionOffer.value);
+    showConnectionCode.value = true;
     
     syncStatus.value = 'Wacht op verbinding...';
   } catch (error) {
@@ -85,37 +91,32 @@ const startAsHost = async () => {
 };
 
 // Join functions
-const startAsClient = async () => {
+const startAsClient = () => {
+  currentStep.value = 'join';
+  showCodeInput.value = true;
+  syncStatus.value = 'Voer de verbindingscode in';
+};
+
+// Handle connection code input
+const handleCodeSubmit = async () => {
   try {
-    currentStep.value = 'join';
+    const code = inputCode.value.trim();
     
-    if (!canScan.value) {
-      syncStatus.value = 'Camera niet beschikbaar';
+    if (!validateCodeFormat(code)) {
+      syncStatus.value = 'Ongeldige code format';
       return;
     }
     
-    showScanner.value = true;
-    
-    if (videoElement.value) {
-      await startScanning(videoElement.value);
-      syncStatus.value = 'Scan QR code van het andere apparaat';
+    const scannedOffer = getOfferFromCode(code);
+    if (!scannedOffer) {
+      syncStatus.value = codeError.value || 'Ongeldige code';
+      return;
     }
-  } catch (error) {
-    console.error('Error starting scanner:', error);
-    syncStatus.value = 'Fout bij het starten van de camera';
-  }
-};
-
-// Handle QR code scan result
-const handleQRCodeScanned = async (event: CustomEvent) => {
-  const scannedOffer = event.detail as ConnectionOffer;
-  
-  try {
+    
     syncStatus.value = 'Verbinding maken...';
     currentStep.value = 'connecting';
     
-    stopScanning();
-    showScanner.value = false;
+    showCodeInput.value = false;
     
     const answer = await createAnswer(scannedOffer);
     
@@ -128,7 +129,7 @@ const handleQRCodeScanned = async (event: CustomEvent) => {
     syncStatus.value = 'Verbonden! Klaar om te synchroniseren.';
     currentStep.value = 'connected';
   } catch (error) {
-    console.error('Error handling QR scan:', error);
+    console.error('Error handling code:', error);
     syncStatus.value = 'Fout bij het verbinden';
     currentStep.value = 'menu';
   }
@@ -197,9 +198,10 @@ const goBack = () => {
 
 const resetToMenu = () => {
   currentStep.value = 'menu';
-  showQRCode.value = false;
-  showScanner.value = false;
-  stopScanning();
+  showConnectionCode.value = false;
+  showCodeInput.value = false;
+  inputCode.value = '';
+  clearCode();
   syncStatus.value = '';
 };
 
@@ -210,14 +212,11 @@ const handleDisconnect = () => {
 
 // Event listeners
 onMounted(() => {
-  window.addEventListener('qr-code-scanned', handleQRCodeScanned as EventListener);
   window.addEventListener('connection-answer', handleConnectionAnswer as EventListener);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('qr-code-scanned', handleQRCodeScanned as EventListener);
   window.removeEventListener('connection-answer', handleConnectionAnswer as EventListener);
-  stopScanning();
 });
 
 // Watch connection state
@@ -297,7 +296,7 @@ useHead({ title: 'Baby Synchronisatie' });
         <div class="space-y-3">
           <UButton
             label="Verbinding starten"
-            icon="i-heroicons-qr-code"
+            icon="i-heroicons-key"
             size="lg"
             block
             @click="startAsHost"
@@ -306,73 +305,100 @@ useHead({ title: 'Baby Synchronisatie' });
           
           <UButton
             label="Verbinding maken"
-            icon="i-heroicons-camera"
+            icon="i-heroicons-pencil-square"
             variant="outline"
             size="lg"
             block
-            :disabled="!canScan"
             @click="startAsClient"
             class="font-medium"
           />
         </div>
 
-        <div v-if="!canScan" class="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded">
-          <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 inline mr-1" />
-          Camera niet beschikbaar voor QR code scannen
-        </div>
       </div>
 
-      <!-- Host Step - Show QR Code -->
-      <div v-if="currentStep === 'host' && showQRCode" class="text-center">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">QR Code voor verbinding</h2>
+      <!-- Host Step - Show Connection Code -->
+      <div v-if="currentStep === 'host' && showConnectionCode" class="text-center">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Verbindingscode</h2>
         <p class="text-gray-600 mb-6">
-          Laat je partner deze QR code scannen om verbinding te maken.
+          Deel deze code met je partner om verbinding te maken.
         </p>
         
-        <div class="bg-white p-4 rounded-lg border-2 border-gray-200 mb-6">
-          <img 
-            :src="qrCodeDataURL" 
-            alt="QR Code" 
-            class="w-64 h-64 mx-auto"
+        <div class="bg-white p-6 rounded-lg border-2 border-gray-200 mb-6">
+          <div class="text-3xl font-mono font-bold text-gray-900 mb-2 tracking-wider">
+            {{ connectionCode }}
+          </div>
+          <p class="text-sm text-gray-500">
+            Code verloopt over 10 minuten
+          </p>
+        </div>
+        
+        <div class="space-y-3">
+          <UButton
+            label="Code kopiëren"
+            icon="i-heroicons-clipboard-document"
+            variant="outline"
+            @click="() => navigator.clipboard?.writeText(connectionCode)"
+          />
+          
+          <UButton
+            label="Annuleren"
+            variant="ghost"
+            @click="resetToMenu"
           />
         </div>
-        
-        <UButton
-          label="Annuleren"
-          variant="outline"
-          @click="resetToMenu"
-        />
       </div>
 
-      <!-- Join Step - Show Scanner -->
-      <div v-if="currentStep === 'join' && showScanner" class="text-center">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">QR Code scannen</h2>
-        <p class="text-gray-600 mb-6">
-          Richt je camera op de QR code van het andere apparaat.
-        </p>
+      <!-- Join Step - Enter Code -->
+      <div v-if="currentStep === 'join' && showCodeInput" class="space-y-6">
+        <div class="text-center">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Verbindingscode invoeren</h2>
+          <p class="text-gray-600 mb-6">
+            Voer de code in die je van je partner hebt gekregen.
+          </p>
+        </div>
         
-        <div class="relative bg-black rounded-lg overflow-hidden mb-6">
-          <video
-            ref="videoElement"
-            class="w-full aspect-square object-cover"
-            autoplay
-            muted
-            playsinline
-          ></video>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Verbindingscode
+            </label>
+            <UInput
+              v-model="inputCode"
+              :value="formattedInputCode"
+              placeholder="BABY-XXXX-XXXX-XXXX"
+              size="lg"
+              class="text-center font-mono tracking-wider"
+              maxlength="19"
+              @keyup.enter="handleCodeSubmit"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              Format: BABY-XXXX-XXXX-XXXX
+            </p>
+          </div>
           
-          <div v-if="scanError" class="absolute inset-0 flex items-center justify-center bg-red-100 bg-opacity-90">
-            <div class="text-center text-red-700">
-              <UIcon name="i-heroicons-exclamation-triangle" class="w-8 h-8 mx-auto mb-2" />
-              <p class="font-medium">{{ scanError }}</p>
-            </div>
+          <div v-if="codeError" class="text-sm text-red-600 bg-red-50 p-3 rounded">
+            <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 inline mr-1" />
+            {{ codeError }}
           </div>
         </div>
         
-        <UButton
-          label="Annuleren"
-          variant="outline"
-          @click="resetToMenu"
-        />
+        <div class="space-y-3">
+          <UButton
+            label="Verbinden"
+            icon="i-heroicons-link"
+            size="lg"
+            block
+            :disabled="!inputCode.trim()"
+            @click="handleCodeSubmit"
+            class="font-medium"
+          />
+          
+          <UButton
+            label="Annuleren"
+            variant="outline"
+            @click="resetToMenu"
+          />
+        </div>
       </div>
 
       <!-- Connected Step -->
