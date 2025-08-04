@@ -1,0 +1,31 @@
+rules:
+  body-leading-blank: 1
+  body-max-line-length: 100
+  footer-leading-blank: 1
+  footer-max-line-length: 100
+  header-max-length: 100
+  subject-case:
+    - 2
+    - never
+    - sentence-case
+    - start-case
+    - pascal-case
+    - upper-case
+  subject-empty: 2
+  subject-full-stop: 2
+  type-case: 2
+  type-empty: 2
+  type-enum:
+    - 2
+    - always
+    - - build
+      - chore
+      - ci
+      - docs
+      - feat
+      - fix
+      - perf
+      - refactor
+      - revert
+      - style
+      - test

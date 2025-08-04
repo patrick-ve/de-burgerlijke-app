@@ -1,6 +1,8 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { v4 as uuidv4 } from 'uuid';
+import { useDataSync } from './useDataSync';
+import type { SyncData } from './useWebRTCSync';
 
 // Define the structure of a baby profile
 export interface BabyProfile {
@@ -207,6 +209,80 @@ export function useBaby() {
     return entries.reduce((total, entry) => total + entry.amount, 0);
   };
 
+  // ===== SYNC FUNCTIONALITY =====
+  const { synchronizeData, createSyncData, isLocalDataNewer } = useDataSync();
+  const deviceId = localStorage.getItem('webrtc-device-id') || uuidv4();
+  
+  // Store device ID if not exists
+  if (!localStorage.getItem('webrtc-device-id')) {
+    localStorage.setItem('webrtc-device-id', deviceId);
+  }
+
+  /**
+   * Export current data for synchronization
+   */
+  const exportSyncData = (): SyncData => {
+    return createSyncData(babyProfile.value, milkEntries.value, deviceId);
+  };
+
+  /**
+   * Import and merge sync data from another device
+   */
+  const importSyncData = async (remoteData: SyncData) => {
+    const { newProfile, newEntries, result } = await synchronizeData(
+      babyProfile.value,
+      milkEntries.value,
+      remoteData
+    );
+
+    // Update local data with merged results
+    if (result.profileUpdated && newProfile) {
+      babyProfile.value = newProfile;
+    }
+
+    if (result.entriesAdded > 0 || result.entriesUpdated > 0) {
+      milkEntries.value = newEntries;
+    }
+
+    console.log('[Sync] Data synchronized:', result);
+    return result;
+  };
+
+  /**
+   * Check if local data has changes that need to be synced
+   */
+  const hasUnsyncedChanges = (lastSyncData?: SyncData): boolean => {
+    if (!lastSyncData) return true;
+    
+    return isLocalDataNewer(babyProfile.value, milkEntries.value, lastSyncData);
+  };
+
+  // Event listeners for WebRTC sync events
+  const handleSyncDataReceived = async (event: CustomEvent) => {
+    const remoteData = event.detail as SyncData;
+    await importSyncData(remoteData);
+  };
+
+  const handleSyncRequest = async (event: CustomEvent) => {
+    // When sync is requested, send our current data
+    const syncData = exportSyncData();
+    window.dispatchEvent(new CustomEvent('baby-sync-response', {
+      detail: syncData
+    }));
+  };
+
+  // Setup event listeners
+  onMounted(() => {
+    window.addEventListener('webrtc-sync-data', handleSyncDataReceived as EventListener);
+    window.addEventListener('webrtc-sync-request', handleSyncRequest as EventListener);
+  });
+
+  // Cleanup event listeners
+  onBeforeUnmount(() => {
+    window.removeEventListener('webrtc-sync-data', handleSyncDataReceived as EventListener);
+    window.removeEventListener('webrtc-sync-request', handleSyncRequest as EventListener);
+  });
+
   return {
     // State
     babyProfile: readonly(babyProfile),
@@ -227,5 +303,10 @@ export function useBaby() {
     clearAllEntries,
     getEntriesForDate,
     getMilkIntakeForDate,
+    
+    // Sync Actions
+    exportSyncData,
+    importSyncData,
+    hasUnsyncedChanges,
   };
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useBaby } from '~/composables/useBaby';
+import { useWebRTCSync } from '~/composables/useWebRTCSync';
 import type { MilkEntry } from '~/composables/useBaby';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -19,6 +20,9 @@ const {
   deleteMilkEntry,
   clearAllEntries,
 } = useBaby();
+
+// WebRTC sync functionality
+const { connectionState, isConnected, connectedDeviceId } = useWebRTCSync();
 
 const router = useRouter();
 
@@ -204,13 +208,25 @@ useHead({ title: 'Baby' });
       />
     </template>
     <template #right-action>
-      <UButton
-        icon="i-heroicons-ellipsis-vertical"
-        variant="ghost"
-        color="gray"
-        aria-label="Options"
-        @click="openContextMenu"
-      />
+      <div class="flex items-center space-x-2">
+        <!-- Sync Status Indicator -->
+        <UButton
+          :icon="isConnected ? 'i-heroicons-wifi' : 'i-heroicons-wifi-slash'"
+          variant="ghost"
+          :color="isConnected ? 'green' : 'gray'"
+          size="sm"
+          aria-label="Sync Status"
+          @click="router.push('/app/baby/sync')"
+        />
+        
+        <UButton
+          icon="i-heroicons-ellipsis-vertical"
+          variant="ghost"
+          color="gray"
+          aria-label="Options"
+          @click="openContextMenu"
+        />
+      </div>
     </template>
   </TheHeader>
 
@@ -366,6 +382,13 @@ useHead({ title: 'Baby' });
         :ui="{ container: 'z-50 group' }"
       >
         <div class="p-1">
+          <UButton
+            label="Synchronisatie"
+            variant="ghost"
+            :icon="isConnected ? 'i-heroicons-wifi' : 'i-heroicons-wifi-slash'"
+            @click="router.push('/app/baby/sync')"
+            class="w-full justify-start"
+          />
           <UButton
             label="Gewicht wijzigen"
             variant="ghost"
